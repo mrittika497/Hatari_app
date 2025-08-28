@@ -1,0 +1,52 @@
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import HomeScreen from '../screens/BottomScreen/HomeScreen';
+import MyOrders from '../screens/BottomScreen/MyOrders';
+import MenuScreen from '../screens/BottomScreen/MenuScreen';
+import ProfileScreen from '../screens/BottomScreen/ProfileScreen';
+
+const Tab = createBottomTabNavigator();
+
+const Bottom = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarShowLabel: true,
+        tabBarActiveTintColor: '#ff6347', // Active color
+        tabBarInactiveTintColor: 'gray', // Inactive color
+        tabBarStyle: {
+          backgroundColor: '#fff',
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+          height: 60,
+          paddingBottom: 8,
+          elevation: 5,
+        },
+        headerShown: false,
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+
+          if (route.name === 'HomeScreen') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'MyOrders') {
+            iconName = focused ? 'cart' : 'cart-outline';
+          } else if (route.name === 'MenuScreen') {
+            iconName = focused ? 'fast-food' : 'fast-food-outline';
+          } else if (route.name === 'ProfileScreen') {
+            iconName = focused ? 'person' : 'person-outline';
+          }
+
+          return <Ionicons name={iconName} size={26} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen name="HomeScreen" component={HomeScreen} options={{ tabBarLabel: 'Home' }} />
+      <Tab.Screen name="MyOrders" component={MyOrders} options={{ tabBarLabel: 'Cart' }} />
+      <Tab.Screen name="MenuScreen" component={MenuScreen} options={{ tabBarLabel: 'Menu' }} />
+      <Tab.Screen name="ProfileScreen" component={ProfileScreen} options={{ tabBarLabel: 'Profile' }} />
+    </Tab.Navigator>
+  );
+};
+
+export default Bottom;

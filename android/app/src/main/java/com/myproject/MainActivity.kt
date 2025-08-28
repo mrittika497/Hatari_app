@@ -1,17 +1,17 @@
-package com.myproject
+package com.Hatari
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
-
+import com.oblador.vectoricons.VectorIconsPackage;
 class MainActivity : ReactActivity() {
 
   /**
    * Returns the name of the main component registered from JavaScript. This is used to schedule
    * rendering of the component.
    */
-  override fun getMainComponentName(): String = "myProject"
+  override fun getMainComponentName(): String = "Hatari"
 
   /**
    * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]
