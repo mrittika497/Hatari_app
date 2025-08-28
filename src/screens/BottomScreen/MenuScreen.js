@@ -106,7 +106,7 @@ const MenuScreen = () => {
             <View style={styles.card}>
                 {/* Food Image */}
                 <Image source={item.image} style={styles.image} />
-
+<Text>hhhh</Text>
                 {/* Details */}
                 <View style={styles.details}>
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
