@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -6,39 +6,101 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  TouchableOpacity,
-} from "react-native";
-import DashboardScreen from "../../components/DashboardScreen";
+  Alert,
+  ToastAndroid,
+} from 'react-native';
+import {useDispatch, useSelector} from 'react-redux';
 import {
   CodeField,
   Cursor,
   useBlurOnFulfill,
   useClearByFocusCell,
-} from "react-native-confirmation-code-field";
-import Theme from "../../assets/theme";
-import ReusableBtn from "../../components/ReuseableBtn";
+} from 'react-native-confirmation-code-field';
+import DashboarsdScreen from '../../components/DashboardScreen';
+import Theme from '../../assets/theme';
+import ReusableBtn from '../../components/ReuseableBtn';
+import {sendOtp, verifyOtp} from '../../redux/slice/authSlice';
+import {useNavigation} from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import DashboardScreen from '../../components/DashboardScreen';
 
 const CELL_COUNT = 6;
 
-const OtpScreen = ({ navigation }) => {
-  const [value, setValue] = useState("");
+const OtpScreen = ({route, navigation}) => {
+  // const navigation = useNavigation();
+  const phone = route?.params?.phone;
+  console.log(phone, '------------------phone');
 
-  const ref = useBlurOnFulfill({ value, cellCount: CELL_COUNT });
+  const dispatch = useDispatch();
+  const {token, user} = useSelector(state => state.auth);
+
+  useEffect(() => {
+    if (token && user) {
+      console.log('Token:', token);
+      console.log('User:', user);
+      navigation.navigate('ExperienceScreen', {token, user});
+    }
+  }, [token, user]);
+
+  const [value, setValue] = useState('');
+  const ref = useBlurOnFulfill({value, cellCount: CELL_COUNT});
   const [props, getCellOnLayoutHandler] = useClearByFocusCell({
     value,
     setValue,
   });
 
   const handleVerify = () => {
-    if (value.length === 6) {
-      navigation.navigate("ExperienceScreen");
-    } else {
-      alert("Please enter 6-digit OTP");
+    if (value.length !== 6) {
+      Alert.alert('Invalid OTP', 'Please enter a valid 6-digit OTP');
+      return;
     }
+
+    dispatch(verifyOtp({phone, value})).then(async res => {
+      console.log('Verify OTP Response:', res?.data);
+
+      if (res.meta.requestStatus === 'fulfilled') {
+        const {token, user} = res.payload;
+
+        // ✅ Save token for future auto-login
+        await AsyncStorage.setItem('userToken', token);
+        await AsyncStorage.setItem('userInfo', JSON.stringify(user));
+
+        if (Platform.OS === 'android') {
+          ToastAndroid.show('Login Successful ✅', ToastAndroid.SHORT);
+        } else {
+          Alert.alert('Success', 'Login Successful ✅');
+        }
+
+        //  navigation.navigate("ExperienceScreen")
+      } else {
+        const errMsg =
+          res.payload?.message || 'OTP verification failed. Try again.';
+        if (Platform.OS === 'android') {
+          ToastAndroid.show(errMsg, ToastAndroid.LONG);
+        } else {
+          Alert.alert('Error', errMsg);
+        }
+      }
+    });
   };
 
   const handleResend = () => {
-    alert("Resending OTP...");
+    dispatch(sendOtp(phone)).then(res => {
+      if (res.meta.requestStatus === 'fulfilled') {
+        if (Platform.OS === 'android') {
+          ToastAndroid.show('OTP Resent ✅', ToastAndroid.SHORT);
+        } else {
+          Alert.alert('Success', 'OTP Resent ✅');
+        }
+      } else {
+        const errMsg = res.payload?.message || 'Failed to resend OTP.';
+        if (Platform.OS === 'android') {
+          ToastAndroid.show(errMsg, ToastAndroid.LONG);
+        } else {
+          Alert.alert('Error', errMsg);
+        }
+      }
+    });
   };
 
   const isButtonActive = value.length === CELL_COUNT;
@@ -47,11 +109,10 @@ const OtpScreen = ({ navigation }) => {
     <DashboardScreen>
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {/* Logo */}
         <Image
-          source={require("../../assets/images/project_logo.png")}
+          source={require('../../assets/images/project_logo.png')}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -70,12 +131,11 @@ const OtpScreen = ({ navigation }) => {
           rootStyle={styles.codeFieldRoot}
           keyboardType="number-pad"
           textContentType="oneTimeCode"
-          renderCell={({ index, symbol, isFocused }) => (
+          renderCell={({index, symbol, isFocused}) => (
             <View
               key={index}
               style={[styles.cell, isFocused && styles.focusCell]}
-              onLayout={getCellOnLayoutHandler(index)}
-            >
+              onLayout={getCellOnLayoutHandler(index)}>
               <Text style={styles.cellText}>
                 {symbol || (isFocused ? <Cursor /> : null)}
               </Text>
@@ -84,22 +144,12 @@ const OtpScreen = ({ navigation }) => {
         />
 
         {/* Verify Button */}
-        {/* <TouchableOpacity
-          style={[styles.verifyBtn, !isButtonActive && styles.verifyBtnDisabled]}
-          onPress={handleVerify}
-          disabled={!isButtonActive}
-        >
-          <Text
-            style={[
-              styles.verifyText,
-              !isButtonActive && styles.verifyTextDisabled,
-            ]}
-          >
-            Verify
-          </Text>
-        </TouchableOpacity> */}
-        <ReusableBtn title="Verify"
-          style={[styles.verifyBtn, !isButtonActive && styles.verifyBtnDisabled]}
+        <ReusableBtn
+          title="Verify"
+          style={[
+            styles.verifyBtn,
+            !isButtonActive && styles.verifyBtnDisabled,
+          ]}
           onPress={handleVerify}
           disabled={!isButtonActive}
         />
@@ -108,7 +158,7 @@ const OtpScreen = ({ navigation }) => {
         <Text style={styles.resendText}>
           Having any issue?
           <Text style={styles.resendLink} onPress={handleResend}>
-            {" "}
+            {' '}
             Send again
           </Text>
         </Text>
@@ -122,9 +172,9 @@ export default OtpScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 20,
   },
   logo: {
@@ -136,58 +186,48 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Theme.colors.red,
     marginBottom: 20,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   instruction: {
     fontSize: 16,
     marginBottom: 20,
     color: Theme.colors.black,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   codeFieldRoot: {
     marginBottom: 30,
-    flexDirection: "row",
-    justifyContent: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   cell: {
     width: 45,
     height: 50,
-    lineHeight: 48,
-    fontSize: 24,
     borderWidth: 1,
     borderColor: Theme.colors.red,
     borderRadius: 8,
     marginHorizontal: 5,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: Theme.colors.white,
   },
   cellText: {
     fontSize: 22,
-    color: "#333",
+    color: '#333',
   },
   focusCell: {
     borderColor: Theme.colors.red,
   },
   verifyBtn: {
-    width: "100%",
+    width: '100%',
     paddingVertical: 14,
     backgroundColor: Theme.colors.red,
     borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 15,
   },
   verifyBtnDisabled: {
-    backgroundColor: "#ccc",
-  },
-  verifyText: {
-    fontSize: 18,
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  verifyTextDisabled: {
-    color: "#666",
+    backgroundColor: '#ccc',
   },
   resendText: {
     fontSize: 14,
@@ -196,6 +236,6 @@ const styles = StyleSheet.create({
   },
   resendLink: {
     color: Theme.colors.red,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
 });

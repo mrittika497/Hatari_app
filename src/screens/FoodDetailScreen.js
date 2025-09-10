@@ -94,7 +94,7 @@ const FoodDetailScreen = ({navigation}) => {
             </TouchableOpacity>
           </View>
            <TouchableOpacity style={styles.addBtn}
-              onPress={() => navigation.navigate("Bottom", { screen: "MyOrders" })}
+              onPress={() => navigation.navigate("Bottom", { screen: "CartScreen" })}
             >
             <Text style={styles.addBtnText}>Add</Text>
           </TouchableOpacity> 

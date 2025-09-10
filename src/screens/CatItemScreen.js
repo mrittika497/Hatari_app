@@ -11,6 +11,7 @@ import {
 import DashboardScreen from '../components/DashboardScreen';
 import CustomHeader from '../components/CustomHeader';
 import SmallbtnReuseable from '../components/SmallbtnReuseable';
+import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
@@ -54,6 +55,7 @@ const items = [
 ];
 
 const CatItemScreen = () => {
+  const Navigation = useNavigation();
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       {/* Food Image */}
@@ -97,7 +99,7 @@ const CatItemScreen = () => {
       {/* Right Side Buttons */}
       <View style={styles.actions}>
        
-        <SmallbtnReuseable/>
+        <SmallbtnReuseable onPress={() => {Navigation.navigate("FoodDetailScreen")}}/>
       </View>
     </View>
   );

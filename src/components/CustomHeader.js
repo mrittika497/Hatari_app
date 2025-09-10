@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     // paddingHorizontal: 12,
-    marginTop:20,
+    marginTop: 20,
     paddingVertical: 12,
     ...Platform.select({
       ios: {

@@ -8,17 +8,19 @@ import {
   FlatList,
   Dimensions,
 } from "react-native";
-import DashboardScreen from "../../components/DashboardScreen";
-import CustomHeader from "../../components/CustomHeader";
+
 import ShimmerPlaceHolder from "react-native-shimmer-placeholder";
 import LinearGradient from "react-native-linear-gradient";
-import ReusableBtn from "../../components/ReuseableBtn";
-import Theme from "../../assets/theme";
+
 import { useNavigation } from "@react-navigation/native";
+import DashboardScreen from "../components/DashboardScreen";
+import CustomHeader from "../components/CustomHeader";
+import Theme from "../assets/theme";
+import ReusableBtn from "../components/ReuseableBtn";
 
 const { width } = Dimensions.get("window");
 
-const OrdersScreen = () => {
+const CartScreen = () => {
   const navigation = useNavigation();
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +34,7 @@ const OrdersScreen = () => {
           name: "Bhetki Fish Fry",
           price: 320,
           quantity: 2,
-          image: require("../../assets/images/remove/Chicken.png"),
+        //   image: require("../../assets/images/remove/Chicken.png"),
           type: "nonveg",
         },
         {
@@ -40,7 +42,7 @@ const OrdersScreen = () => {
           name: "Chicken Dum Biriyani",
           price: 580,
           quantity: 2,
-          image: require("../../assets/images/remove/Chicken.png"),
+        //   image: require("../../assets/images/remove/Chicken.png"),
           type: "nonveg",
         },
         {
@@ -48,7 +50,7 @@ const OrdersScreen = () => {
           name: "Ice cream with brownie",
           price: 180,
           quantity: 1,
-          image: require("../../assets/images/remove/Chicken.png"),
+        //   image: require("../../assets/images/remove/Chicken.png"),
           type: "veg",
         },
       ]);
@@ -121,10 +123,10 @@ const OrdersScreen = () => {
           style={styles.deleteBtn}
           onPress={() => deleteItem(item.id)}
         >
-          <Image
+          {/* <Image
             source={require("../../assets/images/trash.png")}
             style={{ width: 18, height: 18 }}
-          />
+          /> */}
         </TouchableOpacity>
 
         <View style={styles.quantityBox}>
@@ -235,7 +237,7 @@ const OrdersScreen = () => {
                 </Text>
               </View>
             </View>
-            <ReusableBtn title="Pay" />
+            {/* <ReusableBtn title="Pay" /> */}
           </>
         )}
       </View>
@@ -243,7 +245,7 @@ const OrdersScreen = () => {
   );
 };
 
-export default OrdersScreen;
+export default CartScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -381,3 +383,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 });
+
+
+
