@@ -5,6 +5,7 @@ import nearestResReucer from '../slice/nearestResSlice'
 import AllRestaurantReucer from '../slice/AllRestaurantSlice'
 import bannerReucer from '../slice/BannerSlice'
 import AllFoodsReucer from '../slice/AllFoodsSlice'
+import cartReucer from '../slice/cartSlice'
 const store = configureStore({
   reducer: {
     home: HomeReducer,
@@ -12,7 +13,8 @@ const store = configureStore({
     nearestRestaurants:nearestResReucer,
     restaurants:AllRestaurantReucer,
     banners:bannerReucer,
-    allFoods:AllFoodsReucer
+    allFoods:AllFoodsReucer,
+    cart:cartReucer
   },
 });
 

@@ -1,219 +1,512 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   Image,
-  ScrollView,
-  SafeAreaView,
+  TouchableOpacity,
+  FlatList,
+  Dimensions,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Modal,
 } from "react-native";
+import ShimmerPlaceHolder from "react-native-shimmer-placeholder";
+import LinearGradient from "react-native-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
-import DashboardScreen from "../components/DashboardScreen";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
-const experiences = [
-  { id: 1, title: "Delivery", icon: require("../assets/images/delivery.png") },
-  { id: 2, title: "Dine in", icon: require("../assets/images/dinein.png") },
-  { id: 3, title: "Takeaway", icon: require("../assets/images/takeaway.png") },
-];
+import DashboardScreen from "../../components/DashboardScreen";
+import CustomHeader from "../../components/CustomHeader";
+import Theme from "../../assets/theme";
 
-const branches = [
-  { id: 1, title: "GARIA", logo: require("../assets/images/project_logo.png") },
-  { id: 2, title: "BARISHA", logo: require("../assets/images/project_logo.png") },
-  { id: 3, title: "DHAKURIA", logo: require("../assets/images/project_logo.png") },
-];
+const { width } = Dimensions.get("window");
 
-const ExperienceScreen = () => {
-  const [selectedExperience, setSelectedExperience] = useState(null);
-  const [selectedBranch, setSelectedBranch] = useState(null);
+const CartScreen = () => {
   const navigation = useNavigation();
+  const [cartItems, setCartItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleContinue = () => {
-    if (selectedExperience && selectedBranch) {
-      navigation.navigate("Bottom", {
-        experienceId: selectedExperience,
-        branchId: selectedBranch,
-      });
-    } else {
-      alert("Please select both experience and branch.");
-    }
+  // Modal state
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [noteText, setNoteText] = useState("");
+
+  useEffect(() => {
+    setTimeout(() => {
+      setCartItems([
+        {
+          id: "1",
+          name: "Bhetki Fish Fry",
+          price: 320,
+          quantity: 2,
+          image: require("../../assets/images/remove/Chicken.png"),
+          type: "nonveg",
+          note: "",
+        },
+        {
+          id: "2",
+          name: "Chicken Dum Biriyani",
+          price: 580,
+          quantity: 1,
+          image: require("../../assets/images/remove/Chicken.png"),
+          type: "nonveg",
+          note: "",
+        },
+        {
+          id: "3",
+          name: "Ice cream with Brownie",
+          price: 180,
+          quantity: 1,
+          image: require("../../assets/images/remove/Chicken.png"),
+          type: "veg",
+          note: "",
+        },
+      ]);
+      setLoading(false);
+    }, 1500);
+  }, []);
+
+  const incrementQty = (id) => {
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, quantity: item.quantity + 1 } : item
+      )
+    );
   };
 
-  return (
-    <DashboardScreen>
-      <SafeAreaView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          {/* Header */}
-          <Text style={styles.title}>
-            Welcome to <Text style={styles.brand}>Hatari</Text>
-          </Text>
-          <Text style={styles.subtitle}>Elevate Your Dining Experience</Text>
+  const decrementQty = (id) => {
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item.id === id && item.quantity > 1
+          ? { ...item, quantity: item.quantity - 1 }
+          : item
+      )
+    );
+  };
 
-          {/* Choose Experience */}
-          <Text style={styles.sectionHeading}>Choose your experience</Text>
-          <View style={styles.experienceContainer}>
-            {experiences.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={[
-                  styles.experienceCard,
-                  selectedExperience === item.id && styles.selectedCard,
-                ]}
-                onPress={() => setSelectedExperience(item.id)}
-              >
-                <Image source={item.icon} style={styles.icon} resizeMode="contain" />
-                <Text style={styles.cardText}>{item.title}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+  const deleteItem = (id) => {
+    setCartItems((prev) => prev.filter((item) => item.id !== id));
+  };
 
-          {/* Select Branch */}
-          <Text style={styles.sectionHeading}>Please select branch</Text>
-          <View style={styles.branchContainer}>
-            {branches.map((branch) => (
-              <TouchableOpacity
-                key={branch.id}
-                style={[
-                  styles.branchCard,
-                  selectedBranch === branch.id && styles.selectedBranchCard,
-                ]}
-                onPress={() => setSelectedBranch(branch.id)}
-              >
-                <Image source={branch.logo} style={styles.branchLogo} resizeMode="contain" />
-                <Text
-                  style={[
-                    styles.branchText,
-                    selectedBranch === branch.id && styles.selectedBranchText,
-                  ]}
-                >
-                  {branch.title}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+  const updateNote = (id, text) => {
+    setCartItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, note: text } : item))
+    );
+  };
 
-          {/* Continue Button */}
-          <TouchableOpacity
+  const totalPrice = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+  const gst = Math.round(totalPrice * 0.05); // 5% GST
+  const packingFee = 20;
+  const grandTotal = totalPrice + gst + packingFee;
+
+  const formatCurrency = (amount) => `₹${amount.toLocaleString("en-IN")}`;
+
+  const openModal = (item) => {
+    setSelectedItem(item);
+    setNoteText(item.note || "");
+  };
+
+  const closeModal = () => {
+    setSelectedItem(null);
+    setNoteText("");
+  };
+
+  const handleSaveNote = () => {
+    if (selectedItem) {
+      updateNote(selectedItem.id, noteText);
+    }
+    closeModal();
+  };
+
+
+
+  const renderItem = ({ item }) => (
+    <View style={styles.itemCard}>
+      <Image source={item.image} style={styles.itemImage} />
+
+      <View style={styles.detailsContainer}>
+        <View style={styles.itemHeader}>
+          <View
             style={[
-              styles.continueButton,
-              !(selectedExperience && selectedBranch) && styles.disabledButton,
+              styles.typeIndicator,
+              { borderColor: item.type === "veg" ? "green" : "red" },
             ]}
-            onPress={handleContinue}
-            disabled={!(selectedExperience && selectedBranch)}
           >
-            <Text style={styles.continueText}>Continue</Text>
+            <View
+              style={[
+                styles.typeDot,
+                { backgroundColor: item.type === "veg" ? "green" : "red" },
+              ]}
+            />
+          </View>
+          <Text style={styles.itemName}>{item.name}</Text>
+        </View>
+        <Text style={styles.itemPrice}>{formatCurrency(item.price)}</Text>
+ 
+        {/* ✅ Customize + Delete row */}
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={styles.customizeBtn}
+            onPress={() => openModal(item)}
+          >
+            <Icon name="pencil" size={18} color={Theme.colors.red} />
+            <Text style={styles.customizeText}>Customize</Text>
           </TouchableOpacity>
-        </ScrollView>
-      </SafeAreaView>
+
+          <TouchableOpacity
+            style={styles.deleteBtn}
+            onPress={() => deleteItem(item.id)}
+          >
+            <Ionicons name="trash-outline" size={20} color="red" />
+            <Text style={styles.deleteText}>Remove</Text>
+          </TouchableOpacity>
+        </View>
+
+
+               {item.note ? (
+          <Text style={styles.itemNoteDisplay}>📝 {item.note}</Text>
+        ) : null}
+      </View>
+
+      {/* ✅ Quantity Section */}
+      <View style={styles.quantityBox}>
+        <TouchableOpacity
+          style={styles.qtyBtn}
+          onPress={() => decrementQty(item.id)}
+        >
+          <Text style={styles.qtyText}>-</Text>
+        </TouchableOpacity>
+        <Text style={styles.qtyValue}>{item.quantity}</Text>
+        <TouchableOpacity
+          style={styles.qtyBtn}
+          onPress={() => incrementQty(item.id)}
+        >
+          <Text style={styles.qtyText}>+</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderSkeleton = () => (
+    <View style={styles.itemCard}>
+      <ShimmerPlaceHolder
+        LinearGradient={LinearGradient}
+        style={{ width: 70, height: 70, borderRadius: 8 }}
+      />
+      <View style={{ flex: 1, marginLeft: 12 }}>
+        <ShimmerPlaceHolder
+          LinearGradient={LinearGradient}
+          style={{
+            width: width * 0.5,
+            height: 14,
+            borderRadius: 4,
+            marginBottom: 6,
+          }}
+        />
+        <ShimmerPlaceHolder
+          LinearGradient={LinearGradient}
+          style={{ width: width * 0.3, height: 14, borderRadius: 4 }}
+        />
+      </View>
+    </View>
+  );
+
+  return (
+    <DashboardScreen scrollable={false}>
+      <CustomHeader title="My Cart" />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+           <TouchableOpacity
+          style={styles.addMore}
+          onPress={() => navigation.navigate("HomeScreen")}
+        >
+          <Text style={{ color: Theme.colors.red, fontWeight: "600" }}>
+            + Add more Items
+          </Text>
+        </TouchableOpacity>
+        <View style={styles.container}>
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <View key={i}>{renderSkeleton()}</View>
+            ))
+          ) : cartItems.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Your cart is empty</Text>
+              <TouchableOpacity
+                style={styles.browseBtn}
+                onPress={() => navigation.navigate("HomeScreen")}
+              >
+                <Text style={styles.browseText}>Browse Menu</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <FlatList
+                data={cartItems}
+                keyExtractor={(item) => item.id}
+                renderItem={renderItem}
+                contentContainerStyle={{ paddingBottom: 120 }}
+              />
+
+              {/* ✅ Fixed Bottom Checkout Section */}
+              <View style={styles.bottomBar}>
+                <View style={styles.billBox}>
+                  <Text style={styles.billLabel}>Grand Total</Text>
+                  <Text style={styles.billValue}>
+                    {formatCurrency(grandTotal)}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.checkoutBtn}
+                  onPress={() =>
+                    navigation.navigate("Checkout", { cartItems, grandTotal })
+                  }
+                >
+                  <Text style={styles.checkoutText}>Proceed to Checkout</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+        </View>
+      </KeyboardAvoidingView>
+
+      {/* ✅ Modal for Note + Remove */}
+      <Modal
+        visible={!!selectedItem}
+        animationType="slide"
+        transparent
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>
+              Edit Item: {selectedItem?.name}
+            </Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Enter special note..."
+              placeholderTextColor="#999"
+              value={noteText}
+              onChangeText={setNoteText}
+              multiline
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: "#ccc" }]}
+                onPress={closeModal}
+              >
+                <Text style={styles.modalBtnText}>Cancel</Text>
+              </TouchableOpacity>
+
+              {/* <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: "red" }]}
+                onPress={handleRemoveItem}
+              >
+                <Text style={styles.modalBtnText}>Remove</Text>
+              </TouchableOpacity> */}
+
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: Theme.colors.red }]}
+                onPress={handleSaveNote}
+              >
+                <Text style={styles.modalBtnText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </DashboardScreen>
   );
 };
 
-export default ExperienceScreen;
+export default CartScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  scrollContainer: {
-    padding: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 8,
-  },
-  brand: {
-    color: "#e53935",
-    fontWeight: "700",
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#e53935",
-    marginBottom: 25,
-    fontWeight: "500",
-  },
-  sectionHeading: {
-    fontSize: 16,
-    color: "#000",
-    fontWeight: "500",
-    marginBottom: 12,
-    marginTop: 20,
-  },
-  experienceContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    addMore: {
+    alignSelf: "flex-end",
+    marginVertical: 10,
     marginBottom: 20,
   },
-  experienceCard: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 12,
-    paddingVertical: 20,
-    marginHorizontal: 5,
-    alignItems: "center",
+  container: { flex: 1, backgroundColor: "#fff" },
+
+  // Empty Cart
+  emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  emptyText: { fontSize: 18, color: "#555", marginTop: 8 },
+  browseBtn: {
+    backgroundColor: Theme.colors.red,
+    marginTop: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 25,
+  },
+  browseText: { color: "#fff", fontWeight: "600" },
+
+  // Item Card
+  itemCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginHorizontal: 12,
+    marginVertical: 8,
     backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  selectedCard: {
-    borderColor: "#e53935",
+  itemImage: { width: 70, height: 70, borderRadius: 8 },
+  detailsContainer: { flex: 1, marginLeft: 12 },
+  itemHeader: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
+  typeIndicator: {
+    width: 16,
+    height: 16,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 6,
+    borderRadius: 2,
   },
-  icon: {
+  typeDot: { width: 8, height: 8, borderRadius: 4 },
+  itemName: { fontSize: 16, fontWeight: "600", color: "#333", flexShrink: 1 },
+  itemPrice: { fontSize: 14, color: "#777" },
+  itemNoteDisplay: {
+    marginTop: 6,
+    fontSize: 13,
+    color: "#444",
+    backgroundColor: "#f1f1f1",
+    padding: 6,
+    borderRadius: 6,
+  width:200
+  },
+
+  // Action Row
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  customizeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF3F3",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  customizeText: {
+    fontSize: 13,
+    color: Theme.colors.red,
+    fontWeight: "600",
+    marginLeft: 5,
+  },
+  deleteBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF3F3",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  deleteText: {
+    fontSize: 13,
+    color: "red",
+    fontWeight: "600",
+    marginLeft: 5,
+  },
+
+  // Quantity Section
+  quantityBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F1F1F1",
+    borderRadius: 25,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginLeft: 8,
+  },
+  qtyBtn: {
     width: 30,
     height: 30,
-    marginBottom: 8,
-  },
-  cardText: {
-    fontSize: 14,
-    color: "#000",
-  },
-  branchContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    flexWrap: "wrap",
-    marginTop: 10,
-  },
-  branchCard: {
-    width: "30%",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 12,
-    paddingVertical: 15,
-    marginBottom: 10,
-    alignItems: "center",
     backgroundColor: "#fff",
+    borderRadius: 15,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 2,
   },
-  selectedBranchCard: {
-    borderColor: "#e53935",
+  qtyText: { fontSize: 18, fontWeight: "bold", color: Theme.colors.red },
+  qtyValue: { fontSize: 16, fontWeight: "bold", marginHorizontal: 10 },
+
+  // Bottom Checkout
+  bottomBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderColor: "#eee",
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    elevation: 8,
   },
-  branchLogo: {
-    width: 80,
-    height: 40,
-    marginBottom: 8,
+  billBox: { flex: 1 },
+  billLabel: { fontSize: 14, color: "#555" },
+  billValue: { fontSize: 18, fontWeight: "700", color: "#000" },
+  checkoutBtn: {
+    backgroundColor: Theme.colors.red,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 30,
+    marginLeft: 12,
   },
-  branchText: {
+  checkoutText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    width: "85%",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 20,
+    elevation: 5,
+  },
+  modalTitle: { fontSize: 18, fontWeight: "700", marginBottom: 12 },
+  modalInput: {
+    backgroundColor: "#f8f8f8",
+    borderRadius: 8,
+    padding: 10,
+    minHeight: 60,
+    textAlignVertical: "top",
     fontSize: 14,
     color: "#000",
   },
-  selectedBranchText: {
-    color: "#e53935",
-    fontWeight: "700",
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 15,
   },
-  continueButton: {
-    backgroundColor: "#e53935",
-    paddingVertical: 15,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 20,
+  modalBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 6,
+    marginLeft: 10,
   },
-  disabledButton: {
-    backgroundColor: "#ccc",
-  },
-  continueText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
+  modalBtnText: { color: "#fff", fontWeight: "600" },
 });
