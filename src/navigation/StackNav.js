@@ -11,51 +11,40 @@ import DineSection from '../screens/DineSection';
 import FoodDetailScreen from '../screens/FoodDetailScreen';
 import CatItemScreen from '../screens/CatItemScreen';
 
-
-
 const Stack = createNativeStackNavigator();
 
 const StackNav = () => {
-  // const [loading, setLoading] = useState(true);
-  // const [userLoggedIn, setUserLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [userToken, setUserToken] = useState(null);
 
-  // useEffect(() => {
-  //   const checkLogin = async () => {
-  //     try {
-  //       const token = await AsyncStorage.getItem('userToken');
+  useEffect(() => {
+    const checkLogin = async () => {
+      try {
+        const token = await AsyncStorage.getItem('userToken');
+        setUserToken(token); // token exists => user already logged in
+      } catch (err) {
+        console.log('Error reading AsyncStorage:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkLogin();
+  }, []);
 
-  //       if (token) {
-  //         setUserLoggedIn(true);
-  //       }
-  //     } catch (err) {
-  //       console.log('Error reading AsyncStorage:', err);
-  //     }
-  //     setLoading(false);
-  //   };
-  //   checkLogin();
-  // }, []);
-
-  // if (loading) {
-  //   // Optional: splash loader while checking AsyncStorage
-  //   return null;
-  // }
+  if (loading) {
+    return null; // or a loading spinner
+  }
 
   return (
     <Stack.Navigator
+      initialRouteName={userToken ? 'ExperienceScreen' : 'Splash'}
       screenOptions={{
         headerStyle: {backgroundColor: '#ffffff'},
         headerTitleStyle: {fontWeight: 'bold', fontSize: 20},
         headerTintColor: '#000000',
       }}>
-    
-      
-    
-    
-          <Stack.Screen
-            name="Splash"
-            component={Splash}
-            options={{headerShown: false}}
-          />
+      {!userToken && (
+        <>
           <Stack.Screen
             name="LoginScreen"
             component={LoginScreen}
@@ -66,54 +55,38 @@ const StackNav = () => {
             component={OtpScreen}
             options={{headerShown: false}}
           />
-          <Stack.Screen
-            name="ExperienceScreen"
-            component={ExperienceScreen}
-            options={{headerShown: false}}
-          />
-          <Stack.Screen
-            name="FoodDetailScreen"
-            component={FoodDetailScreen}
-            options={{headerShown: false}}
-          />
-          <Stack.Screen
-            name="CatItemScreen"
-            component={CatItemScreen}
-            options={{headerShown: false}}
-          />
-          {/* <Stack.Screen
-            name="MapAddress"
-            component={MapAddress}
-            options={{headerShown: false}}
-          /> */}
-          {/* <Stack.Screen
-            name="PaymentScreen"
-            component={PaymentScreen}
-            options={{headerShown: false}}
-          />
-          <Stack.Screen
-            name="ComfromScreen"
-            component={ComfromScreen}
-            options={{headerShown: false}}
-          /> */}
-          {/* <Stack.Screen
-            name="OrderSummary"z
-            component={OrderSummary}
-            options={{headerShown: false}}
-          /> */}
-          <Stack.Screen
-            name="DineSection"
-            component={DineSection}
-            options={{headerShown: false}}
-          />
-
-          <Stack.Screen
-            name="Bottom"
-            component={Bottom}
-            options={{headerShown: false}}
-          />
-        
-    
+        </>
+      )}
+      <Stack.Screen
+        name="Splash"
+        component={Splash}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="ExperienceScreen"
+        component={ExperienceScreen}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="FoodDetailScreen"
+        component={FoodDetailScreen}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="CatItemScreen"
+        component={CatItemScreen}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="DineSection"
+        component={DineSection}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="Bottom"
+        component={Bottom}
+        options={{headerShown: false}}
+      />
     </Stack.Navigator>
   );
 };

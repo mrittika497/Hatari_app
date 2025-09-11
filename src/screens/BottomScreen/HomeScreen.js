@@ -14,20 +14,33 @@ import DashboardScreen from '../../components/DashboardScreen';
 import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
 // import { useNavigation } from '@react-navigation/native';
 import SmallbtnReuseable from '../../components/SmallbtnReuseable';
-import { useNavigation } from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
+import {useDispatch, useSelector} from 'react-redux';
+import {fetchRestaurants} from '../../redux/slice/AllRestaurantSlice';
+import {fetchBanners} from '../../redux/slice/BannerSlice';
+import {fetchAllFoods} from '../../redux/slice/AllFoodsSlice';
 
-const HomeScreen = ({navigation}) => {
-  // const navigation = useNavigation();
+const HomeScreen = ({route}) => {
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const selectedRestaurantName = route?.params?.selectedRestaurantName;
   const [selectedExperience, setSelectedExperience] = useState('Delivery');
   const [loading, setLoading] = useState(true);
   const [selectedOutlet, setSelectedOutlet] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const list = useSelector(state => state.restaurants);
+  const restaurantsArray = list?.list || [];
+  const bannerlist = useSelector(state => state.banners);
+  const bannerlistBanner = bannerlist?.bannerlist || [];
+  const AllFoodsData = useSelector(state => state.allFoods);
+  const topPicks = AllFoodsData?.AllFoodsData?.data;
+  console.log(topPicks, '---------------allFoods');
 
-  const outlets = [
-    'Hatari (Barisha)',
-    'Hatari (Salt Lake)',
-    'Hatari (Park Street)',
-  ];
+  useEffect(() => {
+    dispatch(fetchRestaurants());
+    dispatch(fetchBanners());
+    dispatch(fetchAllFoods());
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -78,33 +91,6 @@ const HomeScreen = ({navigation}) => {
     },
   ];
 
-  const topPicks = [
-    {
-      id: 1,
-      name: 'Bhetki Fish Fry (4pcs)',
-      price: '₹210 for one',
-      rating: 4.6,
-      tag: 'Indian',
-      type: 'Non Veg',
-    },
-    {
-      id: 2,
-      name: 'Chicken Biriyani',
-      price: '₹180 for one',
-      rating: 4.4,
-      tag: 'Indian',
-      type: 'Non Veg',
-    },
-    {
-      id: 3,
-      name: 'Chicken Biriyani',
-      price: '₹180 for one',
-      rating: 4.4,
-      tag: 'Indian',
-      type: 'veg',
-    },
-  ];
-
   const banners = [
     require('../../assets/images/remove/banner.png'),
     require('../../assets/images/remove/banner.png'),
@@ -120,12 +106,10 @@ const HomeScreen = ({navigation}) => {
             source={require('../../assets/images/location.png')}
             style={styles.logo}
           />
-          <Text style={styles.locationText}>{selectedOutlet}</Text>
-          {/* <TouchableOpacity> 
-        <Image source={require("../../assets/images/downarrow.png")} style={[styles.logo,{alignItems:"center"}]}/>
-        </TouchableOpacity> */}
+          <Text style={styles.locationText}>
+            {selectedOutlet ? selectedOutlet : selectedRestaurantName}
+          </Text>
 
-          {/* Dropdown button */}
           <TouchableOpacity onPress={() => setShowDropdown(!showDropdown)}>
             <Image
               source={require('../../assets/images/downarrow.png')} // Your arrow icon
@@ -142,16 +126,17 @@ const HomeScreen = ({navigation}) => {
       {/* Dropdown list */}
       {showDropdown && (
         <View style={styles.dropdownList}>
-          <ScrollView>
-            {outlets.map((outlet, index) => (
+          <ScrollView style={{maxHeight: 200}}>
+            {restaurantsArray?.map((restaurant, index) => (
               <TouchableOpacity
-                key={index}
+                key={restaurant._id || index}
                 style={styles.dropdownItem}
                 onPress={() => {
-                  setSelectedOutlet(outlet);
+                  setSelectedOutlet(restaurant.name);
                   setShowDropdown(false);
+                  // onSelect(restaurant); // optional callback
                 }}>
-                <Text style={styles.dropdownItemText}>{outlet}</Text>
+                <Text style={styles.dropdownItemText}>{restaurant.name}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -213,26 +198,30 @@ const HomeScreen = ({navigation}) => {
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.bannerScroll}>
-          {loading
-            ? [1, 2, 3].map(i => (
-                <ShimmerPlaceholder
-                  key={i}
-                  style={{
-                    width: 300,
-                    height: 130,
-                    borderRadius: 10,
-                    marginRight: 10,
-                  }}
-                />
-              ))
-            : banners.map((banner, index) => (
-                <Image
-                  key={index}
-                  source={banner}
-                  style={styles.bannerImage}
-                  resizeMode="cover"
-                />
-              ))}
+          {loading ? (
+            [1, 2, 3].map(i => (
+              <ShimmerPlaceholder
+                key={i}
+                style={{
+                  width: 300,
+                  height: 130,
+                  borderRadius: 10,
+                  marginRight: 10,
+                }}
+              />
+            ))
+          ) : bannerlistBanner?.length > 0 ? (
+            bannerlistBanner.map((banner, index) => (
+              <Image
+                key={index}
+                source={{uri: banner?.fullImageUrl}}
+                style={styles.bannerImage}
+                resizeMode="cover"
+              />
+            ))
+          ) : (
+            <Text style={{margin: 10}}>No banners available</Text>
+          )}
         </ScrollView>
 
         {/* Categories */}
@@ -294,12 +283,13 @@ const HomeScreen = ({navigation}) => {
               </View>
             ))
           : topPicks.map(item => (
-              <View style={styles.card}>
+              <View key={item.food._id} style={styles.card}>
                 {/* Food Image */}
-                <Image source={item.image} style={styles.image} />
+                <Image source={{uri: item.food.image}} style={styles.image} />
 
                 {/* Details */}
                 <View style={styles.details}>
+                  {/* Cuisine type (dynamic) */}
                   <View style={{flexDirection: 'row', alignItems: 'center'}}>
                     <Image
                       source={require('../../assets/images/dineBlack.png')}
@@ -312,45 +302,62 @@ const HomeScreen = ({navigation}) => {
                         fontSize: 13,
                         fontWeight: '500',
                       }}>
-                      Indian
+                      {item.food.cuisineType.join(', ')}
                     </Text>
                   </View>
-                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                    {/* Veg / Non-Veg Icon */}
+
+                  {/* Veg / Non-Veg */}
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      marginTop: 5,
+                    }}>
                     <View
                       style={[
                         styles.typeIndicator,
-                        {borderColor: item.type === 'veg' ? 'green' : 'red'},
+                        {
+                          borderColor: item.food.type.includes('non-veg')
+                            ? 'green'
+                            : 'red',
+                        },
                       ]}>
                       <View
                         style={[
                           styles.typeDot,
                           {
-                            backgroundColor:
-                              item.type === 'veg' ? 'green' : 'red',
+                            backgroundColor: item.food.type.includes('veg')
+                              ? 'green'
+                              : 'red',
                           },
                         ]}
                       />
                     </View>
-                    <Text style={styles.name}>{item.name}</Text>
+                    <Text style={styles.name}>{item.food.name}</Text>
                   </View>
 
-                  <Text style={styles.price}>₹{item.price}</Text>
+                  {/* Price */}
+                  <Text style={styles.price}>₹{item.food.price}</Text>
 
                   {/* Rating */}
                   <View style={styles.ratingWrapper}>
-                    <Text style={styles.ratingText}>★ {item.rating}</Text>
+                    <Text style={styles.ratingText}>★ {item.food.rating}</Text>
                   </View>
+
+                  {/* Restaurant Name */}
+                  <Text style={{fontSize: 12, color: '#555', marginTop: 4}}>
+                    {item.restaurant.name}
+                  </Text>
                 </View>
 
-                {/* Right Side Buttons */}
-                <View style={styles.actions}>
-                  <SmallbtnReuseable
-                    onPress={() => {
-                      navigation.navigate('FoodDetailScreen');
-                    }}
-                  />
-                </View>
+                {/* Button */}
+                <SmallbtnReuseable
+                  onPress={() => {
+                    navigation.navigate('FoodDetailScreen', {
+                      foodItem: item.food,
+                    });
+                  }}
+                />
               </View>
             ))}
       </ScrollView>

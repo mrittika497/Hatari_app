@@ -1,15 +1,16 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import { API } from "../../global_Url/GlobalUrl";
+import axiosInstance from "../../global_Url/axiosInstance";
 
 // Fetch nearest restaurants
 export const fetchNearestRestaurants = createAsyncThunk(
   "restaurants/fetchNearest",
-  async ({ token, lat, lng }, { rejectWithValue }) => {
+  async ({  lat, lng }, { rejectWithValue }) => {
     try {
-      const response = await axios.get(API.nearestRasturance, {
-        params: { lat, lng },
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await axiosInstance.get(API.nearestRasturance, {
+        params: { lat, lng }
+       
       });
 
       // Optional: sort by distance if API does not

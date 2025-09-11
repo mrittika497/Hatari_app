@@ -1,8 +1,9 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
 import React, { useEffect } from 'react';
-// import DashboardScreen from '../components/DashboardScreen';
+
 import Theme from '../assets/theme';
 import { useNavigation } from '@react-navigation/native';
+import DashboardScreen from '../components/DashboardScreen';
 
 const Splash = () => {
     const navigation = useNavigation();
@@ -16,12 +17,12 @@ const Splash = () => {
     }, [navigation]);
 
     return (
-        // <DashboardScreen
-        //     scrollable={false}
-        //     contentStyle={styles.container}
-        //     statusBarColor="#f4ebeaff"
-        //     barStyle="light-content"
-        // >
+        <DashboardScreen
+            scrollable={false}
+            contentStyle={styles.container}
+            statusBarColor="#f4ebeaff"
+            barStyle="light-content"
+        >
         <View> 
             <Image
                 source={require('../assets/images/project_logo.png')}
@@ -31,7 +32,7 @@ const Splash = () => {
             <Text style={styles.subTagline}>Elevate Your Dining Experience</Text>
             <Text style={styles.cuisine}>Chinese • Indian • Tandoor</Text>
             </View>
-        // </DashboardScreen>
+         </DashboardScreen>
     );
 };
 

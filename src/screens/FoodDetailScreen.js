@@ -11,72 +11,86 @@ import ShimmerPlaceholder from "react-native-shimmer-placeholder";
 import LinearGradient from "react-native-linear-gradient";
 import DashboardScreen from "../components/DashboardScreen";
 import CustomHeader from "../components/CustomHeader";
+import { useNavigation } from "@react-navigation/native";
 
-
-const FoodDetailScreen = ({navigation}) => {
-  // const navigation = useNavigation();
+const FoodDetailScreen = ({ route }) => {
+  const foodItemdata = route?.params?.foodItem;
+  const navigation = useNavigation();
 
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
-    // Simulate API loading
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000);
+    const timer = setTimeout(() => setLoading(false), 1500);
     return () => clearTimeout(timer);
   }, []);
 
-  return (
+  if (!foodItemdata) return null;
 
+  // Logic for type
+  const isVeg = foodItemdata?.type?.includes("veg");
+  const isNonVeg = foodItemdata?.type?.includes("non-veg");
+
+  let typeLabel = "Mixed";
+  let typeColor = "#999";
+
+  if (isVeg && !isNonVeg) {
+    typeLabel = "Veg";
+    typeColor = "green";
+  } else if (!isVeg && isNonVeg) {
+    typeLabel = "Non-Veg";
+    typeColor = "red";
+  } else if (isVeg && isNonVeg) {
+    typeLabel = "Veg / Non-Veg";
+    typeColor = "orange";
+  }
+
+  return (
     <DashboardScreen>
       <CustomHeader title="Item Details" />
-      {/* Food Image with Shimmer */}
+
+      {/* Food Image */}
       <ShimmerPlaceholder
         LinearGradient={LinearGradient}
         visible={!loading}
         style={styles.image}
       >
-        <Image
-          source={require("../assets/images/remove/Chicken.png")}
-          style={styles.image}
-        />
+        <Image source={{ uri: foodItemdata?.image }} style={styles.image} />
       </ShimmerPlaceholder>
 
-      {/* Content */}
-      <View style={styles.content}>
-        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 5 }}>
-          <Image source={require("../assets/images/dineBlack.png")} style={{ height: 12, width: 12 }} />
-          <Text style={styles.category}>Indian</Text>
+      <ScrollView style={styles.content}>
+        {/* Cuisine */}
+        <View style={styles.row}>
+          <Image
+            source={require("../assets/images/dineBlack.png")}
+            style={{ height: 12, width: 12 }}
+          />
+          <Text style={styles.category}>
+            {foodItemdata?.cuisineType?.join(", ")}
+          </Text>
         </View>
 
-        <Text style={styles.title}>Bhetki Fish Fry</Text>
+        {/* Name */}
+        <Text style={styles.title}>{foodItemdata?.name}</Text>
 
-        {/* Tag and Rating */}
+        {/* Type + Rating */}
         <View style={styles.row}>
-          <View style={styles.nonVegTag}>
-            <Text style={styles.nonVegText}>Non Veg</Text>
+          <View style={[styles.typeTag, { backgroundColor: typeColor }]}>
+            <Text style={styles.typeText}>{typeLabel}</Text>
           </View>
           <View style={styles.ratingBox}>
-            <Text style={styles.ratingText}>2.6K</Text>
-          </View>
-          <View style={[styles.ratingBox, { backgroundColor: "#4CAF50" }]}>
-            <Text style={styles.ratingText}>4.6</Text>
+            <Text style={styles.ratingText}>★ {foodItemdata?.rating}</Text>
           </View>
         </View>
 
         {/* Description */}
         <Text style={styles.sectionTitle}>Description</Text>
-        <Text style={styles.description}>
-          It is a long established fact that a reader will be distracted by the
-          readable content of a page when looking at its layout. The point of
-          using Lorem Ipsum is that it has a more-or-less normal distribution.
-        </Text>
+        <Text style={styles.description}>{foodItemdata?.description}</Text>
 
         {/* Price */}
-        <Text style={styles.price}>₹160 pcs.</Text>
+        <Text style={styles.price}>₹{foodItemdata?.price}</Text>
 
-        {/* Quantity and Add Button */}
+        {/* Quantity + Add Button */}
         <View style={styles.bottomRow}>
           <View style={styles.quantityBox}>
             <TouchableOpacity
@@ -93,16 +107,17 @@ const FoodDetailScreen = ({navigation}) => {
               <Text style={styles.qtyText}>+</Text>
             </TouchableOpacity>
           </View>
-           <TouchableOpacity style={styles.addBtn}
-              onPress={() => navigation.navigate("Bottom", { screen: "CartScreen" })}
-            >
-            <Text style={styles.addBtnText}>Add</Text>
-          </TouchableOpacity> 
-          {/* <SmallbtnReuseable/> */}
-          {/* <ReusableBtn onPress={navigation.navigate("HomeScreen")}/> */}
-        </View>
-      </View>
 
+          <TouchableOpacity
+            style={styles.addBtn}
+            onPress={() =>
+              navigation.navigate("Bottom", { screen: "CartScreen" })
+            }
+          >
+            <Text style={styles.addBtnText}>Add to Cart</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </DashboardScreen>
   );
 };
@@ -110,82 +125,46 @@ const FoodDetailScreen = ({navigation}) => {
 export default FoodDetailScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
+  content: { marginVertical: 20, paddingHorizontal: 15 },
   image: {
     width: "100%",
     height: 300,
     borderBottomLeftRadius: 12,
     borderBottomRightRadius: 12,
-    marginTop: 10
+    marginTop: 10,
   },
-  content: {
-    marginVertical: 20
-  },
-  category: {
-    fontSize: 14,
-    color: "#333",
-  },
+  row: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
+  category: { fontSize: 14, color: "#333", marginLeft: 6 },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
     color: "#000",
     marginVertical: 8,
-    marginBottom: 20
   },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
+  typeTag: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginRight: 10,
   },
-  nonVegTag: {
-    backgroundColor: "#FF4D4D",
+  typeText: { color: "#fff", fontWeight: "bold", fontSize: 12 },
+  ratingBox: {
+    backgroundColor: "#FFD700",
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 6,
-    marginRight: 8,
+    borderRadius: 8,
   },
-  nonVegText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  ratingBox: {
-    backgroundColor: "#E0E0E0",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 5,
-    marginRight: 6,
-  },
-  ratingText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-  },
+  ratingText: { color: "#000", fontSize: 12, fontWeight: "600" },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    marginTop: 10,
+    marginTop: 15,
     marginBottom: 10,
     color: "#000",
   },
-  description: {
-    fontSize: 14,
-    color: "#555",
-    marginBottom: 20,
-  },
-  price: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 30,
-  },
-  bottomRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+  description: { fontSize: 14, color: "#555", marginBottom: 20 },
+  price: { fontSize: 18, fontWeight: "bold", color: "#000", marginBottom: 30 },
+  bottomRow: { flexDirection: "row", alignItems: "center", marginBottom: 30 },
   quantityBox: {
     flexDirection: "row",
     alignItems: "center",
@@ -204,11 +183,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 2,
   },
-  qtyText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#FF4D4D",
-  },
+  qtyText: { fontSize: 18, fontWeight: "bold", color: "#FF4D4D" },
   qtyValue: {
     fontSize: 16,
     fontWeight: "bold",
@@ -223,9 +198,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  addBtnText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+  addBtnText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
 });
