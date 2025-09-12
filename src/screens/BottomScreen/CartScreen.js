@@ -1,5 +1,5 @@
 // src/screens/cart/CartScreen.js
-import React, { useState } from "react";
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -12,145 +12,148 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
-} from "react-native";
-import ShimmerPlaceHolder from "react-native-shimmer-placeholder";
-import LinearGradient from "react-native-linear-gradient";
-import { useNavigation } from "@react-navigation/native";
-import { useSelector, useDispatch } from "react-redux";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import Ionicons from "react-native-vector-icons/Ionicons";
+} from 'react-native';
+import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
+import LinearGradient from 'react-native-linear-gradient';
+import {useNavigation} from '@react-navigation/native';
+import {useSelector, useDispatch} from 'react-redux';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
-import DashboardScreen from "../../components/DashboardScreen";
-import CustomHeader from "../../components/CustomHeader";
-import Theme from "../../assets/theme";
+import DashboardScreen from '../../components/DashboardScreen';
+import CustomHeader from '../../components/CustomHeader';
+import Theme from '../../assets/theme';
 
 import {
   updateQuantity,
   removeFromCart,
-} from "../../redux/slice/cartSlice"; // ✅ your redux slice
+  updateNote,
+} from '../../redux/slice/cartSlice';
 
-const { width } = Dimensions.get("window");
+const {width} = Dimensions.get('window');
 
 const CartScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const { items: cartItems } = useSelector((state) => state.cart);
+  const {items: cartItems} = useSelector(state => state.cart);
 
   const [loading, setLoading] = useState(false);
 
   // Modal state
   const [selectedItem, setSelectedItem] = useState(null);
-  const [noteText, setNoteText] = useState("");
+  const [noteText, setNoteText] = useState('');
 
-  // Calculate totals
-  const totalPrice = cartItems.reduce(
+  // Totals
+  const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
-    0
+    0,
   );
-  const gst = Math.round(totalPrice * 0.05); // 5% GST
+  const gst = Math.round(subtotal * 0.05);
+  const deliveryFee = cartItems.length > 0 ? 40 : 0;
   const packingFee = cartItems.length > 0 ? 20 : 0;
-  const grandTotal = totalPrice + gst + packingFee;
+  const grandTotal = subtotal + gst + deliveryFee + packingFee;
 
-  const formatCurrency = (amount) => `₹${amount.toLocaleString("en-IN")}`;
+  const formatCurrency = amount => `₹${amount.toLocaleString('en-IN')}`;
 
-  // ✅ Redux: increment / decrement / remove
+  // Redux functions
   const incrementQty = (id, currentQty) => {
-    dispatch(updateQuantity({ id, quantity: currentQty + 1 }));
+    dispatch(updateQuantity({id, quantity: currentQty + 1}));
   };
 
   const decrementQty = (id, currentQty) => {
     dispatch(
-      updateQuantity({ id, quantity: currentQty > 1 ? currentQty - 1 : 1 })
+      updateQuantity({id, quantity: currentQty > 1 ? currentQty - 1 : 1}),
     );
   };
 
-  const deleteItem = (id) => {
+  const deleteItem = id => {
     dispatch(removeFromCart(id));
   };
 
-  // ✅ Local note handling
-  const openModal = (item) => {
+  // Note modal
+  const openModal = item => {
     setSelectedItem(item);
-    setNoteText(item.note || "");
+    setNoteText(item.note || '');
   };
 
   const closeModal = () => {
     setSelectedItem(null);
-    setNoteText("");
+    setNoteText('');
   };
 
   const handleSaveNote = () => {
     if (selectedItem) {
-      // notes aren’t in redux slice → extend state if needed
-      selectedItem.note = noteText;
+      dispatch(updateNote({id: selectedItem._id, note: noteText}));
     }
     closeModal();
   };
 
-  const renderItem = ({ item }) => (
+  const renderItem = ({item}) => (
     <View style={styles.itemCard}>
-      <Image source={{ uri: item.image }} style={styles.itemImage} />
+      <Image source={{uri: item.image}} style={styles.itemImage} />
 
       <View style={styles.detailsContainer}>
+        {/* Header */}
         <View style={styles.itemHeader}>
           <View
             style={[
               styles.typeIndicator,
-              {
-                borderColor: item.type?.includes("veg") ? "green" : "red",
-              },
-            ]}
-          >
+              {borderColor: item.type?.includes('veg') ? 'green' : 'red'},
+            ]}>
             <View
               style={[
                 styles.typeDot,
-                {
-                  backgroundColor: item.type?.includes("veg") ? "green" : "red",
-                },
+                {backgroundColor: item.type?.includes('veg') ? 'green' : 'red'},
               ]}
             />
           </View>
-          <Text style={styles.itemName}>{item.name}</Text>
+          <Text style={styles.itemName} numberOfLines={1} ellipsizeMode="tail">
+            {item.name}
+          </Text>
         </View>
-        <Text style={styles.itemPrice}>{formatCurrency(item.price)}</Text>
 
-        {/* ✅ Customize + Delete row */}
+        {/* Price & Rating */}
+        <Text style={styles.itemPrice}>{formatCurrency(item.price)}</Text>
+        <View style={styles.ratingWrapper}>
+          <Text style={styles.ratingText}>★ {item?.rating}</Text>
+        </View>
+
+        {/* Actions */}
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={styles.customizeBtn}
-            onPress={() => openModal(item)}
-          >
-            <Icon name="pencil" size={18} color={Theme.colors.red} />
+            onPress={() => openModal(item)}>
+            <Icon name="pencil" size={16} color={Theme.colors.red} />
             <Text style={styles.customizeText}>Customize</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.deleteBtn}
-            onPress={() => deleteItem(item._id)}
-          >
-            <Ionicons name="trash-outline" size={20} color="red" />
+            onPress={() => deleteItem(item._id)}>
+            <Ionicons name="trash-outline" size={18} color="red" />
             <Text style={styles.deleteText}>Remove</Text>
           </TouchableOpacity>
         </View>
 
+        {/* Note */}
         {item.note ? (
-          <Text style={styles.itemNoteDisplay}>📝 {item.note}</Text>
+          <View style={styles.noteTag}>
+            <Text style={styles.noteText}>📝 {item.note}</Text>
+          </View>
         ) : null}
       </View>
 
-      {/* ✅ Quantity Section */}
+      {/* Quantity */}
       <View style={styles.quantityBox}>
         <TouchableOpacity
           style={styles.qtyBtn}
-          onPress={() => decrementQty(item._id, item.quantity)}
-        >
+          onPress={() => decrementQty(item._id, item.quantity)}>
           <Text style={styles.qtyText}>-</Text>
         </TouchableOpacity>
         <Text style={styles.qtyValue}>{item.quantity}</Text>
         <TouchableOpacity
           style={styles.qtyBtn}
-          onPress={() => incrementQty(item._id, item.quantity)}
-        >
+          onPress={() => incrementQty(item._id, item.quantity)}>
           <Text style={styles.qtyText}>+</Text>
         </TouchableOpacity>
       </View>
@@ -161,9 +164,9 @@ const CartScreen = () => {
     <View style={styles.itemCard}>
       <ShimmerPlaceHolder
         LinearGradient={LinearGradient}
-        style={{ width: 70, height: 70, borderRadius: 8 }}
+        style={{width: 70, height: 70, borderRadius: 8}}
       />
-      <View style={{ flex: 1, marginLeft: 12 }}>
+      <View style={{flex: 1, marginLeft: 12}}>
         <ShimmerPlaceHolder
           LinearGradient={LinearGradient}
           style={{
@@ -175,7 +178,7 @@ const CartScreen = () => {
         />
         <ShimmerPlaceHolder
           LinearGradient={LinearGradient}
-          style={{ width: width * 0.3, height: 14, borderRadius: 4 }}
+          style={{width: width * 0.3, height: 14, borderRadius: 4}}
         />
       </View>
     </View>
@@ -184,31 +187,36 @@ const CartScreen = () => {
   return (
     <DashboardScreen scrollable={false}>
       <CustomHeader title="My Cart" />
+
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+        style={{flex: 1}}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {/* Add More Items */}
         <TouchableOpacity
           style={styles.addMore}
-          onPress={() => navigation.navigate("HomeScreen")}
-        >
-          <Text style={{ color: Theme.colors.red, fontWeight: "600" }}>
+          onPress={() => navigation.navigate('HomeScreen')}>
+          <Text style={{color: Theme.colors.red, fontWeight: '600'}}>
             + Add more Items
           </Text>
         </TouchableOpacity>
 
         <View style={styles.container}>
           {loading ? (
-            Array.from({ length: 3 }).map((_, i) => (
+            Array.from({length: 3}).map((_, i) => (
               <View key={i}>{renderSkeleton()}</View>
             ))
           ) : cartItems.length === 0 ? (
             <View style={styles.emptyContainer}>
+              <Image
+                source={{
+                  uri: 'https://cdn-icons-png.flaticon.com/512/2038/2038854.png',
+                }}
+                style={{width: 120, height: 120, marginBottom: 10}}
+              />
               <Text style={styles.emptyText}>Your cart is empty</Text>
               <TouchableOpacity
                 style={styles.browseBtn}
-                onPress={() => navigation.navigate("HomeScreen")}
-              >
+                onPress={() => navigation.navigate('HomeScreen')}>
                 <Text style={styles.browseText}>Browse Menu</Text>
               </TouchableOpacity>
             </View>
@@ -216,26 +224,68 @@ const CartScreen = () => {
             <>
               <FlatList
                 data={cartItems}
-                keyExtractor={(item) => item._id}
+                keyExtractor={item => item._id}
                 renderItem={renderItem}
-                contentContainerStyle={{ paddingBottom: 120 }}
+                contentContainerStyle={{paddingBottom: 50}}
               />
 
-              {/* ✅ Fixed Bottom Checkout Section */}
-              <View style={styles.bottomBar}>
-                <View style={styles.billBox}>
-                  <Text style={styles.billLabel}>Grand Total</Text>
+              {/* Bill */}
+              <View style={styles.billContainer}>
+                <Text style={styles.billTitle}>Bill Details</Text>
+
+                <View style={styles.billRow}>
+                  <Text style={styles.billLabel}>Subtotal</Text>
                   <Text style={styles.billValue}>
+                    {formatCurrency(subtotal)}
+                  </Text>
+                </View>
+                <View style={styles.billRow}>
+                  <Text style={styles.billLabel}>GST (5%)</Text>
+                  <Text style={styles.billValue}>{formatCurrency(gst)}</Text>
+                </View>
+                <View style={styles.billRow}>
+                  <Text style={styles.billLabel}>Delivery Fee</Text>
+                  <Text style={styles.billValue}>
+                    {formatCurrency(deliveryFee)}
+                  </Text>
+                </View>
+                <View style={styles.billRow}>
+                  <Text style={styles.billLabel}>Packing Fee</Text>
+                  <Text style={styles.billValue}>
+                    {formatCurrency(packingFee)}
+                  </Text>
+                </View>
+
+                <View style={styles.billDivider} />
+                <View style={styles.billRow}>
+                  <Text style={styles.billGrandLabel}>Grand Total</Text>
+                  <Text style={styles.billGrandValue}>
+                    {formatCurrency(grandTotal)}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Checkout bar */}
+              <View style={styles.bottomBar}>
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <Text style={styles.bottomLabel}>Total: </Text>
+                  <Text style={styles.bottomAmount}>
                     {formatCurrency(grandTotal)}
                   </Text>
                 </View>
                 <TouchableOpacity
                   style={styles.checkoutBtn}
                   onPress={() =>
-                    navigation.navigate("Checkout", { cartItems, grandTotal })
-                  }
-                >
-                  <Text style={styles.checkoutText}>Proceed to Checkout</Text>
+                    navigation.navigate('OrderSummaryScreen', {
+                      cartItems,
+                      grandTotal,
+                      subtotal,
+                      gst,
+                      deliveryFee,
+                      packingFee,
+                    })
+                  }>
+                  <Text style={styles.checkoutText}>Continue</Text>
                 </TouchableOpacity>
               </View>
             </>
@@ -243,13 +293,12 @@ const CartScreen = () => {
         </View>
       </KeyboardAvoidingView>
 
-      {/* ✅ Modal for Note + Remove */}
+      {/* Modal */}
       <Modal
         visible={!!selectedItem}
         animationType="slide"
         transparent
-        onRequestClose={closeModal}
-      >
+        onRequestClose={closeModal}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>
@@ -266,16 +315,16 @@ const CartScreen = () => {
 
             <View style={styles.modalActions}>
               <TouchableOpacity
-                style={[styles.modalBtn, { backgroundColor: "#ccc" }]}
-                onPress={closeModal}
-              >
-                <Text style={styles.modalBtnText}>Cancel</Text>
+                style={[styles.modalBtn, {backgroundColor: '#ccc'}]}
+                onPress={closeModal}>
+                <Text style={[styles.modalBtnText, {color: '#333'}]}>
+                  Cancel
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.modalBtn, { backgroundColor: Theme.colors.red }]}
-                onPress={handleSaveNote}
-              >
+                style={[styles.modalBtn, {backgroundColor: Theme.colors.red}]}
+                onPress={handleSaveNote}>
                 <Text style={styles.modalBtnText}>Save</Text>
               </TouchableOpacity>
             </View>
@@ -288,16 +337,14 @@ const CartScreen = () => {
 
 export default CartScreen;
 
-// ✅ your styles remain same (use the ones you pasted)
+/* ==================== Styles ==================== */
 const styles = StyleSheet.create({
-  addMore: {
-    alignSelf: "flex-end",
-    marginVertical: 10,
-    marginBottom: 20,
-  },
-  container: { flex: 1, backgroundColor: "#fff" },
-  emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  emptyText: { fontSize: 18, color: "#555", marginTop: 8 },
+  addMore: {alignSelf: 'flex-end', marginVertical: 12, marginRight: 15},
+  container: {flex: 1, backgroundColor: '#fff'},
+
+  // Empty state
+  emptyContainer: {flex: 1, justifyContent: 'center', alignItems: 'center'},
+  emptyText: {fontSize: 18, color: '#555', marginTop: 8, fontWeight: '600'},
   browseBtn: {
     backgroundColor: Theme.colors.red,
     marginTop: 15,
@@ -305,156 +352,192 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 25,
   },
-  browseText: { color: "#fff", fontWeight: "600" },
+  browseText: {color: '#fff', fontWeight: '600'},
+
+  // Item card
   itemCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     marginHorizontal: 12,
     marginVertical: 8,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  itemImage: { width: 70, height: 70, borderRadius: 8 },
-  detailsContainer: { flex: 1, marginLeft: 12 },
-  itemHeader: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
+  itemImage: {width: 75, height: 75, borderRadius: 10},
+  detailsContainer: {flex: 1, marginLeft: 12},
+  itemHeader: {flexDirection: 'row', alignItems: 'center', marginBottom: 6},
   typeIndicator: {
     width: 16,
     height: 16,
     borderWidth: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 6,
-    borderRadius: 2,
+    borderRadius: 3,
   },
-  typeDot: { width: 8, height: 8, borderRadius: 4 },
-  itemName: { fontSize: 16, fontWeight: "600", color: "#333", flexShrink: 1 },
-  itemPrice: { fontSize: 14, color: "#777" },
-  itemNoteDisplay: {
+  typeDot: {width: 8, height: 8, borderRadius: 4},
+  itemName: {fontSize: 15, fontWeight: '700', color: '#333', flexShrink: 1},
+  itemPrice: {fontSize: 14, color: '#777', marginTop: 2},
+  ratingWrapper: {
+    backgroundColor: 'green',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  ratingText: {color: '#fff', fontSize: 10, fontWeight: '600'},
+  noteTag: {
     marginTop: 6,
-    fontSize: 13,
-    color: "#444",
-    backgroundColor: "#f1f1f1",
+    backgroundColor: '#FFF6E5',
+    borderLeftWidth: 3,
+    borderLeftColor: '#FF9800',
     padding: 6,
     borderRadius: 6,
-    width: 200,
+    width:220
   },
-  actionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-  },
+  noteText: {fontSize: 13, color: '#444'},
+
+  actionRow: {flexDirection: 'row', alignItems: 'center', marginTop: 8},
   customizeBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFF3F3",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF1F1',
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: 20,
     marginRight: 10,
   },
   customizeText: {
     fontSize: 13,
     color: Theme.colors.red,
-    fontWeight: "600",
+    fontWeight: '600',
     marginLeft: 5,
   },
   deleteBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFF3F3",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF1F1',
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: 20,
   },
-  deleteText: {
-    fontSize: 13,
-    color: "red",
-    fontWeight: "600",
-    marginLeft: 5,
-  },
+  deleteText: {fontSize: 13, color: 'red', fontWeight: '600', marginLeft: 5},
+
   quantityBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F1F1F1",
-    borderRadius: 25,
-    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9F9F9',
+    borderRadius: 20,
+    paddingHorizontal: 8,
     paddingVertical: 5,
     marginLeft: 8,
   },
   qtyBtn: {
-    width: 30,
-    height: 30,
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    justifyContent: "center",
-    alignItems: "center",
+    width: 28,
+    height: 28,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
     elevation: 2,
   },
-  qtyText: { fontSize: 18, fontWeight: "bold", color: Theme.colors.red },
-  qtyValue: { fontSize: 16, fontWeight: "bold", marginHorizontal: 10 },
+  qtyText: {fontSize: 18, fontWeight: 'bold', color: Theme.colors.red},
+  qtyValue: {fontSize: 15, fontWeight: '600', marginHorizontal: 8},
+
+  // Bill
+  billContainer: {
+    marginHorizontal: 12,
+    marginTop: 10,
+    padding: 15,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#eee',
+    elevation: 2,
+    marginBottom: 80,
+  },
+  billTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 8,
+    color: '#333',
+  },
+  billRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 4,
+  },
+  billLabel: {fontSize: 14, color: '#666'},
+  billValue: {fontSize: 14, fontWeight: '600', color: '#000'},
+  billDivider: {borderTopWidth: 1, borderTopColor: '#ddd', marginVertical: 8},
+  billGrandLabel: {fontSize: 15, fontWeight: '700', color: '#000'},
+  billGrandValue: {fontSize: 16, fontWeight: '700', color: Theme.colors.red},
+
+  // Bottom
   bottomBar: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#fff",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderColor: "#eee",
+    borderColor: '#eee',
     padding: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    elevation: 8,
+    elevation: 10,
   },
-  billBox: { flex: 1 },
-  billLabel: { fontSize: 14, color: "#555" },
-  billValue: { fontSize: 18, fontWeight: "700", color: "#000" },
+  bottomLabel: {fontSize: 14, color: '#333', fontWeight: '600'},
+  bottomAmount: {fontSize: 16, fontWeight: '700', color: Theme.colors.red},
   checkoutBtn: {
     backgroundColor: Theme.colors.red,
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 30,
-    marginLeft: 12,
+    paddingVertical: 10,
+    borderRadius: 25,
   },
-  checkoutText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+  checkoutText: {color: '#fff', fontWeight: '600', fontSize: 14},
+
+  // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContainer: {
-    width: "85%",
-    backgroundColor: "#fff",
+    width: '85%',
+    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 20,
-    elevation: 5,
+    elevation: 6,
   },
-  modalTitle: { fontSize: 18, fontWeight: "700", marginBottom: 12 },
+  modalTitle: {fontSize: 17, fontWeight: '700', marginBottom: 12},
   modalInput: {
-    backgroundColor: "#f8f8f8",
+    backgroundColor: '#f8f8f8',
     borderRadius: 8,
     padding: 10,
     minHeight: 60,
-    textAlignVertical: "top",
+    textAlignVertical: 'top',
     fontSize: 14,
-    color: "#000",
+    color: '#000',
   },
   modalActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
     marginTop: 15,
   },
   modalBtn: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 6,
     marginLeft: 10,
   },
-  modalBtnText: { color: "#fff", fontWeight: "600" },
+  modalBtnText: {color: '#fff', fontWeight: '600'},
 });
