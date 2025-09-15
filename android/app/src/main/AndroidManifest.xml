@@ -4,7 +4,7 @@
     <!-- add i 10-09 lat and lag -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+<!-- <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" /> -->
 
 
     <application
@@ -27,5 +27,8 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
  </activity>
+     <meta-data
+     android:name="com.google.android.geo.API_KEY"
+     android:value="AIzaSyCLItgC8e0snQFn61EJGVInDOBVRX6tfQQ"/>
     </application>
 </manifest>

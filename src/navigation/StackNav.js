@@ -11,6 +11,9 @@ import DineSection from '../screens/DineSection';
 import FoodDetailScreen from '../screens/FoodDetailScreen';
 import CatItemScreen from '../screens/CatItemScreen';
 import OrderSummaryScreen from '../screens/OrderSummaryScreen';
+import MapScreen from '../screens/MapScreen';
+import PaymentScreen from '../screens/PaymentScreen';
+import OrderSuccessScreen from '../screens/ComfromScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -88,6 +91,17 @@ const StackNav = () => {
       component={OrderSummaryScreen}
       options={{headerShown:false}}
       />
+            <Stack.Screen
+      name='MapScreen'
+      component={MapScreen}
+      options={{headerShown:false}}
+      />
+                  <Stack.Screen
+      name='OrderSuccessScreen'
+      component={OrderSuccessScreen}
+      options={{headerShown:false}}
+      />
+      
       <Stack.Screen
         name="Bottom"
         component={Bottom}

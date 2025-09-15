@@ -6,10 +6,12 @@ buildscript {
         targetSdkVersion = 35
         ndkVersion = "27.1.12297006"
         kotlinVersion = "2.0.21"
+          playServicesLocationVersion = "21.0.1"
     }
     repositories {
         google()
         mavenCentral()
+     maven { url "https://www.jitpack.io" } 
     }
     dependencies {
         classpath("com.android.tools.build:gradle")

@@ -19,6 +19,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import {fetchRestaurants} from '../../redux/slice/AllRestaurantSlice';
 import {fetchBanners} from '../../redux/slice/BannerSlice';
 import {fetchAllFoods} from '../../redux/slice/AllFoodsSlice';
+import Theme from '../../assets/theme';
 
 const HomeScreen = ({route}) => {
   const navigation = useNavigation();
@@ -374,7 +375,7 @@ const styles = StyleSheet.create({
     // marginBottom: 10,
     marginVertical: 15,
   },
-  locationText: {fontSize: 14, fontWeight: '500', flex: 1, marginLeft: 5},
+  locationText: {fontSize: 14, fontWeight: '500', flex: 1, marginLeft: 5,color:Theme.colors.black},
   logo: {width: 20, height: 20, resizeMode: 'contain'},
   projectLogo: {width: 50, height: 50, resizeMode: 'contain'},
 
@@ -432,7 +433,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   activeExperience: {backgroundColor: '#e63946', borderColor: '#e63946'},
-  experienceText: {marginLeft: 6, fontSize: 14},
+  experienceText: {marginLeft: 6, fontSize: 14,color:Theme.colors.black},
   experienceImg: {width: 20, height: 20, resizeMode: 'contain'},
 
   bannerScroll: {marginTop: 20},

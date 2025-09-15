@@ -55,33 +55,25 @@ const OtpScreen = ({route, navigation}) => {
       return;
     }
 
-    dispatch(verifyOtp({phone, value})).then(async res => {
-      console.log('Verify OTP Response:', res?.data);
+   dispatch(verifyOtp({ phone, value })).then(async res => {
+  if (res.meta.requestStatus === "fulfilled") {
+    const { token, user } = res.payload;
 
-      if (res.meta.requestStatus === 'fulfilled') {
-        const {token, user} = res.payload;
+    // Save to AsyncStorage
+    await AsyncStorage.setItem("userToken", token);
+    await AsyncStorage.setItem("userData ", JSON.stringify(user));
 
-        // ✅ Save token for future auto-login
-        await AsyncStorage.setItem('userToken', token);
-        await AsyncStorage.setItem('userInfo', JSON.stringify(user));
+    // Optional: dispatch a Redux action to save token/user
+    dispatch(setAuth({ token, user }));
 
-        if (Platform.OS === 'android') {
-          ToastAndroid.show('Login Successful ✅', ToastAndroid.SHORT);
-        } else {
-          Alert.alert('Success', 'Login Successful ✅');
-        }
-
-        //  navigation.navigate("ExperienceScreen")
-      } else {
-        const errMsg =
-          res.payload?.message || 'OTP verification failed. Try again.';
-        if (Platform.OS === 'android') {
-          ToastAndroid.show(errMsg, ToastAndroid.LONG);
-        } else {
-          Alert.alert('Error', errMsg);
-        }
-      }
+    // Navigate to ExperienceScreen and reset navigation stack
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "ExperienceScreen" }],
     });
+  }
+});
+
   };
 
   const handleResend = () => {
