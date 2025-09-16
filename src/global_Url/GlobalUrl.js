@@ -7,6 +7,8 @@ export const API = {
   nearestRasturance: `${BASE_URL}restaurant/getAllRestaurants`,
   allRestaurant: `${BASE_URL}restaurant/list`,
   getbannerHome : `${BASE_URL}banner/getAll`,
-  getallfoods : `${BASE_URL}food/foods`
+  getallfoods : `${BASE_URL}food/foods`,
+  AllFoodCat :`${BASE_URL}catfood/allFoodCat`,
+  customizeFood:`${BASE_URL}cart/add`
 
 };

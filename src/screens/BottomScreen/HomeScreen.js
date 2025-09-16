@@ -20,6 +20,8 @@ import {fetchRestaurants} from '../../redux/slice/AllRestaurantSlice';
 import {fetchBanners} from '../../redux/slice/BannerSlice';
 import {fetchAllFoods} from '../../redux/slice/AllFoodsSlice';
 import Theme from '../../assets/theme';
+import {fetchAllFoodCat} from '../../redux/slice/foodCategorySlice';
+import {isAsyncThunkAction} from '@reduxjs/toolkit';
 
 const HomeScreen = ({route}) => {
   const navigation = useNavigation();
@@ -35,12 +37,15 @@ const HomeScreen = ({route}) => {
   const bannerlistBanner = bannerlist?.bannerlist || [];
   const AllFoodsData = useSelector(state => state.allFoods);
   const topPicks = AllFoodsData?.AllFoodsData?.data;
-  console.log(topPicks, '---------------allFoods');
+  const {categories, error} = useSelector(state => state.foodCategory);
+  const homeCategories = categories?.foods;
+  console.log(homeCategories, '---------------alcategorieslFoods');
 
   useEffect(() => {
     dispatch(fetchRestaurants());
     dispatch(fetchBanners());
     dispatch(fetchAllFoods());
+    dispatch(fetchAllFoodCat());
   }, []);
 
   useEffect(() => {
@@ -50,53 +55,31 @@ const HomeScreen = ({route}) => {
     return () => clearTimeout(timer);
   }, []);
 
-  const experiences = [
-    {
-      id: 1,
-      title: 'Delivery',
-      img: require('../../assets/images/deliveryH.png'),
-    },
-    {
-      id: 2,
-      title: 'Dine in',
-      img: require('../../assets/images/dineH.png'),
-      redirection: 'DineSection',
-    },
-    {
-      id: 3,
-      title: 'Takeaway',
-      img: require('../../assets/images/takeawayH.png'),
-    },
-  ];
+// 👇 your existing array
+const experiences = [
+  {
+    id: 1,
+    title: 'Delivery',
+    img: require('../../assets/images/deliveryH.png'),
+    redirection: 'HomeScreen',
+    allowOrder: true, // ✅ orders allowed
+  },
+  {
+    id: 2,
+    title: 'Dine in',
+    img: require('../../assets/images/dineH.png'),
+    redirection: 'DineSection',
+    allowOrder: false, // ❌ no orders
+  },
+  {
+    id: 3,
+    title: 'Takeaway',
+    img: require('../../assets/images/takeawayH.png'),
+    redirection: 'HomeScreen',
+    allowOrder: true, // ✅ orders allowed
+  },
+];
 
-  const categories = [
-    {
-      id: 1,
-      name: 'Chicken',
-      img: require('../../assets/images/remove/Chicken.png'),
-    },
-    {
-      id: 2,
-      name: 'Fish',
-      img: require('../../assets/images/remove/Chicken.png'),
-    },
-    {
-      id: 3,
-      name: 'Mutton',
-      img: require('../../assets/images/remove/Chicken.png'),
-    },
-    {
-      id: 4,
-      name: 'Prawns',
-      img: require('../../assets/images/remove/Chicken.png'),
-    },
-  ];
-
-  const banners = [
-    require('../../assets/images/remove/banner.png'),
-    require('../../assets/images/remove/banner.png'),
-    require('../../assets/images/remove/banner.png'),
-  ];
 
   return (
     <DashboardScreen scrollable={false}>
@@ -244,9 +227,9 @@ const HomeScreen = ({route}) => {
         ) : (
           <FlatList
             horizontal
-            data={categories}
+            data={homeCategories}
             showsHorizontalScrollIndicator={false}
-            keyExtractor={item => item.id.toString()}
+            // keyExtractor={item => item.id.toString()}
             contentContainerStyle={{paddingVertical: 10}}
             renderItem={({item}) => (
               <TouchableOpacity
@@ -254,8 +237,11 @@ const HomeScreen = ({route}) => {
                 onPress={() => {
                   navigation.navigate('CatItemScreen');
                 }}>
-                <Image source={item.img} style={styles.categoryImage} />
-                <Text style={styles.categoryText}>{item.name}</Text>
+                <Image
+                  source={{uri: item?.image}}
+                  style={styles.categoryImage}
+                />
+                <Text style={{color: 'red'}}>{item?.name}</Text>
               </TouchableOpacity>
             )}
           />
@@ -319,8 +305,8 @@ const HomeScreen = ({route}) => {
                         styles.typeIndicator,
                         {
                           borderColor: item.food.type.includes('non-veg')
-                            ? 'green'
-                            : 'red',
+                            ? 'red'
+                            : 'green',
                         },
                       ]}>
                       <View
@@ -375,7 +361,13 @@ const styles = StyleSheet.create({
     // marginBottom: 10,
     marginVertical: 15,
   },
-  locationText: {fontSize: 14, fontWeight: '500', flex: 1, marginLeft: 5,color:Theme.colors.black},
+  locationText: {
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
+    marginLeft: 5,
+    color: Theme.colors.black,
+  },
   logo: {width: 20, height: 20, resizeMode: 'contain'},
   projectLogo: {width: 50, height: 50, resizeMode: 'contain'},
 
@@ -433,7 +425,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   activeExperience: {backgroundColor: '#e63946', borderColor: '#e63946'},
-  experienceText: {marginLeft: 6, fontSize: 14,color:Theme.colors.black},
+  experienceText: {marginLeft: 6, fontSize: 14, color: Theme.colors.black},
   experienceImg: {width: 20, height: 20, resizeMode: 'contain'},
 
   bannerScroll: {marginTop: 20},

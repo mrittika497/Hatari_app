@@ -7,6 +7,8 @@ import bannerReucer from '../slice/BannerSlice'
 import AllFoodsReucer from '../slice/AllFoodsSlice'
 import cartReucer from '../slice/cartSlice'
 import addressReucer from '../slice/addressSlice'
+import foodCategoryReducer from '../slice/foodCategorySlice'
+import foodCustomizationReducer from '../slice/CustomizeSlice'
 const store = configureStore({
   reducer: {
     home: HomeReducer,
@@ -16,7 +18,9 @@ const store = configureStore({
     banners:bannerReucer,
     allFoods:AllFoodsReucer,
     cart:cartReucer,
-    address:addressReucer
+    address:addressReucer,
+    foodCategory:foodCategoryReducer,
+    foodCustomization:foodCustomizationReducer
   },
 });
 

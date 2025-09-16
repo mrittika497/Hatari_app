@@ -14,94 +14,49 @@ import {
 import ShimmerPlaceHolder from "react-native-shimmer-placeholder";
 import LinearGradient from "react-native-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
+import { useSelector, useDispatch } from "react-redux";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
 import DashboardScreen from "../../components/DashboardScreen";
 import CustomHeader from "../../components/CustomHeader";
-import Theme from "../../assets/theme";
 import SmallbtnReuseable from "../../components/SmallbtnReuseable";
+import { fetchAllFoods } from "../../redux/slice/AllFoodsSlice";
+
 
 const categories = ["Chinese", "Indian", "Tandoor", "Top Picks"];
 
-const dummyData = [
-  {
-    id: "1",
-    name: "Mixed Hakka Noodles",
-    price: 340,
-    rating: 4.3,
-    reviews: "2.1k",
-    type: "veg",
-    image:
-      "https://www.indianhealthyrecipes.com/wp-content/uploads/2021/07/hakka-noodles.jpg",
-  },
-  {
-    id: "2",
-    name: "Mixed Fried Rice",
-    price: 370,
-    rating: 4.4,
-    reviews: "2.3k",
-    type: "veg",
-    image: "https://static.toiimg.com/thumb/75511788.cms?width=1200&height=900",
-  },
-  {
-    id: "3",
-    name: "Chicken Manchurian",
-    price: 220,
-    rating: 4.1,
-    reviews: "2.4k",
-    type: "non-veg",
-    image: "https://static.toiimg.com/photo/53098316.cms",
-  },
-  {
-    id: "4",
-    name: "Chilli Prawn",
-    price: 510,
-    rating: 4.0,
-    reviews: "2.3k",
-    type: "non-veg",
-    image: "https://static.toiimg.com/photo/84862375.cms",
-  },
-];
-
 const MenuScreen = () => {
-  const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState("Chinese");
-  const [items, setItems] = useState([]);
-  const [search, setSearch] = useState("");
+  const dispatch = useDispatch();
   const navigation = useNavigation();
 
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setItems(dummyData);
-      setLoading(false);
-    }, 2000);
-  }, []);
+  const [activeCategory, setActiveCategory] = useState("Chinese");
+  const [search, setSearch] = useState("");
 
-  // Filter items by search
-  const filteredItems = items.filter((item) =>
-    item.name.toLowerCase().includes(search.toLowerCase())
-  );
+  // Redux state
+  const { data: allFoods, loading } = useSelector((state) => state.allFoods);
+
+  useEffect(() => {
+    dispatch(fetchAllFoods()); // API call to load menu
+  }, [dispatch]);
+
+  // Filter by category + search
+  const filteredItems = allFoods
+    ?.filter((item) =>
+      activeCategory === "Top Picks"
+        ? item.isTopPick // Example flag for top picks
+        : item.category?.toLowerCase() === activeCategory.toLowerCase()
+    )
+    .filter((item) =>
+      item.name.toLowerCase().includes(search.toLowerCase())
+    );
 
   const renderShimmerItem = () => (
     <View style={styles.card}>
-      <ShimmerPlaceHolder
-        LinearGradient={LinearGradient}
-        style={styles.shimmerImage}
-      />
+      <ShimmerPlaceHolder LinearGradient={LinearGradient} style={styles.shimmerImage} />
       <View style={{ flex: 1, marginLeft: 10 }}>
-        <ShimmerPlaceHolder
-          LinearGradient={LinearGradient}
-          style={styles.shimmerLine}
-        />
-        <ShimmerPlaceHolder
-          LinearGradient={LinearGradient}
-          style={[styles.shimmerLine, { width: "40%" }]}
-        />
-        <ShimmerPlaceHolder
-          LinearGradient={LinearGradient}
-          style={[styles.shimmerLine, { width: "30%" }]}
-        />
+        <ShimmerPlaceHolder LinearGradient={LinearGradient} style={styles.shimmerLine} />
+        <ShimmerPlaceHolder LinearGradient={LinearGradient} style={[styles.shimmerLine, { width: "40%" }]} />
+        <ShimmerPlaceHolder LinearGradient={LinearGradient} style={[styles.shimmerLine, { width: "30%" }]} />
       </View>
     </View>
   );
@@ -109,16 +64,12 @@ const MenuScreen = () => {
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       {/* Food Image */}
-      <View>
-        <Image source={{ uri: item.image }} style={styles.image} />
-
-  
-      </View>
+      <Image source={{ uri: item.image }} style={styles.image} />
 
       {/* Details */}
       <View style={styles.details}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          {/* Veg / Non-Veg Icon */}
+          {/* Veg / Non-Veg Indicator */}
           <View
             style={[
               styles.typeIndicator,
@@ -179,7 +130,7 @@ const MenuScreen = () => {
           ))}
         </View>
 
-        {/* Search Section */}
+        {/* Search */}
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color="#666" />
           <TextInput
@@ -212,7 +163,7 @@ const MenuScreen = () => {
         ) : (
           <FlatList
             data={filteredItems}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item.id.toString()}
             renderItem={renderItem}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
@@ -297,21 +248,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 4,
     elevation: 2,
-      alignItems: "center", 
+    alignItems: "center",
   },
   image: {
     width: 70,
     height: 70,
     borderRadius: 10,
-  },
-  heartIcon: {
-    position: "absolute",
-    top: 5,
-    right: 5,
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 4,
-    elevation: 2,
   },
   details: {
     flex: 1,
@@ -353,7 +295,6 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
-
   shimmerImage: {
     width: 70,
     height: 70,

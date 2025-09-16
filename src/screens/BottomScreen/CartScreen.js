@@ -29,6 +29,8 @@ import {
   removeFromCart,
   updateNote,
 } from '../../redux/slice/cartSlice';
+import { fetchAllFoodCat } from '../../redux/slice/foodCategorySlice';
+import { postCustomizedFood } from '../../redux/slice/CustomizeSlice';
 
 const {width} = Dimensions.get('window');
 
@@ -36,11 +38,15 @@ const CartScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const {items: cartItems} = useSelector(state => state.cart);
+const data = useSelector(state => state.foodCustomization);
+console.log(data,"------------------data111111");
 
   const [loading, setLoading] = useState(false);
 
   // Modal state
   const [selectedItem, setSelectedItem] = useState(null);
+  console.log(selectedItem,"--------------selectedItem");
+  
   const [noteText, setNoteText] = useState('');
 
   // Totals
@@ -81,12 +87,40 @@ const CartScreen = () => {
     setNoteText('');
   };
 
-  const handleSaveNote = () => {
-    if (selectedItem) {
-      dispatch(updateNote({id: selectedItem._id, note: noteText}));
+//  const handleSaveNote = async () => {
+//   if (!selectedItem) return;
+
+//   // Update note locally in Redux cart slice
+// dispatch(postCustomizedFood({
+//   id: selectedItem._id, note: noteText ,quantity :selectedItem.quantity
+// }))
+
+
+
+//   closeModal();
+// };
+
+const handleSaveNote = async () => {
+  if (selectedItem) {
+    dispatch(updateNote({ id: selectedItem._id, note: noteText }));
+    
+    const resultAction = await dispatch(postCustomizedFood({
+      food: selectedItem._id,
+      quantity: selectedItem.quantity,
+      note: noteText,
+    }));
+
+    if (postCustomizedFood.fulfilled.match(resultAction)) {
+      console.log(resultAction.payload, "✅ Saved customization response");
+      alert("Customization saved!");
+    } else {
+      console.log(resultAction.payload, "❌ Failed to save");
+      alert("Failed to save customization");
     }
-    closeModal();
-  };
+  }
+
+  closeModal();
+};
 
   const renderItem = ({item}) => (
     <View style={styles.itemCard}>
@@ -518,7 +552,7 @@ const styles = StyleSheet.create({
     padding: 20,
     elevation: 6,
   },
-  modalTitle: {fontSize: 17, fontWeight: '700', marginBottom: 12},
+  modalTitle: {fontSize: 17, fontWeight: '700', marginBottom: 12,color:Theme.colors.black},
   modalInput: {
     backgroundColor: '#f8f8f8',
     borderRadius: 8,
