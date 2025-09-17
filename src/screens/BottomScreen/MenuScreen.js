@@ -30,7 +30,11 @@ const {width} = Dimensions.get('window');
 const MenuScreen = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
-
+  const {experienceId, selectedRestaurant, experienceType} = useSelector(
+    state => state.experience,
+  );
+  console.log(selectedRestaurant?._id,"-------------------selectedRestaurant------------rasID");
+  
   const [activeCategory, setActiveCategory] = useState('Indian');
   const [search, setSearch] = useState('');
 
@@ -45,7 +49,7 @@ const MenuScreen = () => {
     if (activeCategory === 'Top Picks') {
       dispatch(fetchMenuFoods({isTopPick: true}));
     } else {
-      dispatch(fetchMenuFoods({cuisineType: activeCategory}));
+      dispatch(fetchMenuFoods({cuisineType: activeCategory ,restaurantId:selectedRestaurant?._id}));
     }
   }, [dispatch, activeCategory]);
 

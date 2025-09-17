@@ -2,16 +2,20 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axiosInstance from "../../global_Url/axiosInstance";
 import { API } from "../../global_Url/GlobalUrl";
 
-// Async thunk to fetch foods of a specific cuisine
+// Async thunk to fetch foods of a specific cuisine and restaurant
 export const fetchMenuFoods = createAsyncThunk(
   "menuItems/fetch",
-  async ({ cuisineType } = {}, { rejectWithValue }) => {
+  async ({ cuisineType, restaurantId } = {}, { rejectWithValue }) => {
     try {
       const params = new URLSearchParams();
 
       if (cuisineType) {
         // 🔑 Ensure lowercase since many APIs are case-sensitive
         params.append("cuisineType", cuisineType.toLowerCase());
+      }
+
+      if (restaurantId) {
+        params.append("restaurantId", restaurantId); // Append restaurantId
       }
 
       const finalUrl = `${API.getmenutemfoods}?${params.toString()}`;

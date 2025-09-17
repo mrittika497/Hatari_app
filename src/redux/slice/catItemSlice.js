@@ -2,19 +2,23 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axiosInstance from "../../global_Url/axiosInstance";
 import { API } from "../../global_Url/GlobalUrl";
 
-// Async thunk to fetch foods of a specific category
+// Async thunk to fetch foods of a specific category for a specific restaurant
 export const fetchCategoryFoods = createAsyncThunk(
   "catItems/fetch",
-  async ({ categoryId, categoryIngredients }, { rejectWithValue }) => {
+  async ({ categoryId, categoryIngredients, restaurantId }, { rejectWithValue }) => {
     try {
-      // 👇 Build query string dynamically
+      // Build query string dynamically
       let url = `${API.getCatItemfoods}?`;
-      if (categoryId) url += `categoryId=${categoryId}`;
-      if (categoryIngredients)
-        url += `${categoryId ? "&" : ""}ingredients=${categoryIngredients}`;
+      const params = [];
+
+      if (categoryId) params.push(`categoryId=${categoryId}`);
+      if (categoryIngredients) params.push(`ingredients=${categoryIngredients}`);
+      if (restaurantId) params.push(`restaurantId=${restaurantId}`);
+
+      url += params.join("&");
 
       const response = await axiosInstance.get(url);
-      return response.data;
+      return response.data; // expect API returns { data: [...] }
     } catch (error) {
       console.log("Fetch Category Foods Error:", error.response || error.message);
       return rejectWithValue(error.response?.data || error.message);

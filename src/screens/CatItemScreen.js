@@ -24,8 +24,10 @@ const CatItemScreen = () => {
   const dispatch = useDispatch();
   const route = useRoute();
 
-  const {categoryId, categoryName, categoryType, categoryIngredients} =
+  const {categoryId, categoryName, restaurantId, categoryIngredients} =
     route.params;
+    console.log(restaurantId,"-------------restaurantId-------------------hbhbhbs");
+    
 
   const {
     data: categoryFoods,
@@ -38,6 +40,7 @@ const CatItemScreen = () => {
       fetchCategoryFoods({
         categoryId,
         categoryIngredients,
+        restaurantId
       }),
     );
   }, [dispatch, categoryId, categoryIngredients]);

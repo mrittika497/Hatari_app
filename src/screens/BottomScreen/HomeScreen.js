@@ -22,16 +22,22 @@ import {fetchAllFoods} from '../../redux/slice/AllFoodsSlice';
 import Theme from '../../assets/theme';
 import {fetchAllFoodCat} from '../../redux/slice/foodCategorySlice';
 import {isAsyncThunkAction} from '@reduxjs/toolkit';
+import {setExperience, setRestaurant} from '../../redux/slice/experienceSlice';
 
 const HomeScreen = ({route}) => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-    const cartItems = useSelector(state => state.cart.items);
-  const totalCount = cartItems.reduce((sum, item) => sum + item.quantity, 0); 
-  console.log(totalCount,"-------------totalCount");
-  
+  const cartItems = useSelector(state => state.cart.items);
+  const totalCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  // console.log(totalCount, '-------------totalCount');
+  const {experienceId, selectedRestaurant, experienceType} = useSelector(
+    state => state.experience,
+  );
+  // console.log(experienceType, '--------------go90998sselectedRestaurant');
+  const experienceState = useSelector(state => state.experience);
+  console.log(selectedRestaurant?._id, '---------------home');
   const selectedRestaurantName = route?.params?.selectedRestaurantName;
-  const [selectedExperience, setSelectedExperience] = useState('Delivery');
+  const [selectedExperience, setSelectedExperience] = useState(experienceType);
   const [loading, setLoading] = useState(true);
   const [selectedOutlet, setSelectedOutlet] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -94,7 +100,7 @@ const HomeScreen = ({route}) => {
             style={styles.logo}
           />
           <Text style={styles.locationText}>
-            {selectedOutlet ? selectedOutlet : selectedRestaurantName}
+            {selectedOutlet ? selectedOutlet : selectedRestaurant?.name}
           </Text>
 
           <TouchableOpacity onPress={() => setShowDropdown(!showDropdown)}>
@@ -121,7 +127,18 @@ const HomeScreen = ({route}) => {
                 onPress={() => {
                   setSelectedOutlet(restaurant.name);
                   setShowDropdown(false);
-                  // onSelect(restaurant); // optional callback
+
+                  // Option 1: Just update restaurant
+                  dispatch(setRestaurant(restaurant));
+
+                  // Option 2: If you want to also update experience
+                  dispatch(
+                    setExperience({
+                      id: experienceId, // keep current experience
+                      type: experienceType,
+                      restaurant: restaurant,
+                    }),
+                  );
                 }}>
                 <Text style={styles.dropdownItemText}>{restaurant.name}</Text>
               </TouchableOpacity>
@@ -167,6 +184,7 @@ const HomeScreen = ({route}) => {
               onPress={() => {
                 setSelectedExperience(item.title),
                   navigation.navigate(item?.redirection);
+                dispatch(setExperience({id: item.id, type: item.title}));
               }}>
               <Image source={item.img} style={styles.experienceImg} />
               <Text
@@ -243,13 +261,14 @@ const HomeScreen = ({route}) => {
                     categoryName: item.name,
                     categoryType: item.type,
                     categoryIngredients: item?.ingredients,
+                    restaurantId :selectedRestaurant?._id
                   });
                 }}>
                 <Image
                   source={{uri: item?.image}}
                   style={styles.categoryImage}
                 />
-                <Text style={{color: 'red'}}>{item?.name}</Text>
+                {/* <Text style={{color: 'red'}}>{item?.name}</Text> */}
               </TouchableOpacity>
             )}
           />
