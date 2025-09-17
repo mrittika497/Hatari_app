@@ -7,7 +7,7 @@ export const fetchAllFoods = createAsyncThunk(
   "foods/fetchAll",
   async (_, { rejectWithValue }) => { // no need to pass token
     try {
-      const response = await axiosInstance.get(API.getallfoods); // token added automatically
+      const response = await axiosInstance.get(API.getallfoods ); // token added automatically
       return response.data; 
     } catch (error) {
       console.log("Fetch Foods Error:", error.response || error.message);

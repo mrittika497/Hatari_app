@@ -26,6 +26,10 @@ import {isAsyncThunkAction} from '@reduxjs/toolkit';
 const HomeScreen = ({route}) => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
+    const cartItems = useSelector(state => state.cart.items);
+  const totalCount = cartItems.reduce((sum, item) => sum + item.quantity, 0); 
+  console.log(totalCount,"-------------totalCount");
+  
   const selectedRestaurantName = route?.params?.selectedRestaurantName;
   const [selectedExperience, setSelectedExperience] = useState('Delivery');
   const [loading, setLoading] = useState(true);
@@ -55,31 +59,30 @@ const HomeScreen = ({route}) => {
     return () => clearTimeout(timer);
   }, []);
 
-// 👇 your existing array
-const experiences = [
-  {
-    id: 1,
-    title: 'Delivery',
-    img: require('../../assets/images/deliveryH.png'),
-    redirection: 'HomeScreen',
-    allowOrder: true, // ✅ orders allowed
-  },
-  {
-    id: 2,
-    title: 'Dine in',
-    img: require('../../assets/images/dineH.png'),
-    redirection: 'DineSection',
-    allowOrder: false, // ❌ no orders
-  },
-  {
-    id: 3,
-    title: 'Takeaway',
-    img: require('../../assets/images/takeawayH.png'),
-    redirection: 'HomeScreen',
-    allowOrder: true, // ✅ orders allowed
-  },
-];
-
+  // 👇 your existing array
+  const experiences = [
+    {
+      id: 1,
+      title: 'Delivery',
+      img: require('../../assets/images/deliveryH.png'),
+      redirection: 'HomeScreen',
+      allowOrder: true, // ✅ orders allowed
+    },
+    {
+      id: 2,
+      title: 'Dine in',
+      img: require('../../assets/images/dineH.png'),
+      redirection: 'DineSection',
+      allowOrder: false, // ❌ no orders
+    },
+    {
+      id: 3,
+      title: 'Takeaway',
+      img: require('../../assets/images/takeawayH.png'),
+      redirection: 'HomeScreen',
+      allowOrder: true, // ✅ orders allowed
+    },
+  ];
 
   return (
     <DashboardScreen scrollable={false}>
@@ -147,7 +150,7 @@ const experiences = [
               style={styles.cartIcon}
             />
             <View style={styles.cartBadge}>
-              <Text style={styles.cartCount}>0</Text>
+              <Text style={styles.cartCount}>{totalCount}</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -235,7 +238,12 @@ const experiences = [
               <TouchableOpacity
                 style={styles.categoryCard}
                 onPress={() => {
-                  navigation.navigate('CatItemScreen');
+                  navigation.navigate('CatItemScreen', {
+                    categoryId: item._id,
+                    categoryName: item.name,
+                    categoryType: item.type,
+                    categoryIngredients: item?.ingredients,
+                  });
                 }}>
                 <Image
                   source={{uri: item?.image}}

@@ -1,121 +1,150 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {
   View,
   Text,
   FlatList,
   StyleSheet,
   Image,
-  TouchableOpacity,
-  Dimensions
+  Dimensions,
 } from 'react-native';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import {useDispatch, useSelector} from 'react-redux';
+import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
+import LinearGradient from 'react-native-linear-gradient';
+
 import DashboardScreen from '../components/DashboardScreen';
 import CustomHeader from '../components/CustomHeader';
 import SmallbtnReuseable from '../components/SmallbtnReuseable';
-import { useNavigation } from '@react-navigation/native';
+import {fetchCategoryFoods} from '../redux/slice/catItemSlice';
 
-const { width } = Dimensions.get('window');
-
-const items = [
-  {
-    id: '1',
-    name: 'Chicken Biriyani',
-    price: 280,
-    rating: 4.5,
-    reviews: '2.8k',
-    type: 'non-veg',
-    image: require('../assets/images/remove/Chicken.png'),
-  },
-  {
-    id: '2',
-    name: 'Chicken Kadai',
-    price: 370,
-    rating: 4.3,
-    reviews: '2.3k',
-    type: 'non-veg',
-    image: require('../assets/images/remove/Chicken.png'),
-  },
-  {
-    id: '3',
-    name: 'Butter Chicken',
-    price: 250,
-    rating: 4.4,
-    reviews: '2.2k',
-    type: 'non-veg',
-      image: require('../assets/images/remove/Chicken.png'),
-  },
-  {
-    id: '4',
-    name: 'Chicken Rezala',
-    price: 250,
-    rating: 4.4,
-    reviews: '2.0k',
-    type: 'non-veg',
-    image: require('../assets/images/remove/Chicken.png'),
-  },
-];
+const {width} = Dimensions.get('window');
 
 const CatItemScreen = () => {
-  const Navigation = useNavigation();
-  const renderItem = ({ item }) => (
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const route = useRoute();
+
+  const {categoryId, categoryName, categoryType, categoryIngredients} =
+    route.params;
+
+  const {
+    data: categoryFoods,
+    loading,
+    error,
+  } = useSelector(state => state.catItems);
+
+  useEffect(() => {
+    dispatch(
+      fetchCategoryFoods({
+        categoryId,
+        categoryIngredients,
+      }),
+    );
+  }, [dispatch, categoryId, categoryIngredients]);
+
+  // Skeleton loader
+  const renderSkeleton = () => (
     <View style={styles.card}>
-      {/* Food Image */}
-      <Image source={item.image} style={styles.image} />
-
-      {/* Details */}
-      <View style={styles.details}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-                                <Image source={require("../assets/images/dineBlack.png")}
-                                    style={{ width: 12, height: 12 }}
-                                />
-                                <Text style={{ marginLeft: 10, color: "black", fontSize: 13, fontWeight: "500" }}>Indian</Text>
-                            </View>
-        
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {/* Veg / Non-Veg Icon */}
-          <View
-            style={[
-              styles.typeIndicator,
-              { borderColor: item.type === 'veg' ? 'green' : 'red' },
-            ]}
-          >
-            <View
-              style={[
-                styles.typeDot,
-                { backgroundColor: item.type === 'veg' ? 'green' : 'red' },
-              ]}
-            />
-          </View>
-          <Text style={styles.name}>{item.name}</Text>
-        </View>
-
-        <Text style={styles.price}>₹{item.price}</Text>
-
-        {/* Rating */}
-        <View style={styles.ratingWrapper}>
-          <Text style={styles.ratingText}>★ {item.rating}</Text>
-        </View>
-      </View>
-
-      {/* Right Side Buttons */}
-      <View style={styles.actions}>
-       
-        <SmallbtnReuseable onPress={() => {Navigation.navigate("FoodDetailScreen")}}/>
+      <ShimmerPlaceHolder
+        LinearGradient={LinearGradient}
+        style={styles.image}
+      />
+      <View style={{flex: 1, marginLeft: 10}}>
+        <ShimmerPlaceHolder
+          LinearGradient={LinearGradient}
+          style={{width: width * 0.4, height: 14, marginBottom: 6, borderRadius: 4}}
+        />
+        <ShimmerPlaceHolder
+          LinearGradient={LinearGradient}
+          style={{width: width * 0.25, height: 14, marginBottom: 6, borderRadius: 4}}
+        />
+        <ShimmerPlaceHolder
+          LinearGradient={LinearGradient}
+          style={{width: width * 0.2, height: 14, borderRadius: 4}}
+        />
       </View>
     </View>
   );
 
+  const renderItem = ({item}) => {
+    const food = item.food;
+
+    return (
+      <View style={styles.card}>
+        <Image source={{uri: food.image}} style={styles.image} />
+
+        <View style={styles.details}>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <Image
+              source={require('../assets/images/dineBlack.png')}
+              style={{width: 12, height: 12}}
+            />
+            <Text style={{marginLeft: 10, color: 'black', fontSize: 13, fontWeight: '500'}}>
+              {food.cuisineType?.[0] || 'Indian'}
+            </Text>
+          </View>
+
+          <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 4}}>
+            <View
+              style={[
+                styles.typeIndicator,
+                {borderColor: food.type?.[0] === 'veg' ? 'green' : 'red'},
+              ]}>
+              <View
+                style={[
+                  styles.typeDot,
+                  {backgroundColor: food.type?.[0] === 'veg' ? 'green' : 'red'},
+                ]}
+              />
+            </View>
+            <Text style={styles.name}>{food.name}</Text>
+          </View>
+
+          <Text style={styles.price}>₹{food.price}</Text>
+
+          <View style={styles.ratingWrapper}>
+            <Text style={styles.ratingText}>★ {food.rating}</Text>
+          </View>
+        </View>
+
+        <View style={styles.actions}>
+          <SmallbtnReuseable
+            onPress={() => {
+              navigation.navigate('FoodDetailScreen', {
+                foodItem: item.food,
+              });
+            }}
+          />
+        </View>
+      </View>
+    );
+  };
+
   return (
-    <DashboardScreen> 
-      <CustomHeader/>
-    <View style={styles.container}>
-      <Text style={styles.header}>Chicken items</Text>
-      <FlatList
-        data={items}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      />
-    </View>
+    <DashboardScreen>
+      <CustomHeader />
+      <View style={styles.container}>
+        <Text style={styles.header}>{categoryName} Items</Text>
+
+        {loading ? (
+          Array.from({length: 5}).map((_, i) => <View key={i}>{renderSkeleton()}</View>)
+        ) : error ? (
+          <Text style={{textAlign: 'center', marginTop: 20, color: 'red'}}>
+            {error}
+          </Text>
+        ) : categoryFoods.length > 0 ? (
+          <FlatList
+            data={categoryFoods}
+            keyExtractor={item => item.food._id}
+            renderItem={renderItem}
+            contentContainerStyle={{paddingBottom: 20}}
+          />
+        ) : (
+          <Text style={{textAlign: 'center', marginTop: 20, color: 'gray'}}>
+            No items found in {categoryName}
+          </Text>
+        )}
+      </View>
     </DashboardScreen>
   );
 };
@@ -126,7 +155,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    marginTop:20
+    marginTop: 20,
   },
   header: {
     fontSize: 16,
@@ -143,7 +172,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowRadius: 5,
     elevation: 3,
   },
@@ -161,7 +190,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 5,
     color: '#000',
-    
   },
   price: {
     fontSize: 14,
@@ -188,22 +216,12 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 12,
     alignSelf: 'flex-start',
+    marginTop: 4,
   },
   ratingText: {
     color: '#fff',
     fontSize: 10,
     fontWeight: '600',
   },
-  actions: {
-    // alignItems: 'center',
-    // justifyContent: 'space-between',
-    // height: 80,
-    // marginLeft: 10,
-  },
-  heartIcon: {
-    width: 18,
-    height: 18,
-    tintColor: 'red',
-  },
-  
+  actions: {},
 });

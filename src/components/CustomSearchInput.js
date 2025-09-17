@@ -8,8 +8,9 @@ import {
   StyleSheet,
 } from "react-native";
 import Theme from "../assets/theme";
+import { GOOGLE_API_KEY } from "../global_Url/googlemapkey";
 
-const GOOGLE_API_KEY = "AIzaSyCLItgC8e0snQFn61EJGVInDOBVRX6tfQQ"// ⚠️ Replace with unrestricted / correct key
+
 
 const CustomSearchInput = ({ onPlaceSelect }) => {
   const [query, setQuery] = useState("");
@@ -52,6 +53,7 @@ const CustomSearchInput = ({ onPlaceSelect }) => {
 
     try {
       const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${GOOGLE_API_KEY}`;
+      // const url = `https://places.googleapis.com/v1/places/GyuEmsRBfy61i59si0?fields=addressComponents&key=${GOOGLE_API_KEY}`
       console.log("Fetching Details:", url);
 
       const response = await fetch(url);

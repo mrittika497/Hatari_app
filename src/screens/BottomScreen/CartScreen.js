@@ -29,8 +29,7 @@ import {
   removeFromCart,
   updateNote,
 } from '../../redux/slice/cartSlice';
-import { fetchAllFoodCat } from '../../redux/slice/foodCategorySlice';
-import { postCustomizedFood } from '../../redux/slice/CustomizeSlice';
+import {postCustomizedFood} from '../../redux/slice/CustomizeSlice';
 
 const {width} = Dimensions.get('window');
 
@@ -38,15 +37,15 @@ const CartScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const {items: cartItems} = useSelector(state => state.cart);
-const data = useSelector(state => state.foodCustomization);
-console.log(data,"------------------data111111");
+  const data = useSelector(state => state.foodCustomization);
+  console.log(data, '------------------data111111');
 
   const [loading, setLoading] = useState(false);
 
   // Modal state
   const [selectedItem, setSelectedItem] = useState(null);
-  console.log(selectedItem,"--------------selectedItem");
-  
+  console.log(selectedItem, '--------------selectedItem');
+
   const [noteText, setNoteText] = useState('');
 
   // Totals
@@ -87,40 +86,40 @@ console.log(data,"------------------data111111");
     setNoteText('');
   };
 
-//  const handleSaveNote = async () => {
-//   if (!selectedItem) return;
+  //  const handleSaveNote = async () => {
+  //   if (!selectedItem) return;
 
-//   // Update note locally in Redux cart slice
-// dispatch(postCustomizedFood({
-//   id: selectedItem._id, note: noteText ,quantity :selectedItem.quantity
-// }))
+  //   // Update note locally in Redux cart slice
+  // dispatch(postCustomizedFood({
+  //   id: selectedItem._id, note: noteText ,quantity :selectedItem.quantity
+  // }))
 
+  //   closeModal();
+  // };
 
+  const handleSaveNote = async () => {
+    if (selectedItem) {
+      dispatch(updateNote({id: selectedItem._id, note: noteText}));
 
-//   closeModal();
-// };
+      const resultAction = await dispatch(
+        postCustomizedFood({
+          food: selectedItem._id,
+          quantity: selectedItem.quantity,
+          note: noteText,
+        }),
+      );
 
-const handleSaveNote = async () => {
-  if (selectedItem) {
-    dispatch(updateNote({ id: selectedItem._id, note: noteText }));
-    
-    const resultAction = await dispatch(postCustomizedFood({
-      food: selectedItem._id,
-      quantity: selectedItem.quantity,
-      note: noteText,
-    }));
-
-    if (postCustomizedFood.fulfilled.match(resultAction)) {
-      console.log(resultAction.payload, "✅ Saved customization response");
-      alert("Customization saved!");
-    } else {
-      console.log(resultAction.payload, "❌ Failed to save");
-      alert("Failed to save customization");
+      if (postCustomizedFood.fulfilled.match(resultAction)) {
+        console.log(resultAction.payload, '✅ Saved customization response');
+        alert('Customization saved!');
+      } else {
+        console.log(resultAction.payload, '❌ Failed to save');
+        alert('Failed to save customization');
+      }
     }
-  }
 
-  closeModal();
-};
+    closeModal();
+  };
 
   const renderItem = ({item}) => (
     <View style={styles.itemCard}>
@@ -147,7 +146,9 @@ const handleSaveNote = async () => {
         </View>
 
         {/* Price & Rating */}
-        <Text style={styles.itemPrice}>{formatCurrency(item.price)}</Text>
+        <Text style={styles.itemPrice}>
+          {formatCurrency(item.price * item.quantity)}
+        </Text>
         <View style={styles.ratingWrapper}>
           <Text style={styles.ratingText}>★ {item?.rating}</Text>
         </View>
@@ -263,8 +264,7 @@ const handleSaveNote = async () => {
                 contentContainerStyle={{paddingBottom: 50}}
               />
 
-              {/* Bill */}
-              <View style={styles.billContainer}>
+              {/* <View style={styles.billContainer}>
                 <Text style={styles.billTitle}>Bill Details</Text>
 
                 <View style={styles.billRow}>
@@ -297,31 +297,33 @@ const handleSaveNote = async () => {
                     {formatCurrency(grandTotal)}
                   </Text>
                 </View>
-              </View>
+              </View> */}
 
-              {/* Checkout bar */}
-              <View style={styles.bottomBar}>
-                <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                  <Text style={styles.bottomLabel}>Total: </Text>
-                  <Text style={styles.bottomAmount}>
-                    {formatCurrency(grandTotal)}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.checkoutBtn}
-                  onPress={() =>
-                    navigation.navigate('OrderSummaryScreen', {
-                      cartItems,
-                      grandTotal,
-                      subtotal,
-                      gst,
-                      deliveryFee,
-                      packingFee,
-                    })
-                  }>
-                  <Text style={styles.checkoutText}>Continue</Text>
-                </TouchableOpacity>
-              </View>
+             <View style={styles.bottomBar}>
+  <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+
+      <Text style={{fontSize: 14, color: '#555', textAlign: 'center'}}>
+        🛒 Oops! Your cart is lonely. Tap "Continue" to see all the goodies! 
+      </Text>
+
+  </View>
+
+  <TouchableOpacity
+    style={styles.checkoutBtn}
+    onPress={() =>
+      navigation.navigate('OrderSummaryScreen', {
+        cartItems,
+        grandTotal,
+        subtotal,
+        gst,
+        deliveryFee,
+        packingFee,
+      })
+    }>
+    <Text style={styles.checkoutText}>Continue</Text>
+  </TouchableOpacity>
+</View>
+
             </>
           )}
         </View>
@@ -433,7 +435,7 @@ const styles = StyleSheet.create({
     borderLeftColor: '#FF9800',
     padding: 6,
     borderRadius: 6,
-    width:220
+    width: 220,
   },
   noteText: {fontSize: 13, color: '#444'},
 
@@ -482,7 +484,12 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   qtyText: {fontSize: 18, fontWeight: 'bold', color: Theme.colors.red},
-  qtyValue: {fontSize: 15, fontWeight: '600', marginHorizontal: 8},
+  qtyValue: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginHorizontal: 8,
+    color: Theme.colors.black,
+  },
 
   // Bill
   billContainer: {
@@ -552,7 +559,12 @@ const styles = StyleSheet.create({
     padding: 20,
     elevation: 6,
   },
-  modalTitle: {fontSize: 17, fontWeight: '700', marginBottom: 12,color:Theme.colors.black},
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    marginBottom: 12,
+    color: Theme.colors.black,
+  },
   modalInput: {
     backgroundColor: '#f8f8f8',
     borderRadius: 8,

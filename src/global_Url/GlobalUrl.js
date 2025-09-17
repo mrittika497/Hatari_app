@@ -9,6 +9,8 @@ export const API = {
   getbannerHome : `${BASE_URL}banner/getAll`,
   getallfoods : `${BASE_URL}food/foods`,
   AllFoodCat :`${BASE_URL}catfood/allFoodCat`,
-  customizeFood:`${BASE_URL}cart/add`
+  customizeFood:`${BASE_URL}cart/add`,
+  getCatItemfoods : `${BASE_URL}food/foods`,
+  getmenutemfoods : `${BASE_URL}food/foods`
 
 };

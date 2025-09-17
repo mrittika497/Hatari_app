@@ -1,3 +1,4 @@
+// src/screens/MapScreen.js
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
@@ -17,26 +18,28 @@ import Geolocation from 'react-native-geolocation-service';
 import CustomSearchInput from '../components/CustomSearchInput';
 import Theme from '../assets/theme';
 import SaveAddressModal from '../components/SaveAddressModal';
+import { GOOGLE_API_KEY } from '../global_Url/googlemapkey';
+
 
 const { width, height } = Dimensions.get('window');
 
-// ⬇️ Put your API key here
-const GOOGLE_API_KEY = "YOUR_GOOGLE_API_KEY";
-
 const MapScreen = () => {
   const mapRef = useRef(null);
-  const [savemodalVisible, setSaveModalVisible] = useState(false);
+
+  const [saveModalVisible, setSaveModalVisible] = useState(false);
   const [selectedType, setSelectedType] = useState('Home');
   const [currentLocation, setCurrentLocation] = useState(null);
   const [mapRegion, setMapRegion] = useState(null);
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [location, setLocation] = useState(null);
+  console.log(location,"----------------locationmap");
+  
 
   useEffect(() => {
     requestLocationPermission();
   }, []);
 
-  // 🔹 Ask for Location Permission
+  // Request Location Permission
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
       try {
@@ -64,11 +67,13 @@ const MapScreen = () => {
     }
   };
 
-  // 🔹 Get Current Location
+  // Get Current Location
   const getCurrentLocation = () => {
+    setLoadingLocation(true);
     Geolocation.getCurrentPosition(
       async position => {
         const { latitude, longitude } = position.coords;
+
         setCurrentLocation({ latitude, longitude });
         setMapRegion({
           latitude,
@@ -77,15 +82,28 @@ const MapScreen = () => {
           longitudeDelta: 0.01,
         });
 
-        // 🔹 Get Address from Google Geocoding API
-        const address = await fetchAddressFromCoords(latitude, longitude);
+        // Animate map to current location
+        if (mapRef.current) {
+          mapRef.current.animateToRegion(
+            {
+              latitude,
+              longitude,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            },
+            1000,
+          );
+        }
 
-        setLocation({
+        // Fetch full address from Google API
+        const address = await fetchAddressFromCoords(latitude, longitude);
+        const loc = {
           latitude,
           longitude,
           description: address || `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`,
-        });
-
+        };
+        setLocation(loc);
+        setCurrentLocation({ latitude, longitude });
         setLoadingLocation(false);
       },
       error => {
@@ -97,10 +115,36 @@ const MapScreen = () => {
     );
   };
 
-  // 🔹 Fetch Address from Google Maps Geocoding API
+  // Animate Map to Current Location
+  const goToCurrentLocation = async () => {
+    if (currentLocation && mapRef.current) {
+      const address = await fetchAddressFromCoords(
+        currentLocation.latitude,
+        currentLocation.longitude,
+      );
+      setLocation({
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+        description: address,
+      });
+
+      mapRef.current.animateToRegion(
+        {
+          latitude: currentLocation.latitude,
+          longitude: currentLocation.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        },
+        1000,
+      );
+    }
+  };
+
+  // Fetch Address from Google Maps API
   const fetchAddressFromCoords = async (lat, lng) => {
     try {
       const response = await fetch(
+        // https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env.GOOGLEAPIKEY}
         `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`,
       );
       const data = await response.json();
@@ -108,11 +152,11 @@ const MapScreen = () => {
         return data.results[0]?.formatted_address;
       } else {
         console.log('Geocoding error:', data.status);
-        return null;
+        return `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
       }
     } catch (error) {
       console.log('Error fetching address:', error);
-      return null;
+      return `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
     }
   };
 
@@ -126,15 +170,15 @@ const MapScreen = () => {
       ) : (
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
           <View style={styles.container}>
-            {/* 🔹 Top Bar */}
+            {/* Top Bar */}
             <View style={styles.topRow}>
               <Text style={styles.addressText}>{location?.description}</Text>
-              <TouchableOpacity onPress={getCurrentLocation}>
-                <Text style={styles.changeText}>Refresh</Text>
+              <TouchableOpacity onPress={goToCurrentLocation}>
+                <Text style={styles.changeText}>Use Current</Text>
               </TouchableOpacity>
             </View>
 
-            {/* 🔹 Map */}
+            {/* Map */}
             <MapView
               ref={mapRef}
               style={styles.map}
@@ -143,27 +187,30 @@ const MapScreen = () => {
               showsMyLocationButton={true}>
               {location && (
                 <Marker
-                  coordinate={{ latitude: location.latitude, longitude: location.longitude }}
+                  coordinate={{
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                  }}
                 />
               )}
             </MapView>
 
-            {/* 🔹 Custom Search Input */}
+            {/* Search */}
             <CustomSearchInput
               onPlaceSelect={place => {
-                setLocation({
+                const loc = {
                   latitude: place.latitude,
                   longitude: place.longitude,
                   description: place.description,
-                });
-
+                };
+                setLocation(loc);
+                setCurrentLocation({ latitude: place.latitude, longitude: place.longitude });
                 setMapRegion({
                   latitude: place.latitude,
                   longitude: place.longitude,
                   latitudeDelta: 0.01,
                   longitudeDelta: 0.01,
                 });
-
                 if (mapRef.current) {
                   mapRef.current.animateToRegion(
                     {
@@ -178,19 +225,17 @@ const MapScreen = () => {
               }}
             />
 
-            {/* 🔹 Address Section */}
+            {/* Address Section */}
             <View style={styles.addressSection}>
               <Text style={styles.sectionTitle}>🏠 {selectedType}</Text>
               <Text style={styles.subAddress}>
-                {location?.description || 'Select a location'}
+           show my address
               </Text>
-
-            
             </View>
 
-            {/* 🔹 Bottom Buttons */}
+            {/* Bottom Buttons */}
             <View style={styles.bottomRow}>
-              <TouchableOpacity style={styles.changeBtn} onPress={getCurrentLocation}>
+              <TouchableOpacity style={styles.changeBtn} onPress={goToCurrentLocation}>
                 <Text style={styles.changeBtnText}>Use Current</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -203,9 +248,9 @@ const MapScreen = () => {
         </ScrollView>
       )}
 
-      {/* 🔹 Pass location into SaveAddressModal */}
+      {/* Save Address Modal */}
       <SaveAddressModal
-        visible={savemodalVisible}
+        visible={saveModalVisible}
         onRequestClose={() => setSaveModalVisible(false)}
         location={location}
       />
@@ -231,22 +276,7 @@ const styles = StyleSheet.create({
   map: { width: width, height: height * 0.6 },
   addressSection: { padding: 15, marginTop: 10 },
   sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 5 },
-  subAddress: { fontSize: 13, color: '#666', marginBottom: 10 },
-  typeRow: { flexDirection: 'row' },
-  typeBtn: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 18,
-    marginRight: 10,
-  },
-  typeBtnActive: {
-    backgroundColor: Theme.colors.red,
-    borderColor: Theme.colors.red,
-  },
-  typeBtnText: { color: '#333', fontWeight: '500' },
-  typeBtnTextActive: { color: '#fff' },
+  subAddress: { fontSize: 13, color: '#c71616ff', marginBottom: 10 },
   bottomRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
