@@ -7,6 +7,7 @@ import {
   SafeAreaView,
 } from "react-native";
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Theme from "../assets/theme";
 
 const OrderSuccessScreen = ({ navigation }) => {
 
@@ -75,6 +76,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 5,
+    color:Theme.colors.black
   },
   confirmed: {
     fontSize: 20,

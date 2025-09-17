@@ -7,10 +7,9 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
 import Theme from "../assets/theme";
 import { GOOGLE_API_KEY } from "../global_Url/googlemapkey";
-
-
 
 const CustomSearchInput = ({ onPlaceSelect }) => {
   const [query, setQuery] = useState("");
@@ -29,16 +28,12 @@ const CustomSearchInput = ({ onPlaceSelect }) => {
         text
       )}&key=${GOOGLE_API_KEY}&components=country:in`;
 
-      console.log("Fetching Autocomplete:", url);
-
       const response = await fetch(url);
       const data = await response.json();
-      console.log("Autocomplete Response:", data);
 
       if (data.status === "OK" && data.predictions) {
         setSuggestions(data.predictions);
       } else {
-        console.log("Autocomplete failed:", data.status, data.error_message);
         setSuggestions([]);
       }
     } catch (error) {
@@ -53,12 +48,8 @@ const CustomSearchInput = ({ onPlaceSelect }) => {
 
     try {
       const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${GOOGLE_API_KEY}`;
-      // const url = `https://places.googleapis.com/v1/places/GyuEmsRBfy61i59si0?fields=addressComponents&key=${GOOGLE_API_KEY}`
-      console.log("Fetching Details:", url);
-
       const response = await fetch(url);
       const data = await response.json();
-      console.log("Place Details Response:", data);
 
       if (data.result?.geometry?.location) {
         const location = data.result.geometry.location;
@@ -67,23 +58,34 @@ const CustomSearchInput = ({ onPlaceSelect }) => {
           latitude: location.lat,
           longitude: location.lng,
         });
-      } else {
-        console.log("Details failed:", data.status, data.error_message);
       }
     } catch (error) {
       console.log("Error fetching place details:", error);
     }
   };
 
+  // 🔹 Clear search
+  const clearSearch = () => {
+    setQuery("");
+    setSuggestions([]);
+  };
+
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Search location..."
-        value={query}
-        onChangeText={fetchPlaces}
-        placeholderTextColor="#888"
-      />
+      <View style={styles.inputWrapper}>
+        <TextInput
+          style={styles.input}
+          placeholder="Search location..."
+          value={query}
+          onChangeText={fetchPlaces}
+          placeholderTextColor="#888"
+        />
+        {query.length > 0 && (
+          <TouchableOpacity onPress={clearSearch} style={styles.clearIcon}>
+            <Ionicons name="close-circle" size={20} color="#888" />
+          </TouchableOpacity>
+        )}
+      </View>
 
       {suggestions.length > 0 && (
         <FlatList
@@ -95,7 +97,7 @@ const CustomSearchInput = ({ onPlaceSelect }) => {
               style={styles.suggestion}
               onPress={() => handleSelect(item.place_id, item.description)}
             >
-              <Text style={{ color: "#333" }}>{item.description}</Text>
+              <Text style={styles.suggestionText}>{item.description}</Text>
             </TouchableOpacity>
           )}
         />
@@ -108,29 +110,43 @@ export default CustomSearchInput;
 
 const styles = StyleSheet.create({
   container: {
-    margin: 10,
+    marginHorizontal: 20,
     position: "absolute",
-    top: 40,
-    left: 10,
-    right: 10,
+    top: 67,
+    left: 0,
+    right: 0,
     backgroundColor: "#fff",
     borderRadius: 10,
     elevation: 5,
     zIndex: 999,
   },
-  input: {
-    height: 50,
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center", // vertically center
     borderColor: "#ddd",
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 15,
-    fontSize: 16,
     backgroundColor: "#f9f9f9",
+    paddingHorizontal: 10,
+    height: 50,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
     color: Theme.colors.black,
+  },
+  clearIcon: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 5,
   },
   suggestion: {
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
+  },
+  suggestionText: {
+    color: "#333",
+    fontSize: 14,
   },
 });
