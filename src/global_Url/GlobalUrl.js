@@ -8,9 +8,10 @@ export const API = {
   allRestaurant: `${BASE_URL}restaurant/list`,
   getbannerHome : `${BASE_URL}banner/getAll`,
   getallfoods : `${BASE_URL}food/foods`,
-  AllFoodCat :`${BASE_URL}catfood/allFoodCat`,
+  AllFoodCat :`${BASE_URL}catfood/allFoodCatActive`,
   customizeFood:`${BASE_URL}cart/add`,
   getCatItemfoods : `${BASE_URL}food/foods`,
-  getmenutemfoods : `${BASE_URL}food/foods`
+  getmenutemfoods : `${BASE_URL}food/foods`,
+  getfoodpagination :`${BASE_URL}food/foods`
 
 };

@@ -150,17 +150,15 @@ const HomeScreen = ({route}) => {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <View style={styles.searchBox}>
+
+          <TouchableOpacity style={styles.searchBox} onPress={() => {navigation.navigate("SearchScreen")}}>
             <Image
               source={require('../../assets/images/search.png')}
               style={styles.searchIcon}
             />
-            <TextInput
-              placeholder="Search your favourite food!"
-              style={styles.searchInput}
-              placeholderTextColor="#999"
-            />
-          </View>
+           <Text style={{color:"black"}}>Search your favorite food</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.cartBtn}>
             <Image
               source={require('../../assets/images/cart.png')}
@@ -358,10 +356,6 @@ const HomeScreen = ({route}) => {
                     <Text style={styles.ratingText}>★ {item.food.rating}</Text>
                   </View>
 
-                  {/* Restaurant Name */}
-                  <Text style={{fontSize: 12, color: '#555', marginTop: 4}}>
-                    {item.restaurant.name}
-                  </Text>
                 </View>
 
                 {/* Button */}

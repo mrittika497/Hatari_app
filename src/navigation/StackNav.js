@@ -14,6 +14,7 @@ import OrderSummaryScreen from '../screens/OrderSummaryScreen';
 import MapScreen from '../screens/MapScreen';
 import PaymentScreen from '../screens/PaymentScreen';
 import OrderSuccessScreen from '../screens/ComfromScreen';
+import SearchScreen from '../screens/SearchScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -101,6 +102,13 @@ const StackNav = () => {
       component={OrderSuccessScreen}
       options={{headerShown:false}}
       />
+
+       <Stack.Screen
+      name='SearchScreen'
+      component={SearchScreen}
+      options={{headerShown:false}}
+      />
+      
       
       <Stack.Screen
         name="Bottom"

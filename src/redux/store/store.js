@@ -11,7 +11,8 @@ import foodCategoryReducer from '../slice/foodCategorySlice';
 import foodCustomizationReducer from '../slice/CustomizeSlice';
 import catItemReducer from '../slice/catItemSlice';
 import menucuisineTypeReducer from '../slice/menucuisineTypeSlice';
-import experienceReducer from '../slice/experienceSlice'
+import experienceReducer from '../slice/experienceSlice';
+import SearchFoodPaginationReducer from '../slice/SearchFoodPaginationSlice'
 const store = configureStore({
   reducer: {
     home: HomeReducer,
@@ -27,6 +28,7 @@ const store = configureStore({
     catItems: catItemReducer,
     menuItems: menucuisineTypeReducer,
     experience: experienceReducer,
+    FoodPagination:SearchFoodPaginationReducer
   },
 });
 

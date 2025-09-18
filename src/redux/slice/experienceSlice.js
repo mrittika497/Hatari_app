@@ -21,7 +21,7 @@ const experienceSlice = createSlice({
       state.selectedRestaurant = action.payload;
     },
     clearExperience: (state) => {
-      state.experienceId = null;
+      state.experienceId = null; 
       state.experienceType = '';
       state.selectedRestaurant = null;
     },
