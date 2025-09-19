@@ -159,8 +159,9 @@ const HomeScreen = ({route}) => {
             }}>
             <Image
               source={require('../../assets/images/search.png')}
-              style={styles.searchIcon}
+              style={styles.searchIcon} 
             />
+          
             <Text style={{color: 'black'}}>Search your favorite food</Text>
           </TouchableOpacity>
 
