@@ -19,6 +19,7 @@ import CustomSearchInput from "../components/CustomSearchInput";
 import SaveAddressModal from "../components/SaveAddressModal";
 import Theme from "../assets/theme";
 import { GOOGLE_API_KEY } from "../global_Url/googlemapkey";
+import DashboardScreen from "../components/DashboardScreen";
 
 const { width, height } = Dimensions.get("window");
 
@@ -147,6 +148,7 @@ const MapScreen = () => {
   };
 
   return (
+    <DashboardScreen> 
     <SafeAreaView style={styles.safeArea}>
       {loading ? (
         <View style={styles.loader}>
@@ -208,6 +210,7 @@ const MapScreen = () => {
         addressDetails={addressDetails}
       />
     </SafeAreaView>
+    </DashboardScreen>
   );
 };
 
@@ -218,7 +221,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
   loadingText: { marginTop: 10, fontSize: 14, color: "#555" },
-  topRow: { flexDirection: "row", justifyContent: "space-between", padding: 15, borderBottomWidth: 0.5, borderColor: "#ccc" },
+  topRow: { flexDirection: "row", justifyContent: "space-between", padding: 10, borderBottomWidth: 0.5, borderColor: "#ccc" },
   addressText: { flex: 1, fontSize: 14, fontWeight: "500", color: "#222" },
   changeText: { color: Theme.colors.red, fontWeight: "600" },
   map: { width: width, height: height * 0.6, marginVertical: 10 },

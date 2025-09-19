@@ -33,8 +33,11 @@ const MenuScreen = () => {
   const {experienceId, selectedRestaurant, experienceType} = useSelector(
     state => state.experience,
   );
-  console.log(selectedRestaurant?._id,"-------------------selectedRestaurant------------rasID");
-  
+  console.log(
+    selectedRestaurant?._id,
+    '-------------------selectedRestaurant------------rasID',
+  );
+
   const [activeCategory, setActiveCategory] = useState('Indian');
   const [search, setSearch] = useState('');
 
@@ -49,7 +52,12 @@ const MenuScreen = () => {
     if (activeCategory === 'Top Picks') {
       dispatch(fetchMenuFoods({isTopPick: true}));
     } else {
-      dispatch(fetchMenuFoods({cuisineType: activeCategory ,restaurantId:selectedRestaurant?._id}));
+      dispatch(
+        fetchMenuFoods({
+          cuisineType: activeCategory,
+          restaurantId: selectedRestaurant?._id,
+        }),
+      );
     }
   }, [dispatch, activeCategory]);
 
@@ -132,7 +140,7 @@ const MenuScreen = () => {
   );
 
   return (
-    <DashboardScreen>
+    <DashboardScreen scrollable={false}>
       <CustomHeader title="Menu" />
       <SafeAreaView style={styles.container}>
         {/* Categories */}
@@ -177,32 +185,33 @@ const MenuScreen = () => {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Best Selling {activeCategory}</Text>
         </View>
-
-        {/* Loader / Error / Food List */}
-        {loading ? (
-          <FlatList
-            data={[1, 2, 3, 4, 5]}
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={renderShimmerItem}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{paddingBottom: 100}}
-          />
-        ) : error ? (
-          <Text style={styles.error}>{error}</Text>
-        ) : (
-          <FlatList
-            data={filteredItems}
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={renderItem}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{paddingBottom: 100}}
-            ListEmptyComponent={
-              <Text style={styles.noResults}>
-                No items found for {activeCategory}
-              </Text>
-            }
-          />
-        )}
+        <View style={{height: 600}}>
+          {/* Loader / Error / Food List */}
+          {loading ? (
+            <FlatList
+              data={[1, 2, 3, 4, 5]}
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={renderShimmerItem}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{paddingBottom: 100}}
+            />
+          ) : error ? (
+            <Text style={styles.error}>{error}</Text>
+          ) : (
+            <FlatList
+              data={filteredItems}
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={renderItem}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{paddingBottom: 100}}
+              ListEmptyComponent={
+                <Text style={styles.noResults}>
+                  No items found for {activeCategory}
+                </Text>
+              }
+            />
+          )}
+        </View>
       </SafeAreaView>
     </DashboardScreen>
   );
@@ -217,16 +226,19 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     flexDirection: 'row',
-    marginHorizontal: 10,
+    // marginHorizontal: 10,
     marginBottom: 10,
   },
   tab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+ 
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#ddd',
     marginRight: 10,
+    height: 30,
+    width:80,
+    justifyContent:"center",
+    marginVertical:10
   },
   activeTab: {
     backgroundColor: '#f44336',
@@ -235,6 +247,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 14,
     color: '#555',
+    textAlign: 'center',
   },
   activeTabText: {
     color: '#fff',
@@ -245,14 +258,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f1f1f1',
     borderRadius: 10,
-    marginHorizontal: 10,
+    // marginHorizontal: 10,
     paddingHorizontal: 12,
     paddingVertical: 6,
     marginBottom: 20,
-    marginTop: 20,
+    // marginTop: 20,
   },
   searchInput: {
-    flex: 1,
+    // flex: 1,
     marginLeft: 8,
     fontSize: 14,
     color: '#333',
@@ -273,7 +286,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 10,
-    marginHorizontal: 10,
+    // marginHorizontal: 10,
     marginVertical: 6,
     shadowColor: '#000',
     shadowOpacity: 0.05,

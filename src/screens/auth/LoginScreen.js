@@ -13,14 +13,14 @@ import {
   ScrollView,
   ToastAndroid,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Theme from "../../assets/theme";
 import { useDispatch, useSelector } from "react-redux";
 import { sendOtp } from "../../redux/slice/authSlice";
 import { useNavigation } from "@react-navigation/native";
 
-
 const LoginScreen = () => {
-  const navigation = useNavigation()
+  const navigation = useNavigation();
   const dispatch = useDispatch();
   const [phone, setPhone] = useState("");
   const { loading } = useSelector((state) => state.auth);
@@ -40,30 +40,26 @@ const LoginScreen = () => {
     }
 
     dispatch(sendOtp(phone)).then((res) => {
-      console.log("OTP API Response:", res);
       if (res.meta.requestStatus === "fulfilled") {
-        if (Platform.OS === "android") {
-          ToastAndroid.show("OTP sent successfully ✅", ToastAndroid.SHORT);
-        } else {
-          Alert.alert("Success", "OTP sent successfully ✅");
-        }
+        Platform.OS === "android"
+          ? ToastAndroid.show("OTP sent successfully ✅", ToastAndroid.SHORT)
+          : Alert.alert("Success", "OTP sent successfully ✅");
+
         navigation.navigate("OtpScreen", { phone });
       } else {
         const errMsg =
           res.payload?.message || "Failed to send OTP. Please try again.";
-        if (Platform.OS === "android") {
-          ToastAndroid.show(errMsg, ToastAndroid.LONG);
-        } else {
-          Alert.alert("Error", errMsg);
-        }
+        Platform.OS === "android"
+          ? ToastAndroid.show(errMsg, ToastAndroid.LONG)
+          : Alert.alert("Error", errMsg);
       }
     });
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
       >
         <ScrollView
@@ -87,7 +83,9 @@ const LoginScreen = () => {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Enter phone number</Text>
             <View style={styles.phoneWrapper}>
-               <Text style={styles.countryCode}>+91</Text>
+              <View style={styles.countryCodeBox}>
+                <Text style={styles.countryCode}>+91</Text>
+              </View>
               <TextInput
                 style={styles.input}
                 placeholder="12345 67890"
@@ -97,7 +95,6 @@ const LoginScreen = () => {
                 value={phone}
                 onChangeText={handlePhoneChange}
               />
-             
             </View>
           </View>
 
@@ -105,10 +102,7 @@ const LoginScreen = () => {
           <TouchableOpacity
             style={[
               styles.button,
-              {
-                backgroundColor:
-                  phone.length === 10 ? Theme.colors.red : "#ccc",
-              },
+              { opacity: phone.length === 10 ? 1 : 0.6 },
             ]}
             onPress={handleSendOtp}
             disabled={phone.length !== 10 || loading}
@@ -125,7 +119,7 @@ const LoginScreen = () => {
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -159,7 +153,7 @@ const styles = StyleSheet.create({
   },
   heading: {
     textAlign: "center",
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
     color: Theme.colors.text,
     marginBottom: 25,
@@ -181,12 +175,24 @@ const styles = StyleSheet.create({
     borderColor: Theme.colors.whiteddd,
     backgroundColor: Theme.colors.whitefff,
     borderRadius: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
     paddingVertical: 10,
     elevation: 2,
     shadowColor: Theme.colors.blackshadow,
     shadowOpacity: 0.05,
     shadowRadius: 5,
+  },
+  countryCodeBox: {
+    backgroundColor: "#F5F5F5",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  countryCode: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Theme.colors.blackshadow,
   },
   input: {
     flex: 1,
@@ -199,8 +205,9 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     alignItems: "center",
     justifyContent: "center",
-    elevation: 2,
-    shadowOpacity: 0.2,
+    backgroundColor: Theme.colors.red,
+    elevation: 3,
+    shadowOpacity: 0.15,
     shadowRadius: 6,
     marginBottom: 15,
   },

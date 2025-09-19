@@ -19,6 +19,7 @@ import Geolocation from 'react-native-geolocation-service';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchNearestRestaurants } from '../redux/slice/nearestResSlice';
 import { setExperience, setRestaurant } from '../redux/slice/experienceSlice';
+import DashboardScreen from '../components/DashboardScreen';
 
 // Dummy experiences
 const experiences = [
@@ -112,8 +113,10 @@ const ExperienceScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+    <DashboardScreen 
+    contentStyle={{ alignItems: "center", justifyContent: "center" }}
+    >
+      {/* <ScrollView contentContainerStyle={styles.scrollContainer}> */}
         <Text style={styles.title}>
           Welcome to <Text style={styles.brand}>Hatari</Text>
         </Text>
@@ -188,8 +191,8 @@ const ExperienceScreen = () => {
         >
           <Text style={styles.continueText}>Continue</Text>
         </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+      {/* </ScrollView> */}
+    </DashboardScreen>
   );
 };
 
@@ -197,7 +200,7 @@ export default ExperienceScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  scrollContainer: { padding: 20, alignItems: 'center' }, // center everything horizontally
+  scrollContainer: { alignItems: 'center' }, // center everything horizontally
   title: { fontSize: 28, fontWeight: '600', color: '#333', marginBottom: 8, textAlign: 'center' },
   brand: { color: '#e53935', fontWeight: '700' },
   subtitle: { fontSize: 14, color: '#e53935', marginBottom: 15, fontWeight: '500', textAlign: 'center' },

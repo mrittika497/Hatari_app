@@ -12,9 +12,9 @@ import FoodDetailScreen from '../screens/FoodDetailScreen';
 import CatItemScreen from '../screens/CatItemScreen';
 import OrderSummaryScreen from '../screens/OrderSummaryScreen';
 import MapScreen from '../screens/MapScreen';
-import PaymentScreen from '../screens/PaymentScreen';
 import OrderSuccessScreen from '../screens/ComfromScreen';
 import SearchScreen from '../screens/SearchScreen';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -109,7 +109,7 @@ const StackNav = () => {
       options={{headerShown:false}}
       />
       
-      
+  
       <Stack.Screen
         name="Bottom"
         component={Bottom}

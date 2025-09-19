@@ -67,7 +67,7 @@ const SaveAddressModal = ({ visible, onRequestClose, location, addressDetails })
     dispatch(saveAddress(finalData));
     console.log("✅ Saved Address Data:", finalData);
 
-    Alert.alert("Address Saved", "Your address has been saved successfully.");
+ 
     onRequestClose();
     navigation.navigate("OrderSummaryScreen");
   };

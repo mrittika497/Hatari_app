@@ -23,8 +23,10 @@ import Theme from '../../assets/theme';
 import {fetchAllFoodCat} from '../../redux/slice/foodCategorySlice';
 import {isAsyncThunkAction} from '@reduxjs/toolkit';
 import {setExperience, setRestaurant} from '../../redux/slice/experienceSlice';
+import {useBottomTabBarHeight} from '@react-navigation/bottom-tabs';
 
 const HomeScreen = ({route}) => {
+  const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const cartItems = useSelector(state => state.cart.items);
@@ -150,16 +152,23 @@ const HomeScreen = ({route}) => {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-
-          <TouchableOpacity style={styles.searchBox} onPress={() => {navigation.navigate("SearchScreen")}}>
+          <TouchableOpacity
+            style={styles.searchBox}
+            onPress={() => {
+              navigation.navigate('SearchScreen');
+            }}>
             <Image
               source={require('../../assets/images/search.png')}
               style={styles.searchIcon}
             />
-           <Text style={{color:"black"}}>Search your favorite food</Text>
+            <Text style={{color: 'black'}}>Search your favorite food</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.cartBtn}>
+          <TouchableOpacity
+            style={styles.cartBtn}
+            onPress={() => {
+              navigation.navigate('CartScreen');
+            }}>
             <Image
               source={require('../../assets/images/cart.png')}
               style={styles.cartIcon}
@@ -259,7 +268,7 @@ const HomeScreen = ({route}) => {
                     categoryName: item.name,
                     categoryType: item.type,
                     categoryIngredients: item?.ingredients,
-                    restaurantId :selectedRestaurant?._id
+                    restaurantId: selectedRestaurant?._id,
                   });
                 }}>
                 <Image
@@ -355,7 +364,6 @@ const HomeScreen = ({route}) => {
                   <View style={styles.ratingWrapper}>
                     <Text style={styles.ratingText}>★ {item.food.rating}</Text>
                   </View>
-
                 </View>
 
                 {/* Button */}
@@ -374,12 +382,12 @@ const HomeScreen = ({route}) => {
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#fff'},
+  container: {backgroundColor: '#fff'},
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    // marginBottom: 10,
+    marginBottom: 10,
     marginVertical: 15,
   },
   locationText: {
@@ -422,13 +430,17 @@ const styles = StyleSheet.create({
   cartIcon: {width: 22, height: 22},
   cartBadge: {
     position: 'absolute',
-    top: 6,
-    right: 6,
+    top: 4,
+    right: 4,
     backgroundColor: 'red',
-    borderRadius: 8,
-    paddingHorizontal: 5,
+    borderRadius: 10,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
   },
-  cartCount: {color: '#fff', fontSize: 10},
+  cartCount: {color: '#fff', fontSize: 10, textAlign: 'center'},
 
   experienceContainer: {
     flexDirection: 'row',

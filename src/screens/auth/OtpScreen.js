@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,41 +9,38 @@ import {
   Alert,
   ToastAndroid,
 } from 'react-native';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   CodeField,
   Cursor,
   useBlurOnFulfill,
   useClearByFocusCell,
 } from 'react-native-confirmation-code-field';
-import DashboarsdScreen from '../../components/DashboardScreen';
+import DashboardScreen from '../../components/DashboardScreen';
 import Theme from '../../assets/theme';
 import ReusableBtn from '../../components/ReuseableBtn';
-import {sendOtp, verifyOtp} from '../../redux/slice/authSlice';
-import {useNavigation} from '@react-navigation/native';
+import { sendOtp, verifyOtp } from '../../redux/slice/authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import DashboardScreen from '../../components/DashboardScreen';
+import { setAuth } from '../../redux/slice/authSlice'; // ✅ make sure this exists
 
 const CELL_COUNT = 6;
 
-const OtpScreen = ({route, navigation}) => {
-  // const navigation = useNavigation();
+const OtpScreen = ({ route, navigation }) => {
   const phone = route?.params?.phone;
-  console.log(phone, '------------------phone');
-
   const dispatch = useDispatch();
-  const {token, user} = useSelector(state => state.auth);
+  const { token, user } = useSelector(state => state.auth);
 
   useEffect(() => {
     if (token && user) {
-      console.log('Token:', token);
-      console.log('User:', user);
-      navigation.navigate('ExperienceScreen', {token, user});
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'ExperienceScreen', params: { token, user } }],
+      });
     }
   }, [token, user]);
 
   const [value, setValue] = useState('');
-  const ref = useBlurOnFulfill({value, cellCount: CELL_COUNT});
+  const ref = useBlurOnFulfill({ value, cellCount: CELL_COUNT });
   const [props, getCellOnLayoutHandler] = useClearByFocusCell({
     value,
     setValue,
@@ -55,42 +52,34 @@ const OtpScreen = ({route, navigation}) => {
       return;
     }
 
-   dispatch(verifyOtp({ phone, value })).then(async res => {
-  if (res.meta.requestStatus === "fulfilled") {
-    const { token, user } = res.payload;
+    dispatch(verifyOtp({ phone, value })).then(async res => {
+      if (res.meta.requestStatus === 'fulfilled') {
+        const { token, user } = res.payload;
 
-    // Save to AsyncStorage
-    await AsyncStorage.setItem("userToken", token);
-    await AsyncStorage.setItem("userData ", JSON.stringify(user));
+        await AsyncStorage.setItem('userToken', token);
+        await AsyncStorage.setItem('userData', JSON.stringify(user));
 
-    // Optional: dispatch a Redux action to save token/user
-    dispatch(setAuth({ token, user }));
+        dispatch(setAuth({ token, user }));
 
-    // Navigate to ExperienceScreen and reset navigation stack
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "ExperienceScreen" }],
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'ExperienceScreen' }],
+        });
+      }
     });
-  }
-});
-
   };
 
   const handleResend = () => {
     dispatch(sendOtp(phone)).then(res => {
       if (res.meta.requestStatus === 'fulfilled') {
-        if (Platform.OS === 'android') {
-          ToastAndroid.show('OTP Resent ✅', ToastAndroid.SHORT);
-        } else {
-          Alert.alert('Success', 'OTP Resent ✅');
-        }
+        Platform.OS === 'android'
+          ? ToastAndroid.show('OTP Resent ✅', ToastAndroid.SHORT)
+          : Alert.alert('Success', 'OTP Resent ✅');
       } else {
         const errMsg = res.payload?.message || 'Failed to resend OTP.';
-        if (Platform.OS === 'android') {
-          ToastAndroid.show(errMsg, ToastAndroid.LONG);
-        } else {
-          Alert.alert('Error', errMsg);
-        }
+        Platform.OS === 'android'
+          ? ToastAndroid.show(errMsg, ToastAndroid.LONG)
+          : Alert.alert('Error', errMsg);
       }
     });
   };
@@ -101,8 +90,9 @@ const OtpScreen = ({route, navigation}) => {
     <DashboardScreen>
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        {/* Logo */}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0} // ✅ prevents overlap on iOS notch
+      >
         <Image
           source={require('../../assets/images/project_logo.png')}
           style={styles.logo}
@@ -110,10 +100,8 @@ const OtpScreen = ({route, navigation}) => {
         />
         <Text style={styles.tagline}>Chinese • Indian • Tandoor</Text>
 
-        {/* Instruction */}
         <Text style={styles.instruction}>Enter 6 digit OTP</Text>
 
-        {/* OTP Input */}
         <CodeField
           ref={ref}
           {...props}
@@ -123,11 +111,12 @@ const OtpScreen = ({route, navigation}) => {
           rootStyle={styles.codeFieldRoot}
           keyboardType="number-pad"
           textContentType="oneTimeCode"
-          renderCell={({index, symbol, isFocused}) => (
+          renderCell={({ index, symbol, isFocused }) => (
             <View
               key={index}
               style={[styles.cell, isFocused && styles.focusCell]}
-              onLayout={getCellOnLayoutHandler(index)}>
+              onLayout={getCellOnLayoutHandler(index)}
+            >
               <Text style={styles.cellText}>
                 {symbol || (isFocused ? <Cursor /> : null)}
               </Text>
@@ -135,18 +124,13 @@ const OtpScreen = ({route, navigation}) => {
           )}
         />
 
-        {/* Verify Button */}
         <ReusableBtn
           title="Verify"
-          style={[
-            styles.verifyBtn,
-            !isButtonActive && styles.verifyBtnDisabled,
-          ]}
+          style={[styles.verifyBtn, !isButtonActive && styles.verifyBtnDisabled]}
           onPress={handleVerify}
           disabled={!isButtonActive}
         />
 
-        {/* Resend Text */}
         <Text style={styles.resendText}>
           Having any issue?
           <Text style={styles.resendLink} onPress={handleResend}>
@@ -210,12 +194,15 @@ const styles = StyleSheet.create({
     borderColor: Theme.colors.red,
   },
   verifyBtn: {
-    width: '100%',
-    paddingVertical: 14,
+    width: "100%",
+    paddingVertical: 15,
+    borderRadius: 30,
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: Theme.colors.red,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    elevation: 3,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
     marginBottom: 15,
   },
   verifyBtnDisabled: {

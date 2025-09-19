@@ -26,8 +26,10 @@ const CatItemScreen = () => {
 
   const {categoryId, categoryName, restaurantId, categoryIngredients} =
     route.params;
-    console.log(restaurantId,"-------------restaurantId-------------------hbhbhbs");
-    
+  console.log(
+    restaurantId,
+    '-------------restaurantId-------------------hbhbhbs',
+  );
 
   const {
     data: categoryFoods,
@@ -40,7 +42,7 @@ const CatItemScreen = () => {
       fetchCategoryFoods({
         categoryId,
         categoryIngredients,
-        restaurantId
+        restaurantId,
       }),
     );
   }, [dispatch, categoryId, categoryIngredients]);
@@ -55,11 +57,21 @@ const CatItemScreen = () => {
       <View style={{flex: 1, marginLeft: 10}}>
         <ShimmerPlaceHolder
           LinearGradient={LinearGradient}
-          style={{width: width * 0.4, height: 14, marginBottom: 6, borderRadius: 4}}
+          style={{
+            width: width * 0.4,
+            height: 14,
+            marginBottom: 6,
+            borderRadius: 4,
+          }}
         />
         <ShimmerPlaceHolder
           LinearGradient={LinearGradient}
-          style={{width: width * 0.25, height: 14, marginBottom: 6, borderRadius: 4}}
+          style={{
+            width: width * 0.25,
+            height: 14,
+            marginBottom: 6,
+            borderRadius: 4,
+          }}
         />
         <ShimmerPlaceHolder
           LinearGradient={LinearGradient}
@@ -82,12 +94,19 @@ const CatItemScreen = () => {
               source={require('../assets/images/dineBlack.png')}
               style={{width: 12, height: 12}}
             />
-            <Text style={{marginLeft: 10, color: 'black', fontSize: 13, fontWeight: '500'}}>
+            <Text
+              style={{
+                marginLeft: 10,
+                color: 'black',
+                fontSize: 13,
+                fontWeight: '500',
+              }}>
               {food.cuisineType?.[0] || 'Indian'}
             </Text>
           </View>
 
-          <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 4}}>
+          <View
+            style={{flexDirection: 'row', alignItems: 'center', marginTop: 4}}>
             <View
               style={[
                 styles.typeIndicator,
@@ -124,30 +143,36 @@ const CatItemScreen = () => {
   };
 
   return (
-    <DashboardScreen>
-      <CustomHeader />
-      <View style={styles.container}>
-        <Text style={styles.header}>{categoryName} Items</Text>
+    <DashboardScreen scrollable={false}>
+      <CustomHeader title="Category Item" />
+ 
+        <View style={styles.container}>
+          <Text style={styles.header}>{categoryName} Items</Text>
 
-        {loading ? (
-          Array.from({length: 5}).map((_, i) => <View key={i}>{renderSkeleton()}</View>)
-        ) : error ? (
-          <Text style={{textAlign: 'center', marginTop: 20, color: 'red'}}>
-            {error}
-          </Text>
-        ) : categoryFoods.length > 0 ? (
-          <FlatList
-            data={categoryFoods}
-            keyExtractor={item => item.food._id}
-            renderItem={renderItem}
-            contentContainerStyle={{paddingBottom: 20}}
-          />
-        ) : (
-          <Text style={{textAlign: 'center', marginTop: 20, color: 'gray'}}>
-            No items found in {categoryName}
-          </Text>
-        )}
-      </View>
+          {loading ? (
+            Array.from({length: 5}).map((_, i) => (
+              <View key={i}>{renderSkeleton()}</View>
+            ))
+          ) : error ? (
+            <Text style={{textAlign: 'center', marginTop: 20, color: 'red'}}>
+              {error}
+            </Text>
+          ) : categoryFoods.length > 0 ? (
+            <FlatList
+            // showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
+              data={categoryFoods}
+              keyExtractor={item => item.food._id}
+              renderItem={renderItem}
+              contentContainerStyle={{paddingBottom: 20}}
+            />
+          ) : (
+            <Text style={{textAlign: 'center', marginTop: 20, color: 'gray'}}>
+              No items found in {categoryName}
+            </Text>
+          )}
+        </View>
+   
     </DashboardScreen>
   );
 };

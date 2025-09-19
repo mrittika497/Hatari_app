@@ -86,6 +86,9 @@ const OrderSummaryScreen = ({ navigation }) => {
             <Text style={{ color: "#555" }}>+ Add Delivery Address</Text>
           </TouchableOpacity>
         )}
+       
+       {/* ------------- */}
+    
 
         {/* Cart Items */}
         <View style={styles.sectionBox}>
@@ -266,7 +269,7 @@ const styles = StyleSheet.create({
     padding: 15,
     backgroundColor: "#fff",
     position: "absolute",
-    bottom: 0,
+    bottom: "3%",
     left: 0,
     right: 0,
   },
@@ -276,6 +279,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
+    
   },
   continueText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 

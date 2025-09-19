@@ -52,5 +52,6 @@ const styles = StyleSheet.create({
   },
   wrapper: {
     flexGrow: 1,
+    marginVertical:20
   },
 });
