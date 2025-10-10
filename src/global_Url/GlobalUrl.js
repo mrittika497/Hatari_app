@@ -12,6 +12,9 @@ export const API = {
   customizeFood:`${BASE_URL}cart/add`,
   getCatItemfoods : `${BASE_URL}food/foods`,
   getmenutemfoods : `${BASE_URL}food/foods`,
-  getfoodpagination :`${BASE_URL}food/foods`
+  getfoodpagination :`${BASE_URL}food/foods`,
+  addAddressPost:`${BASE_URL}users/addAddress`,
+  deliverySettings :`${BASE_URL}setting/deliverySettings`,
+  tableBooking :`${BASE_URL}booking`
 
 };

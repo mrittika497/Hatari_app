@@ -14,6 +14,7 @@ import OrderSummaryScreen from '../screens/OrderSummaryScreen';
 import MapScreen from '../screens/MapScreen';
 import OrderSuccessScreen from '../screens/ComfromScreen';
 import SearchScreen from '../screens/SearchScreen';
+import TableBookingShow from '../screens/TableBookingShow';
 
 
 const Stack = createNativeStackNavigator();
@@ -31,7 +32,7 @@ const StackNav = () => {
         console.log('Error reading AsyncStorage:', err);
       } finally {
         setLoading(false);
-      }
+      } 
     };
     checkLogin();
   }, []);
@@ -109,6 +110,11 @@ const StackNav = () => {
       options={{headerShown:false}}
       />
       
+            <Stack.Screen
+      name='TableBookingShow'
+      component={TableBookingShow}
+      options={{headerShown:false}}
+      />
   
       <Stack.Screen
         name="Bottom"

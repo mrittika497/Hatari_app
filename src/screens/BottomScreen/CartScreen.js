@@ -37,8 +37,8 @@ const CartScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const {items: cartItems} = useSelector(state => state.cart);
-  const data = useSelector(state => state.foodCustomization);
-  console.log(data, '------------------data111111');
+  // const data = useSelector(state => state.foodCustomization);
+  // console.log(data, '------------------data111111');
 
   const [loading, setLoading] = useState(false);
 
@@ -49,14 +49,9 @@ const CartScreen = () => {
   const [noteText, setNoteText] = useState('');
 
   // Totals
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
-  );
-  const gst = Math.round(subtotal * 0.05);
-  const deliveryFee = cartItems.length > 0 ? 40 : 0;
-  const packingFee = cartItems.length > 0 ? 20 : 0;
-  const grandTotal = subtotal + gst + deliveryFee + packingFee;
+
+
+
 
   const formatCurrency = amount => `₹${amount.toLocaleString('en-IN')}`;
 
@@ -143,6 +138,7 @@ const CartScreen = () => {
           <Text style={styles.itemName} numberOfLines={1} ellipsizeMode="tail">
             {item.name}
           </Text>
+   
         </View>
 
         {/* Price & Rating */}
@@ -313,11 +309,7 @@ const CartScreen = () => {
     onPress={() =>
       navigation.navigate('OrderSummaryScreen', {
         cartItems,
-        grandTotal,
-        subtotal,
-        gst,
-        deliveryFee,
-        packingFee,
+     
       })
     }>
     <Text style={styles.checkoutText}>Continue</Text>

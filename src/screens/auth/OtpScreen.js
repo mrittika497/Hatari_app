@@ -126,7 +126,7 @@ const OtpScreen = ({ route, navigation }) => {
 
         <ReusableBtn
           title="Verify"
-          style={[styles.verifyBtn, !isButtonActive && styles.verifyBtnDisabled]}
+          style={[ !isButtonActive && styles.verifyBtnDisabled]}
           onPress={handleVerify}
           disabled={!isButtonActive}
         />
@@ -194,16 +194,16 @@ const styles = StyleSheet.create({
     borderColor: Theme.colors.red,
   },
   verifyBtn: {
-    width: "100%",
-    paddingVertical: 15,
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: Theme.colors.red,
-    elevation: 3,
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    marginBottom: 15,
+    // width: "100%",
+    // paddingVertical: 15,
+    // borderRadius: 30,
+    // alignItems: "center",
+    // justifyContent: "center",
+    // backgroundColor: Theme.colors.red,
+    // elevation: 3,
+    // shadowOpacity: 0.15,
+    // shadowRadius: 6,
+    // marginBottom: 15,
   },
   verifyBtnDisabled: {
     backgroundColor: '#ccc',

@@ -191,7 +191,8 @@ const MapScreen = () => {
             />
             <View style={styles.addressSection}>
               <Text style={styles.sectionTitle}>🏠 {selectedType}</Text>
-              <Text style={styles.subAddress}>{location?.description || "No address selected"}</Text>
+               <Text style={styles.subAddress}>{location?.description || "No address selected"}</Text>
+
             </View>
 
             <View style={styles.bottomRow}>
@@ -208,6 +209,9 @@ const MapScreen = () => {
         onRequestClose={() => setSaveModalVisible(false)}
         location={location}
         addressDetails={addressDetails}
+        latitude={location?.latitude }
+        longitude={location?.longitude}
+
       />
     </SafeAreaView>
     </DashboardScreen>

@@ -18,6 +18,8 @@ import { useDispatch } from 'react-redux';
 const FoodDetailScreen = ({route}) => {
   const dispatch = useDispatch()
   const foodItemdata = route?.params?.foodItem;
+  console.log(foodItemdata,"---------------------foodItemdata123333333");
+  
   const navigation = useNavigation();
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);

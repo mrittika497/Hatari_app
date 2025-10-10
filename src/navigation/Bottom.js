@@ -5,11 +5,13 @@ import HomeScreen from '../screens/BottomScreen/HomeScreen';
 import ProfileScreen from '../screens/BottomScreen/ProfileScreen';
 import CartScreen from '../screens/BottomScreen/CartScreen';
 import MenuScreen from '../screens/BottomScreen/MenuScreen';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Tab = createBottomTabNavigator();
 
 const Bottom = () => {
   return (
+    // <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom']}> 
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarShowLabel: true,
@@ -19,7 +21,7 @@ const Bottom = () => {
           position: 'absolute',
           left: 10,
           right: 10,
-          bottom: 10, // 👈 makes it float a little above the screen edge
+          // bottom: "12%",
           backgroundColor: '#fff',
           borderTopLeftRadius: 20,
           borderTopRightRadius: 20,
@@ -55,7 +57,9 @@ const Bottom = () => {
       <Tab.Screen name="MenuScreen" component={MenuScreen} options={{ tabBarLabel: 'Menu' }} />
       <Tab.Screen name="ProfileScreen" component={ProfileScreen} options={{ tabBarLabel: 'Profile' }} />
     </Tab.Navigator>
+    // </SafeAreaView>
   );
 };
 
 export default Bottom;
+
