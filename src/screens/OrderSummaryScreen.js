@@ -1,4 +1,3 @@
-// src/screens/OrderSummaryScreen.js
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -16,27 +15,26 @@ import DashboardScreen from '../components/DashboardScreen';
 import CustomHeader from '../components/CustomHeader';
 import Theme from '../assets/theme';
 import { fetchDeliverySettings } from '../redux/slice/deliverySettingsSlice';
+import LinearGradient from 'react-native-linear-gradient';
+import { fetchCoupons } from '../redux/slice/couponSlice';
 
 const OrderSummaryScreen = ({ navigation }) => {
   const dispatch = useDispatch();
+  const couponState = useSelector(state => state.coupons);
+  const couponList = couponState?.list || [];
 
-  const { data, loading, error } = useSelector(
-    state => state.deliverySettings
-  );
-    const { experienceType} = useSelector(
-      state => state.experience,
-    );
-    console.log(experienceType, '--------------go90998sselectedRest')
+  const [selectedCoupon, setSelectedCoupon] = useState(null);
 
   useEffect(() => {
+    dispatch(fetchCoupons());
     dispatch(fetchDeliverySettings());
   }, [dispatch]);
 
-  const [codModalVisible, setCodModalVisible] = useState(false);
+  const { data } = useSelector(state => state.deliverySettings);
   const { items: cartItems } = useSelector(state => state.cart);
   const savedAddress = useSelector(state => state.address.savedAddress);
 
-  // Calculate packing fee dynamically from cart items
+  // Calculate packing fee dynamically
   const packingFee = cartItems.reduce(
     (sum, item) => sum + (item.packagingCharges || 0),
     0
@@ -48,14 +46,25 @@ const OrderSummaryScreen = ({ navigation }) => {
     0
   );
 
-  // Discount (existing logic)
-  // const discount = cartItems.length > 0 ? 50 : 0;
+  // Coupon discount
+  let discount = 0;
+  if (selectedCoupon) {
+    if (selectedCoupon.discountType === 'percentage') {
+      discount = (itemTotal * selectedCoupon.discountValue) / 100;
+    } else {
+      discount = selectedCoupon.discountValue;
+    }
+    // Optional: enforce min order amount
+    if (itemTotal < selectedCoupon.minOrderAmount) {
+      discount = 0;
+    }
+  }
 
   // Taxes
   const cgstAmt = data?.Cgst ? (itemTotal * parseFloat(data.Cgst)) / 100 : 0;
   const sgstAmt = data?.Sgst ? (itemTotal * parseFloat(data.Sgst)) / 100 : 0;
 
-  // Convenience charges (dynamic from API)
+  // Convenience charges
   let convenienceAmt = 0;
   if (data?.convenience_charges_type === 'percentage') {
     convenienceAmt = (itemTotal * data.convenience_charges_value) / 100;
@@ -63,14 +72,17 @@ const OrderSummaryScreen = ({ navigation }) => {
     convenienceAmt = data.convenience_charges_value || 0;
   }
 
-  // Grand Total
+  // Grand Total after discount
   const grandTotal =
     itemTotal +
     (data?.delivery_charges_value || 0) +
     packingFee +
     cgstAmt +
     sgstAmt +
-    convenienceAmt 
+    convenienceAmt -
+    discount;
+
+  const [codModalVisible, setCodModalVisible] = useState(false);
 
   // Proceed to COD
   const handleProceed = () => {
@@ -90,10 +102,15 @@ const OrderSummaryScreen = ({ navigation }) => {
     navigation.navigate('OrderSuccessScreen');
   };
 
+  // Apply coupon
+  const applyCoupon = coupon => {
+    setSelectedCoupon(coupon);
+    Alert.alert('Coupon Applied', `${coupon.code} applied successfully!`);
+  };
+
   return (
     <DashboardScreen>
       <CustomHeader title="Order Summary" />
-
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
         {/* Address Section */}
         {savedAddress ? (
@@ -125,13 +142,43 @@ const OrderSummaryScreen = ({ navigation }) => {
           </TouchableOpacity>
         )}
 
+
+
+        {/* Coupons Section */}
+        {savedAddress &&
+          couponList.map(coupon => (
+            <View key={coupon._id} style={styles.sectionBox}>
+              <LinearGradient
+                colors={['#FF8C00', '#FFA500']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.card}
+              >
+                <View style={styles.leftSection}>
+                  <Text style={styles.title}>{coupon.description}</Text>
+                  <Text style={styles.expiry}>
+                    {new Date(coupon.expiry).toLocaleDateString()}
+                  </Text>
+                </View>
+
+                <View style={styles.rightSection}>
+                  <Text style={styles.code}>{coupon.code}</Text>
+                  <TouchableOpacity
+                    style={styles.applyBtn}
+                    onPress={() => applyCoupon(coupon)}
+                  >
+                    <Text style={styles.applyText}>APPLY</Text>
+                  </TouchableOpacity>
+                </View>
+              </LinearGradient>
+            </View>
+          ))}
+
         {/* Cart Items Section */}
         <View style={styles.sectionBox}>
           <Text style={styles.sectionTitle}>Your Items</Text>
           {cartItems.length === 0 ? (
-            <Text style={{ color: '#777', marginTop: 8 }}>
-              Your cart is empty
-            </Text>
+            <Text style={{ color: '#777', marginTop: 8 }}>Your cart is empty</Text>
           ) : (
             cartItems.map(item => (
               <View key={item._id} style={styles.itemRow}>
@@ -148,9 +195,7 @@ const OrderSummaryScreen = ({ navigation }) => {
                   ) : null}
                 </View>
                 {savedAddress && (
-                  <Text style={styles.itemQty}>
-                    ₹{item.price * item.quantity}
-                  </Text>
+                  <Text style={styles.itemQty}>₹{item.price * item.quantity}</Text>
                 )}
               </View>
             ))
@@ -196,13 +241,25 @@ const OrderSummaryScreen = ({ navigation }) => {
             {convenienceAmt > 0 && (
               <View style={styles.billRow}>
                 <Text style={styles.billLabel}>
-                  Convenience Charges ({data.convenience_charges_type === 'percentage' ? `${data.convenience_charges_value}%` : 'Flat'})
+                  Convenience Charges (
+                  {data.convenience_charges_type === 'percentage'
+                    ? `${data.convenience_charges_value}%`
+                    : 'Flat'}
+                  )
                 </Text>
                 <Text style={styles.billValue}>{convenienceAmt.toFixed(2)}</Text>
               </View>
             )}
 
-     
+            {/* Coupon Discount */}
+            {selectedCoupon && (
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>
+                  Coupon Discount ({selectedCoupon.code})
+                </Text>
+                <Text style={styles.billValue}>-₹{discount.toFixed(2)}</Text>
+              </View>
+            )}
 
             <View style={styles.divider} />
 
@@ -212,6 +269,7 @@ const OrderSummaryScreen = ({ navigation }) => {
             </View>
           </View>
         )}
+
       </ScrollView>
 
       {/* Bottom Bar */}
@@ -251,10 +309,7 @@ const OrderSummaryScreen = ({ navigation }) => {
               You will pay ₹{grandTotal.toFixed(2)} when the order is delivered.
             </Text>
 
-            <TouchableOpacity
-              style={styles.modalBtn}
-              onPress={handleConfirmCOD}
-            >
+            <TouchableOpacity style={styles.modalBtn} onPress={handleConfirmCOD}>
               <Text style={styles.modalBtnText}>Confirm Order</Text>
             </TouchableOpacity>
 
@@ -309,4 +364,55 @@ const styles = StyleSheet.create({
   modalText: { fontSize: 14, color: '#555', textAlign: 'center', marginBottom: 20 },
   modalBtn: { backgroundColor: Theme.colors.red, paddingVertical: 12, paddingHorizontal: 25, borderRadius: 25 },
   modalBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+
+card: {
+    flexDirection: 'row',
+    padding: 15,
+    borderRadius: 15,
+    width: '100%',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    elevation: 3,
+  },
+  leftSection: {
+    flex: 2,
+  },
+  rightSection: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  title: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  expiry: {
+    color: '#fff',
+    marginTop: 5,
+    fontSize: 12,
+  },
+  code: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  applyBtn: {
+    backgroundColor: '#fff',
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  applyText: {
+    color: '#FF8C00',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  dashedSeparator: {
+    borderBottomWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#FFA500',
+    width: '85%',
+    marginTop: -5,
+  },
 });

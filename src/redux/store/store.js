@@ -13,8 +13,9 @@ import catItemReducer from '../slice/catItemSlice';
 import menucuisineTypeReducer from '../slice/menucuisineTypeSlice';
 import experienceReducer from '../slice/experienceSlice';
 import SearchFoodPaginationReducer from '../slice/SearchFoodPaginationSlice';
-import deliverySettingsReducer from "../slice/deliverySettingsSlice"
- import TableBookingRducer from "../slice/TableBookingSlice"
+import deliverySettingsReducer from "../slice/deliverySettingsSlice";
+ import TableBookingRducer from "../slice/TableBookingSlice";
+ import couponReducer from '../slice/couponSlice'
 const store = configureStore({
   reducer: {
     home: HomeReducer,
@@ -32,7 +33,8 @@ const store = configureStore({
     experience: experienceReducer,
     FoodPagination: SearchFoodPaginationReducer,
     deliverySettings: deliverySettingsReducer,
-    tableBooking:TableBookingRducer
+    tableBooking:TableBookingRducer,
+    coupons:couponReducer
   },
 });
 

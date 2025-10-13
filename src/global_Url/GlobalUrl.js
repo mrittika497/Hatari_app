@@ -15,6 +15,7 @@ export const API = {
   getfoodpagination :`${BASE_URL}food/foods`,
   addAddressPost:`${BASE_URL}users/addAddress`,
   deliverySettings :`${BASE_URL}setting/deliverySettings`,
-  tableBooking :`${BASE_URL}booking`
+  tableBooking :`${BASE_URL}booking`,
+  coupon :`${BASE_URL}coupon`
 
 };
