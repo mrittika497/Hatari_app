@@ -18,5 +18,6 @@ export const API = {
   tableBooking :`${BASE_URL}booking`,
   coupon :`${BASE_URL}coupon`,
   billing:`${BASE_URL}billing/create`,
+  getfoodOrder :`${BASE_URL}billing`
 
 };

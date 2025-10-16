@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   Modal,
+  ToastAndroid,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useDispatch, useSelector} from 'react-redux';
@@ -87,6 +88,7 @@ const OrderSummaryScreen = ({navigation}) => {
       sum + (Number(item.price) || 0) * (Number(item.quantity) || 1),
     0,
   );
+
   const packingFee = cartItems.reduce(
     (sum, item) => sum + (Number(item.packagingCharges) || 0),
     0,
@@ -126,22 +128,35 @@ const OrderSummaryScreen = ({navigation}) => {
     discount;
 
   // Apply coupon
-  const applyCoupon = coupon => {
-    setSelectedCoupon(coupon);
-    Alert.alert('Coupon Applied', `${coupon.code} applied successfully!`);
-  };
+const applyCoupon = (coupon) => {
+  // Check minimum order condition (e.g., ₹500)
+  if (itemTotal < 500) {
+    ToastAndroid.show(
+      'Order must be ₹500 or more to apply a coupon!',
+      ToastAndroid.LONG
+    );
+    return;
+  }
 
-  // Proceed to COD
-  const handleProceed = () => {
-    if (!savedAddress) {
-      Alert.alert(
-        'Add Address',
-        'Please add a delivery address before proceeding.',
-      );
-      return;
-    }
-    setCodModalVisible(true);
-  };
+  setSelectedCoupon(coupon);
+  ToastAndroid.show(
+    `${coupon.code} applied successfully!`,
+    ToastAndroid.SHORT
+  );
+};
+
+// Proceed to COD
+const handleProceed = () => {
+  if (!savedAddress) {
+    ToastAndroid.show(
+      'Please add a delivery address before proceeding.',
+      ToastAndroid.LONG
+    );
+    return;
+  }
+
+  setCodModalVisible(true);
+};
 
   // Confirm COD
   const handleConfirmCOD = async () => {
@@ -177,13 +192,16 @@ const OrderSummaryScreen = ({navigation}) => {
       grossAmount: Number(grandTotal) || 0,
       convenienceCharges: Number(convenienceAmt) || 0,
       otherCharges: Number(packingFee) || 0,
-      CGST: Number(data?.Cgst) || 0,
-      SGST: Number(data?.Sgst) || 0,
+      CGST: Number(cgstAmt.toFixed(2)) || 0,
+      SGST: Number(sgstAmt.toFixed(2)) || 0,
       couponCode: selectedCoupon?.code || null,
       paymentStatus: 'Pending',
     };
 
-    console.log('Billing Data Sent:', billingData);
+    console.log(
+      '-------------------------------Billing Data Sent:',
+      billingData,
+    );
 
     try {
       // Use unwrap() to get payload directly or throw error
@@ -191,27 +209,25 @@ const OrderSummaryScreen = ({navigation}) => {
       console.log('Billing API Response:', response);
 
       setCodModalVisible(false);
-      Alert.alert(
-        'Order Placed',
-        response?.message || 'Your order has been placed successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('OrderSuccessScreen'),
-          },
-        ],
-      );
+       ToastAndroid.show(
+    response?.message || 'Your order has been placed successfully!',
+    ToastAndroid.LONG
+  );
+    setTimeout(() => {
+    navigation.navigate('OrderSuccessScreen');
+  }, 1000);
+
     } catch (error) {
       console.log('Billing Failed:', error);
-      Alert.alert(
-        'Error',
-        error?.message || 'Failed to place order. Please try again.',
-      );
+    ToastAndroid.show(
+    error?.message || 'Failed to place order. Please try again.',
+    ToastAndroid.LONG
+  );
     }
   };
 
   return (
-    <DashboardScreen>
+    <DashboardScreen >
       <CustomHeader title="Order Summary" />
       <ScrollView contentContainerStyle={{paddingBottom: 120}}>
         {/* Address Section */}
@@ -219,7 +235,7 @@ const OrderSummaryScreen = ({navigation}) => {
           <View style={styles.addressCard}>
             <View style={{flex: 1}}>
               <Text style={styles.addrName}>
-                {savedAddress.name} ({savedAddress.type})
+                {savedAddress.name} ({experienceType})
               </Text>
               <Text style={styles.addrDetails}>
                 {savedAddress.flat},{' '}
@@ -244,38 +260,57 @@ const OrderSummaryScreen = ({navigation}) => {
 
         {/* Coupons */}
         {savedAddress &&
-          couponList.map(coupon => (
-            <View key={coupon._id} style={styles.sectionBox}>
-              <LinearGradient
-                colors={['#FF8C00', '#FFA500']}
-                start={{x: 0, y: 0}}
-                end={{x: 1, y: 0}}
-                style={styles.card}>
-                <View style={styles.leftSection}>
-                  <Text style={styles.title}>{coupon.description}</Text>
-                  <Text style={styles.expiry}>
-                    {new Date(coupon.expiry).toLocaleDateString()}
-                  </Text>
-                </View>
-                <View style={styles.rightSection}>
-                  <Text style={styles.code}>{coupon.code}</Text>
-                  <TouchableOpacity
-                    style={[
-                      styles.applyBtn,
-                      selectedCoupon?._id === coupon._id && {
-                        backgroundColor: '#ccc',
-                      },
-                    ]}
-                    onPress={() => applyCoupon(coupon)}
-                    disabled={selectedCoupon?._id === coupon._id}>
-                    <Text style={styles.applyText}>
-                      {selectedCoupon?._id === coupon._id ? 'APPLIED' : 'APPLY'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </LinearGradient>
-            </View>
-          ))}
+
+       couponList.map(coupon => (
+  <View key={coupon._id} style={styles.sectionBox}>
+    <LinearGradient
+      colors={
+        selectedCoupon?._id === coupon._id
+          ? ['#f50606e6', '#c16280ff']
+          : ['#FF8C00', '#FFA500']
+      }
+      start={{x: 0, y: 0}}
+      end={{x: 1, y: 0}}
+      style={styles.card}>
+      <View style={styles.leftSection}>
+        <View style={styles.iconBox}>
+          <Text style={styles.giftIcon}>🎁</Text>
+        </View>
+        <View style={{flex: 1}}>
+          <Text style={styles.title}>{coupon.description}</Text>
+          <Text style={styles.detailText}>
+            Min Order: ₹{coupon?.minOrderAmount}
+          </Text>
+          <Text style={styles.detailText}>
+            Discount: ₹{coupon?.discountValue}
+          </Text>
+          <Text style={styles.expiry}>
+            Expiry: {new Date(coupon.expiry).toLocaleDateString()}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.rightSection}>
+        <View style={styles.codeBox}>
+          <Text style={styles.codeText}>{coupon.code}</Text>
+        </View>
+        <TouchableOpacity
+          style={[
+            styles.applyBtn,
+            selectedCoupon?._id === coupon._id && styles.appliedBtn,
+          ]}
+          onPress={() => applyCoupon(coupon)}
+          disabled={selectedCoupon?._id === coupon._id}>
+          <Text style={styles.applyText}>
+            {selectedCoupon?._id === coupon._id ? 'APPLIED' : 'APPLY'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </LinearGradient>
+  </View>
+))
+          
+          }
 
         {/* Cart Items */}
         <View style={styles.sectionBox}>
@@ -317,12 +352,14 @@ const OrderSummaryScreen = ({navigation}) => {
               <Text style={styles.billLabel}>Item Total</Text>
               <Text style={styles.billValue}>₹{itemTotal.toFixed(2)}</Text>
             </View>
+        { experienceType === 'Delivery' && (
             <View style={styles.billRow}>
               <Text style={styles.billLabel}>Delivery Fee</Text>
               <Text style={styles.billValue}>
                 ₹{(data?.delivery_charges_value || 0).toFixed(2)}
               </Text>
             </View>
+        )}
             <View style={styles.billRow}>
               <Text style={styles.billLabel}>Packing Fee</Text>
               <Text style={styles.billValue}>₹{packingFee.toFixed(2)}</Text>

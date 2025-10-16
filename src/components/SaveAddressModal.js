@@ -11,6 +11,7 @@ import {
   Alert,
   Dimensions,
   Platform,
+  ToastAndroid,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Theme from "../assets/theme";
@@ -38,6 +39,10 @@ const SaveAddressModal = ({
   const dispatch = useDispatch();
 
   const { data } = useSelector((state) => state.deliverySettings);
+  console.log(data,"--------------------------------datamapaddres---12337777");
+    const savedAddress = useSelector(state => state.address.savedAddress);
+    console.log(savedAddress,"--------------------------postaddress");
+    
   const storeDeliverySettingId = async (id) => {
     try {
       await AsyncStorage.setItem('deliverySettingId', id);
@@ -100,10 +105,10 @@ const SaveAddressModal = ({
     const distance = getDistanceKm(latitude, longitude, restaurantLat, restaurantLng);
 
     if (distance > minDistance) {
-      Alert.alert(
-        "Outside Delivery Range",
-        `Your location is ${distance.toFixed(2)} km away.\nDelivery available only within ${minDistance} km.`
-      );
+   ToastAndroid.show(
+  `Your location is ${distance.toFixed(2)} km away. Delivery available only within ${minDistance} km.`,
+  ToastAndroid.LONG
+);
       return;
     }
 

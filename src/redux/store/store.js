@@ -16,7 +16,8 @@ import SearchFoodPaginationReducer from '../slice/SearchFoodPaginationSlice';
 import deliverySettingsReducer from "../slice/deliverySettingsSlice";
  import TableBookingRducer from "../slice/TableBookingSlice";
  import postBillingReducer from '../slice/postBillingSlice';
- import couponReducer from '../slice/couponSlice'
+ import couponReducer from '../slice/couponSlice';
+ import getFoodOrderReducer from '../slice/getfoodorderSlice';
 const store = configureStore({
   reducer: {
     home: HomeReducer,
@@ -36,7 +37,8 @@ const store = configureStore({
     deliverySettings: deliverySettingsReducer,
     tableBooking:TableBookingRducer,
     coupons:couponReducer,
-    billing:postBillingReducer
+    billing:postBillingReducer,
+    foodOrder:getFoodOrderReducer
   },
 });
 
