@@ -16,6 +16,7 @@ import DashboardScreen from '../components/DashboardScreen';
 import CustomHeader from '../components/CustomHeader';
 import SmallbtnReuseable from '../components/SmallbtnReuseable';
 import {fetchCategoryFoods} from '../redux/slice/catItemSlice';
+import Theme from '../assets/theme';
 
 const {width} = Dimensions.get('window');
 
@@ -98,7 +99,7 @@ const CatItemScreen = () => {
               style={{
                 marginLeft: 10,
                 color: 'black',
-                fontSize: 13,
+                fontSize: Theme.fontSizes.small,
                 fontWeight: '500',
               }}>
               {food.cuisineType?.[0] || 'Indian'}
@@ -186,7 +187,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   header: {
-    fontSize: 16,
+    fontSize: Theme.fontSizes.smedium,
     fontWeight: '600',
     marginVertical: 10,
     color: '#000',
@@ -214,13 +215,13 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   name: {
-    fontSize: 14,
+    fontSize: Theme.fontSizes.small,
     fontWeight: '600',
     marginLeft: 5,
     color: '#000',
   },
   price: {
-    fontSize: 14,
+    fontSize: Theme.fontSizes.small,
     color: '#000',
     marginVertical: 4,
     fontWeight: '500',

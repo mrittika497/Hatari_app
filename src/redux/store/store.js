@@ -15,6 +15,7 @@ import experienceReducer from '../slice/experienceSlice';
 import SearchFoodPaginationReducer from '../slice/SearchFoodPaginationSlice';
 import deliverySettingsReducer from "../slice/deliverySettingsSlice";
  import TableBookingRducer from "../slice/TableBookingSlice";
+ import postBillingReducer from '../slice/postBillingSlice';
  import couponReducer from '../slice/couponSlice'
 const store = configureStore({
   reducer: {
@@ -34,7 +35,8 @@ const store = configureStore({
     FoodPagination: SearchFoodPaginationReducer,
     deliverySettings: deliverySettingsReducer,
     tableBooking:TableBookingRducer,
-    coupons:couponReducer
+    coupons:couponReducer,
+    billing:postBillingReducer
   },
 });
 

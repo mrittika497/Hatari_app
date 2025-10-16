@@ -14,7 +14,7 @@ const OrderSuccessScreen = ({ navigation }) => {
   // Auto-navigate to Home after 3 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigation.navigate("OrderSummary");
+      navigation.navigate("ItemDetalis");
     }, 3000); // 3000ms = 3 seconds
 
     // Clear timer if the component unmounts before timeout

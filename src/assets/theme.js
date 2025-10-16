@@ -1,3 +1,25 @@
+// Theme.js
+import { Dimensions, PixelRatio } from 'react-native';
+
+// Get screen dimensions
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// Base width to scale fonts (based on iPhone 8)
+const BASE_WIDTH = 375;
+
+// Function to scale fonts
+const responsiveFont = (size) => {
+  const newSize = size * (SCREEN_WIDTH / BASE_WIDTH);
+  return Math.round(PixelRatio.roundToNearestPixel(newSize));
+};
+
+// Function to scale spacing if needed
+const responsiveSpacing = (size) => {
+  const newSize = size * (SCREEN_WIDTH / BASE_WIDTH);
+  return Math.round(PixelRatio.roundToNearestPixel(newSize));
+};
+
+// Colors
 const Colors = {
   primary: '#515151',
   secondary: '#FD9D56',
@@ -17,26 +39,28 @@ const Colors = {
   projectbase: '#FD9D56',
   btncolor: '#FD9D56',
   v1_light_gray: '#ccc',
-  whiteddd:"#ddd",
-  whitefff:"#fff",
-  blackshadow:"#000",
-  red:"rgba(245, 12, 54, 1)",
-   green: "rgba(34, 197, 94, 1)" 
+  whiteddd: '#ddd',
+  whitefff: '#fff',
+  blackshadow: '#000',
+  red: 'rgba(245, 12, 54, 1)',
+  green: 'rgba(34, 197, 94, 1)',
 };
 
+// Font sizes (responsive)
 const FontSizes = {
-  tiny: 10,
-  xs: 12,
-  small: 14,
-  smedium: 16,
-  medium: 18,
-  lmedium: 20,
-  large: 22,
-  xlarge: 24,
-  xxlarge: 26,
-  huge: 30,
+  xxs : responsiveFont(10),
+  xs: responsiveFont(12),
+  small: responsiveFont(14),
+  smedium: responsiveFont(16),
+  medium: responsiveFont(18),
+  lmedium: responsiveFont(20),
+  large: responsiveFont(22),
+  xlarge: responsiveFont(24),
+  xxlarge: responsiveFont(26),
+  huge: responsiveFont(30),
 };
 
+// Fonts
 const Fonts = {
   Light: 'Inter_18pt-Light',
   regular: 'Inter_18pt-Regular',
@@ -46,19 +70,23 @@ const Fonts = {
   ExtraBold: 'Inter_18pt-ExtraBold',
 };
 
+// Spacing (responsive)
 const Spacing = {
-  tiny: 4,
-  small: 8,
-  medium: 16,
-  large: 24,
-  xlarge: 32,
+  tiny: responsiveSpacing(4),
+  small: responsiveSpacing(8),
+  medium: responsiveSpacing(16),
+  large: responsiveSpacing(24),
+  xlarge: responsiveSpacing(32),
 };
 
+// Theme export
 const Theme = {
   colors: Colors,
   fontSizes: FontSizes,
   fonts: Fonts,
   spacing: Spacing,
+  responsiveFont,
+  responsiveSpacing,
 };
 
 export default Theme;

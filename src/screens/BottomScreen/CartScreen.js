@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
+  SafeAreaView,
 } from 'react-native';
 import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
 import LinearGradient from 'react-native-linear-gradient';
@@ -19,6 +20,7 @@ import {useNavigation} from '@react-navigation/native';
 import {useSelector, useDispatch} from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import DashboardScreen from '../../components/DashboardScreen';
 import CustomHeader from '../../components/CustomHeader';
@@ -31,71 +33,41 @@ import {
 } from '../../redux/slice/cartSlice';
 import {postCustomizedFood} from '../../redux/slice/CustomizeSlice';
 
-const {width} = Dimensions.get('window');
+const {width, height} = Dimensions.get('window');
 
 const CartScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const {items: cartItems} = useSelector(state => state.cart);
-  // const data = useSelector(state => state.foodCustomization);
-  // console.log(data, '------------------data111111');
-
   const [loading, setLoading] = useState(false);
-
-  // Modal state
   const [selectedItem, setSelectedItem] = useState(null);
-  console.log(selectedItem, '--------------selectedItem');
-
   const [noteText, setNoteText] = useState('');
-
-  // Totals
-
-
-
+  const insets = useSafeAreaInsets();
 
   const formatCurrency = amount => `₹${amount.toLocaleString('en-IN')}`;
 
-  // Redux functions
   const incrementQty = (id, currentQty) => {
     dispatch(updateQuantity({id, quantity: currentQty + 1}));
   };
-
   const decrementQty = (id, currentQty) => {
-    dispatch(
-      updateQuantity({id, quantity: currentQty > 1 ? currentQty - 1 : 1}),
-    );
+    dispatch(updateQuantity({id, quantity: currentQty > 1 ? currentQty - 1 : 1}));
   };
-
   const deleteItem = id => {
     dispatch(removeFromCart(id));
   };
 
-  // Note modal
   const openModal = item => {
     setSelectedItem(item);
     setNoteText(item.note || '');
   };
-
   const closeModal = () => {
     setSelectedItem(null);
     setNoteText('');
   };
 
-  //  const handleSaveNote = async () => {
-  //   if (!selectedItem) return;
-
-  //   // Update note locally in Redux cart slice
-  // dispatch(postCustomizedFood({
-  //   id: selectedItem._id, note: noteText ,quantity :selectedItem.quantity
-  // }))
-
-  //   closeModal();
-  // };
-
   const handleSaveNote = async () => {
     if (selectedItem) {
       dispatch(updateNote({id: selectedItem._id, note: noteText}));
-
       const resultAction = await dispatch(
         postCustomizedFood({
           food: selectedItem._id,
@@ -103,25 +75,19 @@ const CartScreen = () => {
           note: noteText,
         }),
       );
-
       if (postCustomizedFood.fulfilled.match(resultAction)) {
-        console.log(resultAction.payload, '✅ Saved customization response');
         alert('Customization saved!');
       } else {
-        console.log(resultAction.payload, '❌ Failed to save');
         alert('Failed to save customization');
       }
     }
-
     closeModal();
   };
 
   const renderItem = ({item}) => (
     <View style={styles.itemCard}>
       <Image source={{uri: item.image}} style={styles.itemImage} />
-
       <View style={styles.detailsContainer}>
-        {/* Header */}
         <View style={styles.itemHeader}>
           <View
             style={[
@@ -135,13 +101,11 @@ const CartScreen = () => {
               ]}
             />
           </View>
-          <Text style={styles.itemName} numberOfLines={1} ellipsizeMode="tail">
+          <Text style={styles.itemName} numberOfLines={1}>
             {item.name}
           </Text>
-   
         </View>
 
-        {/* Price & Rating */}
         <Text style={styles.itemPrice}>
           {formatCurrency(item.price * item.quantity)}
         </Text>
@@ -149,24 +113,18 @@ const CartScreen = () => {
           <Text style={styles.ratingText}>★ {item?.rating}</Text>
         </View>
 
-        {/* Actions */}
         <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={styles.customizeBtn}
-            onPress={() => openModal(item)}>
+          <TouchableOpacity style={styles.customizeBtn} onPress={() => openModal(item)}>
             <Icon name="pencil" size={16} color={Theme.colors.red} />
             <Text style={styles.customizeText}>Customize</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.deleteBtn}
-            onPress={() => deleteItem(item._id)}>
+          <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteItem(item._id)}>
             <Ionicons name="trash-outline" size={18} color="red" />
             <Text style={styles.deleteText}>Remove</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Note */}
         {item.note ? (
           <View style={styles.noteTag}>
             <Text style={styles.noteText}>📝 {item.note}</Text>
@@ -174,7 +132,6 @@ const CartScreen = () => {
         ) : null}
       </View>
 
-      {/* Quantity */}
       <View style={styles.quantityBox}>
         <TouchableOpacity
           style={styles.qtyBtn}
@@ -191,147 +148,84 @@ const CartScreen = () => {
     </View>
   );
 
-  const renderSkeleton = () => (
-    <View style={styles.itemCard}>
-      <ShimmerPlaceHolder
-        LinearGradient={LinearGradient}
-        style={{width: 70, height: 70, borderRadius: 8}}
-      />
-      <View style={{flex: 1, marginLeft: 12}}>
-        <ShimmerPlaceHolder
-          LinearGradient={LinearGradient}
-          style={{
-            width: width * 0.5,
-            height: 14,
-            borderRadius: 4,
-            marginBottom: 6,
-          }}
-        />
-        <ShimmerPlaceHolder
-          LinearGradient={LinearGradient}
-          style={{width: width * 0.3, height: 14, borderRadius: 4}}
-        />
-      </View>
-    </View>
-  );
-
   return (
     <DashboardScreen scrollable={false}>
       <CustomHeader title="My Cart" />
 
-      <KeyboardAvoidingView
-        style={{flex: 1}}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        {/* Add More Items */}
-        <TouchableOpacity
-          style={styles.addMore}
-          onPress={() => navigation.navigate('HomeScreen')}>
-          <Text style={{color: Theme.colors.red, fontWeight: '600'}}>
-            + Add more Items
-          </Text>
-        </TouchableOpacity>
+      <SafeAreaView style={{flex: 1}}>
+        <KeyboardAvoidingView
+          style={{flex: 1}}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <TouchableOpacity
+            style={styles.addMore}
+            onPress={() => navigation.navigate('HomeScreen')}>
+            <Text style={{color: Theme.colors.red, fontWeight: '600'}}>
+              + Add more Items
+            </Text>
+          </TouchableOpacity>
 
-        <View style={styles.container}>
-          {loading ? (
-            Array.from({length: 3}).map((_, i) => (
-              <View key={i}>{renderSkeleton()}</View>
-            ))
-          ) : cartItems.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Image
-                source={{
-                  uri: 'https://cdn-icons-png.flaticon.com/512/2038/2038854.png',
-                }}
-                style={{width: 120, height: 120, marginBottom: 10}}
-              />
-              <Text style={styles.emptyText}>Your cart is empty</Text>
-              <TouchableOpacity
-                style={styles.browseBtn}
-                onPress={() => navigation.navigate('HomeScreen')}>
-                <Text style={styles.browseText}>Browse Menu</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <>
-              <FlatList
-                data={cartItems}
-                keyExtractor={item => item._id}
-                renderItem={renderItem}
-                contentContainerStyle={{paddingBottom: 50}}
-              />
-
-              {/* <View style={styles.billContainer}>
-                <Text style={styles.billTitle}>Bill Details</Text>
-
-                <View style={styles.billRow}>
-                  <Text style={styles.billLabel}>Subtotal</Text>
-                  <Text style={styles.billValue}>
-                    {formatCurrency(subtotal)}
-                  </Text>
+          <View style={styles.container}>
+            {loading ? (
+              Array.from({length: 3}).map((_, i) => (
+                <View key={i} style={{marginVertical: 8}}>
+                  <ShimmerPlaceHolder
+                    LinearGradient={LinearGradient}
+                    style={{width: width * 0.9, height: 80, borderRadius: 8}}
+                  />
                 </View>
-                <View style={styles.billRow}>
-                  <Text style={styles.billLabel}>GST (5%)</Text>
-                  <Text style={styles.billValue}>{formatCurrency(gst)}</Text>
+              ))
+            ) : cartItems.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Image
+                  source={{
+                    uri: 'https://cdn-icons-png.flaticon.com/512/2038/2038854.png',
+                  }}
+                  style={{width: width * 0.35, height: width * 0.35, marginBottom: 10}}
+                />
+                <Text style={styles.emptyText}>Your cart is empty</Text>
+                <TouchableOpacity
+                  style={styles.browseBtn}
+                  onPress={() => navigation.navigate('HomeScreen')}>
+                  <Text style={styles.browseText}>Browse Menu</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <>
+                <FlatList
+                  data={cartItems}
+                  keyExtractor={item => item._id}
+                  renderItem={renderItem}
+                  contentContainerStyle={{paddingBottom: height * 0.15}}
+                  showsVerticalScrollIndicator={false}
+                />
+
+                {/* ✅ Fixed Responsive Bottom Bar */}
+                <View style={[styles.bottomBar, {paddingBottom: insets.bottom || 16}]}>
+                  <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+                    <Text style={{fontSize: width * 0.035, color: '#555', textAlign: 'center'}}>
+                      🛒 Oops! Your cart is lonely. Tap "Continue" to see all the goodies!
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.checkoutBtn}
+                    onPress={() =>
+                      navigation.navigate('OrderSummaryScreen', {cartItems})
+                    }>
+                    <Text style={styles.checkoutText}>Continue</Text>
+                  </TouchableOpacity>
                 </View>
-                <View style={styles.billRow}>
-                  <Text style={styles.billLabel}>Delivery Fee</Text>
-                  <Text style={styles.billValue}>
-                    {formatCurrency(deliveryFee)}
-                  </Text>
-                </View>
-                <View style={styles.billRow}>
-                  <Text style={styles.billLabel}>Packing Fee</Text>
-                  <Text style={styles.billValue}>
-                    {formatCurrency(packingFee)}
-                  </Text>
-                </View>
+              </>
+            )}
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
 
-                <View style={styles.billDivider} />
-                <View style={styles.billRow}>
-                  <Text style={styles.billGrandLabel}>Grand Total</Text>
-                  <Text style={styles.billGrandValue}>
-                    {formatCurrency(grandTotal)}
-                  </Text>
-                </View>
-              </View> */}
-
-             <View style={styles.bottomBar}>
-  <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-
-      <Text style={{fontSize: 14, color: '#555', textAlign: 'center'}}>
-        🛒 Oops! Your cart is lonely. Tap "Continue" to see all the goodies! 
-      </Text>
-
-  </View>
-
-  <TouchableOpacity
-    style={styles.checkoutBtn}
-    onPress={() =>
-      navigation.navigate('OrderSummaryScreen', {
-        cartItems,
-     
-      })
-    }>
-    <Text style={styles.checkoutText}>Continue</Text>
-  </TouchableOpacity>
-</View>
-
-            </>
-          )}
-        </View>
-      </KeyboardAvoidingView>
-
-      {/* Modal */}
-      <Modal
-        visible={!!selectedItem}
-        animationType="slide"
-        transparent
-        onRequestClose={closeModal}>
+      {/* Note Modal */}
+      <Modal visible={!!selectedItem} animationType="slide" transparent onRequestClose={closeModal}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>
-              Edit Item: {selectedItem?.name}
-            </Text>
+            <Text style={styles.modalTitle}>Edit Item: {selectedItem?.name}</Text>
             <TextInput
               style={styles.modalInput}
               placeholder="Enter special note..."
@@ -345,11 +239,8 @@ const CartScreen = () => {
               <TouchableOpacity
                 style={[styles.modalBtn, {backgroundColor: '#ccc'}]}
                 onPress={closeModal}>
-                <Text style={[styles.modalBtnText, {color: '#333'}]}>
-                  Cancel
-                </Text>
+                <Text style={[styles.modalBtnText, {color: '#333'}]}>Cancel</Text>
               </TouchableOpacity>
-
               <TouchableOpacity
                 style={[styles.modalBtn, {backgroundColor: Theme.colors.red}]}
                 onPress={handleSaveNote}>
@@ -365,38 +256,33 @@ const CartScreen = () => {
 
 export default CartScreen;
 
-/* ==================== Styles ==================== */
 const styles = StyleSheet.create({
-  addMore: {alignSelf: 'flex-end', marginVertical: 12, marginRight: 15},
+  addMore: {alignSelf: 'flex-end', marginVertical: 10, marginRight: 15},
   container: {flex: 1, backgroundColor: '#fff'},
-
-  // Empty state
   emptyContainer: {flex: 1, justifyContent: 'center', alignItems: 'center'},
-  emptyText: {fontSize: 18, color: '#555', marginTop: 8, fontWeight: '600'},
+  emptyText: {fontSize: width * 0.045, color: '#555', fontWeight: '600'},
   browseBtn: {
     backgroundColor: Theme.colors.red,
     marginTop: 15,
-    paddingHorizontal: 20,
+    paddingHorizontal: width * 0.06,
     paddingVertical: 10,
     borderRadius: 25,
   },
   browseText: {color: '#fff', fontWeight: '600'},
-
-  // Item card
   itemCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     marginHorizontal: 12,
-    marginVertical: 8,
+    marginVertical: 6,
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 12,
     shadowColor: '#000',
     shadowOpacity: 0.08,
-    shadowRadius: 6,
+    shadowRadius: 4,
     elevation: 3,
   },
-  itemImage: {width: 75, height: 75, borderRadius: 10},
+  itemImage: {width: width * 0.18, height: width * 0.18, borderRadius: 10},
   detailsContainer: {flex: 1, marginLeft: 12},
   itemHeader: {flexDirection: 'row', alignItems: 'center', marginBottom: 6},
   typeIndicator: {
@@ -409,8 +295,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   typeDot: {width: 8, height: 8, borderRadius: 4},
-  itemName: {fontSize: 15, fontWeight: '700', color: '#333', flexShrink: 1},
-  itemPrice: {fontSize: 14, color: '#777', marginTop: 2},
+  itemName: {fontSize: width * 0.04, fontWeight: '700', color: '#333', flexShrink: 1},
+  itemPrice: {fontSize: width * 0.037, color: '#777', marginTop: 2},
   ratingWrapper: {
     backgroundColor: 'green',
     paddingHorizontal: 8,
@@ -419,7 +305,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginTop: 4,
   },
-  ratingText: {color: '#fff', fontSize: 10, fontWeight: '600'},
+  ratingText: {color: '#fff', fontSize: width * 0.03, fontWeight: '600'},
   noteTag: {
     marginTop: 6,
     backgroundColor: '#FFF6E5',
@@ -427,10 +313,9 @@ const styles = StyleSheet.create({
     borderLeftColor: '#FF9800',
     padding: 6,
     borderRadius: 6,
-    width: 220,
+    width: width * 0.55,
   },
-  noteText: {fontSize: 13, color: '#444'},
-
+  noteText: {fontSize: width * 0.035, color: '#444'},
   actionRow: {flexDirection: 'row', alignItems: 'center', marginTop: 8},
   customizeBtn: {
     flexDirection: 'row',
@@ -441,12 +326,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 10,
   },
-  customizeText: {
-    fontSize: 13,
-    color: Theme.colors.red,
-    fontWeight: '600',
-    marginLeft: 5,
-  },
+  customizeText: {fontSize: width * 0.032, color: Theme.colors.red, fontWeight: '600', marginLeft: 5},
   deleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -455,8 +335,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 20,
   },
-  deleteText: {fontSize: 13, color: 'red', fontWeight: '600', marginLeft: 5},
-
+  deleteText: {fontSize: width * 0.032, color: 'red', fontWeight: '600', marginLeft: 5},
   quantityBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -475,44 +354,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 2,
   },
-  qtyText: {fontSize: 18, fontWeight: 'bold', color: Theme.colors.red},
-  qtyValue: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginHorizontal: 8,
-    color: Theme.colors.black,
-  },
-
-  // Bill
-  billContainer: {
-    marginHorizontal: 12,
-    marginTop: 10,
-    padding: 15,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#eee',
-    elevation: 2,
-    marginBottom: 80,
-  },
-  billTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginBottom: 8,
-    color: '#333',
-  },
-  billRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 4,
-  },
-  billLabel: {fontSize: 14, color: '#666'},
-  billValue: {fontSize: 14, fontWeight: '600', color: '#000'},
-  billDivider: {borderTopWidth: 1, borderTopColor: '#ddd', marginVertical: 8},
-  billGrandLabel: {fontSize: 15, fontWeight: '700', color: '#000'},
-  billGrandValue: {fontSize: 16, fontWeight: '700', color: Theme.colors.red},
-
-  // Bottom
+  qtyText: {fontSize: width * 0.05, fontWeight: 'bold', color: Theme.colors.red},
+  qtyValue: {fontSize: width * 0.035, fontWeight: '600', marginHorizontal: 8, color: '#000'},
   bottomBar: {
     position: 'absolute',
     bottom: "10%",
@@ -524,20 +367,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderColor: '#eee',
-    padding: 12,
-    elevation: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    elevation: 12,
   },
-  bottomLabel: {fontSize: 14, color: '#333', fontWeight: '600'},
-  bottomAmount: {fontSize: 16, fontWeight: '700', color: Theme.colors.red},
   checkoutBtn: {
     backgroundColor: Theme.colors.red,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 25,
   },
-  checkoutText: {color: '#fff', fontWeight: '600', fontSize: 14},
-
-  // Modal
+  checkoutText: {color: '#fff', fontWeight: '600', fontSize: width * 0.038},
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -551,12 +391,7 @@ const styles = StyleSheet.create({
     padding: 20,
     elevation: 6,
   },
-  modalTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    marginBottom: 12,
-    color: Theme.colors.black,
-  },
+  modalTitle: {fontSize: width * 0.045, fontWeight: '700', marginBottom: 12, color: '#000'},
   modalInput: {
     backgroundColor: '#f8f8f8',
     borderRadius: 8,
@@ -566,16 +401,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#000',
   },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 15,
-  },
-  modalBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 6,
-    marginLeft: 10,
-  },
+  modalActions: {flexDirection: 'row', justifyContent: 'flex-end', marginTop: 15},
+  modalBtn: {paddingHorizontal: 16, paddingVertical: 10, borderRadius: 6, marginLeft: 10},
   modalBtnText: {color: '#fff', fontWeight: '600'},
 });

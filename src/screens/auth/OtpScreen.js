@@ -8,6 +8,8 @@ import {
   Platform,
   Alert,
   ToastAndroid,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -19,16 +21,41 @@ import {
 import DashboardScreen from '../../components/DashboardScreen';
 import Theme from '../../assets/theme';
 import ReusableBtn from '../../components/ReuseableBtn';
-import { sendOtp, verifyOtp } from '../../redux/slice/authSlice';
+import { sendOtp, verifyOtp, setAuth } from '../../redux/slice/authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setAuth } from '../../redux/slice/authSlice'; // ✅ make sure this exists
 
 const CELL_COUNT = 6;
+const { width } = Dimensions.get('window');
+const CELL_WIDTH = Math.min(60, (width - 80) / 8); // responsive cell width
 
 const OtpScreen = ({ route, navigation }) => {
   const phone = route?.params?.phone;
   const dispatch = useDispatch();
   const { token, user } = useSelector(state => state.auth);
+
+
+
+    useEffect(() => {
+    const storeUserId = async () => {
+      if (user?._id) {
+        try {
+          await AsyncStorage.setItem('userId', user._id);
+          console.log('✅ User ID saved:', user._id);
+        } catch (error) {
+          console.log('❌ Error saving user ID:', error);
+        }
+      }
+    };
+
+    storeUserId();
+  }, [user]);
+
+  const [value, setValue] = useState('');
+  const ref = useBlurOnFulfill({ value, cellCount: CELL_COUNT });
+  const [props, getCellOnLayoutHandler] = useClearByFocusCell({
+    value,
+    setValue,
+  });
 
   useEffect(() => {
     if (token && user) {
@@ -39,15 +66,8 @@ const OtpScreen = ({ route, navigation }) => {
     }
   }, [token, user]);
 
-  const [value, setValue] = useState('');
-  const ref = useBlurOnFulfill({ value, cellCount: CELL_COUNT });
-  const [props, getCellOnLayoutHandler] = useClearByFocusCell({
-    value,
-    setValue,
-  });
-
   const handleVerify = () => {
-    if (value.length !== 6) {
+    if (value.length !== CELL_COUNT) {
       Alert.alert('Invalid OTP', 'Please enter a valid 6-digit OTP');
       return;
     }
@@ -89,55 +109,60 @@ const OtpScreen = ({ route, navigation }) => {
   return (
     <DashboardScreen>
       <KeyboardAvoidingView
-        style={styles.container}
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0} // ✅ prevents overlap on iOS notch
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
       >
-        <Image
-          source={require('../../assets/images/project_logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-        <Text style={styles.tagline}>Chinese • Indian • Tandoor</Text>
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Image
+            source={require('../../assets/images/project_logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.tagline}>Chinese • Indian • Tandoor</Text>
 
-        <Text style={styles.instruction}>Enter 6 digit OTP</Text>
+          <Text style={styles.instruction}>Enter 6 digit OTP</Text>
 
-        <CodeField
-          ref={ref}
-          {...props}
-          value={value}
-          onChangeText={setValue}
-          cellCount={CELL_COUNT}
-          rootStyle={styles.codeFieldRoot}
-          keyboardType="number-pad"
-          textContentType="oneTimeCode"
-          renderCell={({ index, symbol, isFocused }) => (
-            <View
-              key={index}
-              style={[styles.cell, isFocused && styles.focusCell]}
-              onLayout={getCellOnLayoutHandler(index)}
-            >
-              <Text style={styles.cellText}>
-                {symbol || (isFocused ? <Cursor /> : null)}
-              </Text>
-            </View>
-          )}
-        />
+          <CodeField
+            ref={ref}
+            {...props}
+            value={value}
+            onChangeText={setValue}
+            cellCount={CELL_COUNT}
+            rootStyle={styles.codeFieldRoot}
+            keyboardType="number-pad"
+            textContentType="oneTimeCode"
+            renderCell={({ index, symbol, isFocused }) => (
+              <View
+                key={index}
+                style={[styles.cell, isFocused && styles.focusCell]}
+                onLayout={getCellOnLayoutHandler(index)}
+              >
+                <Text style={styles.cellText}>
+                  {symbol || (isFocused ? <Cursor /> : null)}
+                </Text>
+              </View>
+            )}
+          />
 
-        <ReusableBtn
-          title="Verify"
-          style={[ !isButtonActive && styles.verifyBtnDisabled]}
-          onPress={handleVerify}
-          disabled={!isButtonActive}
-        />
+          <ReusableBtn
+            title="Verify"
+            style={[isButtonActive ? styles.verifyBtn : styles.verifyBtnDisabled]}
+            onPress={handleVerify}
+            disabled={!isButtonActive}
+          />
 
-        <Text style={styles.resendText}>
-          Having any issue?
-          <Text style={styles.resendLink} onPress={handleResend}>
-            {' '}
-            Send again
+          <Text style={styles.resendText}>
+            Having any issue?
+            <Text style={styles.resendLink} onPress={handleResend}>
+              {' '}
+              Send again
+            </Text>
           </Text>
-        </Text>
+        </ScrollView>
       </KeyboardAvoidingView>
     </DashboardScreen>
   );
@@ -147,15 +172,15 @@ export default OtpScreen;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#fff',
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
+    backgroundColor: '#fff',
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: width * 0.3,
+    height: width * 0.3,
     marginBottom: 10,
   },
   tagline: {
@@ -176,8 +201,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cell: {
-    width: 45,
-    height: 50,
+    width: CELL_WIDTH,
+    height: CELL_WIDTH * 1.1,
     borderWidth: 1,
     borderColor: Theme.colors.red,
     borderRadius: 8,
@@ -187,26 +212,32 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.white,
   },
   cellText: {
-    fontSize: 22,
+    fontSize: CELL_WIDTH * 0.45,
     color: '#333',
   },
   focusCell: {
     borderColor: Theme.colors.red,
   },
   verifyBtn: {
-    // width: "100%",
-    // paddingVertical: 15,
-    // borderRadius: 30,
-    // alignItems: "center",
-    // justifyContent: "center",
-    // backgroundColor: Theme.colors.red,
-    // elevation: 3,
-    // shadowOpacity: 0.15,
-    // shadowRadius: 6,
-    // marginBottom: 15,
+    width: '100%',
+    paddingVertical: 15,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Theme.colors.red,
+    elevation: 3,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    marginBottom: 15,
   },
   verifyBtnDisabled: {
+    width: '100%',
+    paddingVertical: 15,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#ccc',
+    marginBottom: 15,
   },
   resendText: {
     fontSize: 14,

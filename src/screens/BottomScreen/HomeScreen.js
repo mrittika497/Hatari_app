@@ -377,7 +377,9 @@ const HomeScreen = ({route}) => {
                 />
               </View>
             ))}
+                <View style={{height:170}}/>
       </ScrollView>
+  
     </DashboardScreen>
   );
 };
@@ -389,13 +391,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 10,
-    marginVertical: 15,
+    marginVertical: Theme.spacing.medium,
   },
   locationText: {
-    fontSize: 14,
+    fontSize: Theme.fontSizes.small,
     fontWeight: '500',
     flex: 1,
-    marginLeft: 5,
+    marginLeft: Theme.spacing.tiny,
     color: Theme.colors.black,
   },
   logo: {width: 20, height: 20, resizeMode: 'contain'},
@@ -441,12 +443,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 4,
   },
-  cartCount: {color: '#fff', fontSize: 10, textAlign: 'center'},
+  cartCount: {color: '#fff', fontSize: Theme.fontSizes.xxs, textAlign: 'center'},
 
   experienceContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginVertical: 10,
+
+    width:"100%",
+   
   },
   experienceCard: {
     flexDirection: 'row',
@@ -454,12 +459,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 20,
-    paddingHorizontal: 15,
+    paddingHorizontal: 10,
     paddingVertical: 8,
     marginHorizontal: 5,
   },
   activeExperience: {backgroundColor: '#e63946', borderColor: '#e63946'},
-  experienceText: {marginLeft: 6, fontSize: 14, color: Theme.colors.black},
+  experienceText: {marginLeft: 6, fontSize: Theme.fontSizes.xs, color: Theme.colors.black},
   experienceImg: {width: 20, height: 20, resizeMode: 'contain'},
 
   bannerScroll: {marginTop: 20},
@@ -479,7 +484,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#eee',
   },
-  categoryText: {marginTop: 5, fontSize: 14, fontWeight: '500'},
+  categoryText: {marginTop: 5, fontSize: Theme.fontSizes.small, fontWeight: '500'},
 
   foodCard: {
     flexDirection: 'row',
@@ -495,10 +500,10 @@ const styles = StyleSheet.create({
   },
   foodImage: {width: 80, height: 80, borderRadius: 10},
   foodDetails: {flex: 1, marginLeft: 10},
-  foodType: {fontSize: 12, color: '#555', marginLeft: 5},
-  foodName: {fontSize: 14, fontWeight: '600', marginVertical: 4},
-  foodPrice: {fontSize: 12, color: '#333'},
-  foodTag: {fontSize: 12, color: 'red', marginTop: 4},
+  foodType: {fontSize: Theme.fontSizes.xs, color: '#555', marginLeft: 5},
+  foodName: {fontSize: Theme.fontSizes.small, fontWeight: '600', marginVertical: 4},
+  foodPrice: {fontSize: Theme, color: '#333'},
+  foodTag: {fontSize: Theme.fontSizes.xs, color: 'red', marginTop: 4},
   foodRight: {justifyContent: 'space-between', alignItems: 'flex-end'},
   ratingBox: {
     backgroundColor: '#d4edda',
@@ -506,7 +511,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 3,
   },
-  ratingText: {fontSize: 12, color: '#155724'},
+  ratingText: {fontSize: Theme.fontSizes.xs, color: '#155724'},
   addBtn: {
     backgroundColor: '#e63946',
     paddingHorizontal: 15,
@@ -537,13 +542,13 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   name: {
-    fontSize: 14,
+    fontSize: Theme.fontSizes.small,
     fontWeight: '600',
     marginLeft: 5,
     color: '#000',
   },
   price: {
-    fontSize: 14,
+    fontSize: Theme.fontSizes.small,
     color: '#000',
     marginVertical: 4,
     fontWeight: '500',
@@ -570,10 +575,10 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     color: '#fff',
-    fontSize: 10,
+    fontSize: Theme.fontSizes.xs,
     fontWeight: '600',
   },
-  label: {fontSize: 14, marginBottom: 8, color: '#444'},
+  label: {fontSize: Theme.fontSizes.small, marginBottom: 8, color: '#444'},
   dropdownBtn: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -585,7 +590,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: '#f9f9f9',
   },
-  dropdownText: {fontSize: 16, color: '#444'},
+  dropdownText: {fontSize: Theme.fontSizes.smedium, color: '#444'},
   arrowIcon: {width: 20, height: 20, resizeMode: 'contain'},
   dropdownList: {
     borderWidth: 1,
@@ -601,7 +606,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  dropdownItemText: {fontSize: 16, color: '#444'},
+  dropdownItemText: {fontSize: Theme.fontSizes.small, color: '#444'},
 });
+
+
 
 export default HomeScreen;

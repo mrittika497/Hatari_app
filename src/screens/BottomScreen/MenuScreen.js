@@ -23,6 +23,7 @@ import DashboardScreen from '../../components/DashboardScreen';
 import CustomHeader from '../../components/CustomHeader';
 import SmallbtnReuseable from '../../components/SmallbtnReuseable';
 import {fetchMenuFoods} from '../../redux/slice/menucuisineTypeSlice';
+import Theme from '../../assets/theme';
 
 const categories = ['Indian', 'Chinese', 'Italian', 'Mexican', 'Top Picks'];
 const {width} = Dimensions.get('window');
@@ -245,7 +246,7 @@ const styles = StyleSheet.create({
     borderColor: '#f44336',
   },
   tabText: {
-    fontSize: 14,
+    fontSize: Theme.fontSizes.small,
     color: '#555',
     textAlign: 'center',
   },
@@ -267,7 +268,7 @@ const styles = StyleSheet.create({
   searchInput: {
     // flex: 1,
     marginLeft: 8,
-    fontSize: 14,
+    fontSize: Theme.fontSizes.small,
     color: '#333',
   },
   sectionHeader: {
@@ -277,7 +278,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: Theme.fontSizes.smedium,
     fontWeight: 'bold',
     color: '#333',
   },
@@ -311,18 +312,18 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   name: {
-    fontSize: 15,
+    fontSize: Theme.fontSizes.small,
     fontWeight: 'bold',
     color: '#333',
     marginLeft: 6,
   },
   restaurantName: {
-    fontSize: 13,
+    fontSize:Theme.fontSizes.sx,
     color: '#777',
     marginTop: 2,
   },
   price: {
-    fontSize: 14,
+    fontSize: Theme.fontSizes.small,
     color: '#000',
     fontWeight: 'bold',
     marginTop: 4,
@@ -364,7 +365,7 @@ const styles = StyleSheet.create({
   noResults: {
     textAlign: 'center',
     marginTop: 20,
-    fontSize: 14,
+    fontSize:Theme.fontSizes.small,
     color: '#666',
   },
   error: {textAlign: 'center', color: 'red', marginTop: 20},

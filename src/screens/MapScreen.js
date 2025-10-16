@@ -21,15 +21,18 @@ import Theme from "../assets/theme";
 import { GOOGLE_API_KEY } from "../global_Url/googlemapkey";
 import DashboardScreen from "../components/DashboardScreen";
 
+// Responsive helpers
 const { width, height } = Dimensions.get("window");
+const guidelineBaseWidth = 390; // base design width (e.g. iPhone 14)
+const scale = (size) => (width / guidelineBaseWidth) * size;
 
 const MapScreen = () => {
   const mapRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
-  const [currentLocation, setCurrentLocation] = useState(null); // Real device location
+  const [currentLocation, setCurrentLocation] = useState(null);
   const [mapRegion, setMapRegion] = useState(null);
-  const [location, setLocation] = useState(null); // Selected location (search or current)
+  const [location, setLocation] = useState(null);
   const [saveModalVisible, setSaveModalVisible] = useState(false);
   const [selectedType, setSelectedType] = useState("Home");
   const [addressDetails, setAddressDetails] = useState({
@@ -70,15 +73,13 @@ const MapScreen = () => {
     }
   };
 
-  // Fetch real device location
   const fetchCurrentLocation = () => {
     setLoading(true);
     Geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        setCurrentLocation({ latitude, longitude }); // Only set real device location here
-        setLocation({ latitude, longitude }); // Default selected location = current location
-
+        setCurrentLocation({ latitude, longitude });
+        setLocation({ latitude, longitude });
         setMapRegion({
           latitude,
           longitude,
@@ -103,7 +104,6 @@ const MapScreen = () => {
     );
   };
 
-  // Reverse geocode
   const setAddressFromCoords = async (lat, lng) => {
     try {
       const response = await fetch(
@@ -122,9 +122,14 @@ const MapScreen = () => {
 
         components.forEach((comp) => {
           if (comp.types.includes("postal_code")) pin = comp.long_name;
-          if (comp.types.includes("sublocality") || comp.types.includes("sublocality_level_1")) area = comp.long_name;
+          if (
+            comp.types.includes("sublocality") ||
+            comp.types.includes("sublocality_level_1")
+          )
+            area = comp.long_name;
           if (comp.types.includes("locality")) city = comp.long_name;
-          if (comp.types.includes("administrative_area_level_1")) state = comp.long_name;
+          if (comp.types.includes("administrative_area_level_1"))
+            state = comp.long_name;
         });
 
         setLocation((prev) => ({ ...prev, description: address }));
@@ -135,85 +140,107 @@ const MapScreen = () => {
     }
   };
 
-  // Go to device current location
   const goToCurrentLocation = async () => {
     if (!currentLocation) return;
 
-    setLocation({ ...currentLocation }); // Update selected location to device
+    setLocation({ ...currentLocation });
     mapRef.current?.animateToRegion(
       { ...currentLocation, latitudeDelta: 0.01, longitudeDelta: 0.01 },
       1000
     );
-    await setAddressFromCoords(currentLocation.latitude, currentLocation.longitude);
+    await setAddressFromCoords(
+      currentLocation.latitude,
+      currentLocation.longitude
+    );
   };
 
   return (
-    <DashboardScreen> 
-    <SafeAreaView style={styles.safeArea}>
-      {loading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator size="large" color={Theme.colors.red} />
-          <Text style={styles.loadingText}>Fetching your location...</Text>
-        </View>
-      ) : (
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-          <View style={styles.container}>
-            <View style={styles.topRow}>
-              <Text style={styles.addressText}>
-                {location?.description || "Fetching..."}
-              </Text>
-              <TouchableOpacity onPress={goToCurrentLocation}>
-                <Text style={styles.changeText}>Use Current</Text>
-              </TouchableOpacity>
-            </View>
-
-            <MapView
-              ref={mapRef}
-              style={styles.map}
-              region={mapRegion}
-              showsUserLocation
-              showsMyLocationButton
-            >
-              {location && <Marker coordinate={{ latitude: location.latitude, longitude: location.longitude }} />}
-            </MapView>
-
-       
-     <CustomSearchInput
-              onPlaceSelect={async (place) => {
-                const loc = { latitude: place.latitude, longitude: place.longitude, description: place.description };
-                setLocation(loc); // Only update selected location
-                setMapRegion({ ...loc, latitudeDelta: 0.01, longitudeDelta: 0.01 });
-                mapRef.current?.animateToRegion({ ...loc, latitudeDelta: 0.01, longitudeDelta: 0.01 }, 1000);
-
-                await setAddressFromCoords(place.latitude, place.longitude);
-                // DO NOT update currentLocation
-              }}
-            />
-            <View style={styles.addressSection}>
-              <Text style={styles.sectionTitle}>🏠 {selectedType}</Text>
-               <Text style={styles.subAddress}>{location?.description || "No address selected"}</Text>
-
-            </View>
-
-            <View style={styles.bottomRow}>
-              <TouchableOpacity style={styles.nextBtn} onPress={() => setSaveModalVisible(true)}>
-                <Text style={styles.nextBtnText}>Next</Text>
-              </TouchableOpacity>
-            </View>
+    <DashboardScreen>
+      <SafeAreaView style={styles.safeArea}>
+        {loading ? (
+          <View style={styles.loader}>
+            <ActivityIndicator size="large" color={Theme.colors.red} />
+            <Text style={styles.loadingText}>Fetching your location...</Text>
           </View>
-        </ScrollView>
-      )}
+        ) : (
+          <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+            <View style={styles.container}>
+              <View style={styles.topRow}>
+                <Text style={styles.addressText}>
+                  {location?.description || "Fetching..."}
+                </Text>
+                <TouchableOpacity onPress={goToCurrentLocation}>
+                  <Text style={styles.changeText}>Use Current</Text>
+                </TouchableOpacity>
+              </View>
 
-      <SaveAddressModal
-        visible={saveModalVisible}
-        onRequestClose={() => setSaveModalVisible(false)}
-        location={location}
-        addressDetails={addressDetails}
-        latitude={location?.latitude }
-        longitude={location?.longitude}
+              <MapView
+                ref={mapRef}
+                style={styles.map}
+                region={mapRegion}
+                showsUserLocation
+                showsMyLocationButton
+              >
+                {location && (
+                  <Marker
+                    coordinate={{
+                      latitude: location.latitude,
+                      longitude: location.longitude,
+                    }}
+                  />
+                )}
+              </MapView>
 
-      />
-    </SafeAreaView>
+              <CustomSearchInput
+                onPlaceSelect={async (place) => {
+                  const loc = {
+                    latitude: place.latitude,
+                    longitude: place.longitude,
+                    description: place.description,
+                  };
+                  setLocation(loc);
+                  setMapRegion({
+                    ...loc,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                  });
+                  mapRef.current?.animateToRegion(
+                    { ...loc, latitudeDelta: 0.01, longitudeDelta: 0.01 },
+                    1000
+                  );
+
+                  await setAddressFromCoords(place.latitude, place.longitude);
+                }}
+              />
+
+              <View style={styles.addressSection}>
+                <Text style={styles.sectionTitle}>🏠 {selectedType}</Text>
+                <Text style={styles.subAddress}>
+                  {location?.description || "No address selected"}
+                </Text>
+              </View>
+
+              <View style={styles.bottomRow}>
+                <TouchableOpacity
+                  style={styles.nextBtn}
+                  onPress={() => setSaveModalVisible(true)}
+                >
+                  <Text style={styles.nextBtnText}>Next</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        )}
+
+        <SaveAddressModal
+          visible={saveModalVisible}
+          onRequestClose={() => setSaveModalVisible(false)}
+          location={location}
+          addressDetails={addressDetails}
+          latitude={location?.latitude}
+          longitude={location?.longitude}
+        />
+      </SafeAreaView>
     </DashboardScreen>
   );
 };
@@ -224,15 +251,56 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#fff" },
   container: { flex: 1, backgroundColor: "#fff" },
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
-  loadingText: { marginTop: 10, fontSize: 14, color: "#555" },
-  topRow: { flexDirection: "row", justifyContent: "space-between", padding: 10, borderBottomWidth: 0.5, borderColor: "#ccc" },
-  addressText: { flex: 1, fontSize: 14, fontWeight: "500", color: "#222" },
-  changeText: { color: Theme.colors.red, fontWeight: "600" },
-  map: { width: width, height: height * 0.6, marginVertical: 10 },
-  addressSection: { paddingHorizontal: 15, marginTop: 10 },
-  sectionTitle: { fontSize: 16, fontWeight: "600", marginBottom: 5 },
-  subAddress: { fontSize: 13, color: "#c71616ff", marginBottom: 10 },
-  bottomRow: { flexDirection: "row", justifyContent: "flex-end", padding: 15 },
-  nextBtn: { backgroundColor: Theme.colors.red, borderRadius: 25, paddingVertical: 12, paddingHorizontal: 30 },
-  nextBtnText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+  loadingText: { marginTop: scale(8), fontSize: scale(13), color: "#555" },
+  topRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: scale(10),
+    borderBottomWidth: 0.5,
+    borderColor: "#ccc",
+  },
+  addressText: {
+    flex: 1,
+    fontSize: scale(13),
+    fontWeight: "500",
+    color: "#222",
+    marginRight: scale(5),
+  },
+  changeText: {
+    color: Theme.colors.red,
+    fontWeight: "700",
+    fontSize: scale(13),
+  },
+  map: {
+    width: width * 0.96,
+    height: height * 0.55,
+    marginVertical: scale(10),
+    alignSelf: "center",
+    borderRadius: scale(10),
+  },
+  addressSection: { paddingHorizontal: scale(15), marginTop: scale(8) },
+  sectionTitle: { fontSize: scale(15), fontWeight: "700", marginBottom: scale(4) },
+  subAddress: {
+    fontSize: scale(12),
+    color: "#c71616ff",
+    marginBottom: scale(10),
+    lineHeight: scale(16),
+  },
+  bottomRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    padding: scale(15),
+  },
+  nextBtn: {
+    backgroundColor: Theme.colors.red,
+    borderRadius: scale(25),
+    paddingVertical: scale(10),
+    paddingHorizontal: scale(30),
+    marginBottom: Platform.OS === "ios" ? scale(15) : scale(20),
+  },
+  nextBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: scale(14),
+  },
 });

@@ -301,13 +301,13 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   itemName: {
-    fontSize: 16,
+    fontSize: Theme.fontSizes.small,
     fontWeight: "600",
     color: "#333",
     flexShrink: 1,
   },
   itemPrice: {
-    fontSize: 14,
+    fontSize: Theme.fontSizes.small,
     color: "#777",
   },
   rightContainer: {
@@ -335,12 +335,12 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   qtyText: {
-    fontSize: 18,
+    fontSize: Theme.fontSizes.medium,
     fontWeight: "bold",
     color: "#FF4D4D",
   },
   qtyValue: {
-    fontSize: 16,
+    fontSize: Theme.fontSizes.medium,
     fontWeight: "bold",
     color: "#000",
     marginHorizontal: 10,
@@ -357,11 +357,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   billText: {
-    fontSize: 16,
+    fontSize: Theme.fontSizes.smedium,
     color: "#333",
   },
   billAmount: {
-    fontSize: 16,
+    fontSize: Theme.fontSizes.smedium,
     color: "#333",
   },
   dashedLine: {
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     marginTop: 50,
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: Theme.fontSizes.medium,
     color: "#666",
     fontWeight: "500",
   },

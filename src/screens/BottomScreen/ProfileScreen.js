@@ -14,6 +14,7 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DashboardScreen from "../../components/DashboardScreen";
 import CustomHeader from "../../components/CustomHeader";
+import Theme from "../../assets/theme";
 
 const ProfileScreen = ({ navigation }) => {
   const [user, setUser] = useState({
@@ -35,18 +36,35 @@ const ProfileScreen = ({ navigation }) => {
   }, []);
 
   // Logout function: clear AsyncStorage and go to Login
+// const handleLogout = async () => {
+//   try {
+//     // Clear token and user data
+//     await AsyncStorage.removeItem("userToken");
+//     await AsyncStorage.removeItem("userData");
+
+//     // Reset navigation stack to LoginScreen
+//     navigation.navigate(LoginScreen);
+//   } catch (err) {
+//     console.log("Logout Error:", err);
+//   }
+// };
+
 const handleLogout = async () => {
   try {
-    // Clear token and user data
+    // Clear all stored data
     await AsyncStorage.removeItem("userToken");
     await AsyncStorage.removeItem("userData");
 
-    // Reset navigation stack to LoginScreen
-    navigation.navigate(LoginScreen);
+    // Reset navigation to LoginScreen (prevents going back)
+navigation.getParent()?.reset({
+  index: 0,
+  routes: [{ name: "LoginScreen" }],
+});
   } catch (err) {
     console.log("Logout Error:", err);
   }
 };
+
 
   // Save profile changes
   const handleSaveProfile = async () => {
@@ -163,7 +181,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   profileImage: { width: 60, height: 60, borderRadius: 30 },
-  name: { fontSize: 18, fontWeight: "bold", color: "#333" },
+  name: { fontSize:Theme.fontSizes.smedium, fontWeight: "bold", color: "#333" },
   phone: { color: "#666" },
   editIcon: { position: "absolute", right: 15, top: 15 },
   menuContainer: {
@@ -180,7 +198,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#EAEAEA",
   },
-  menuText: { flex: 1, marginLeft: 15, fontSize: 16, color: "#333" },
+  menuText: { flex: 1, marginLeft: 15, fontSize: Theme.fontSizes.smedium, color: "#333" },
   logoutContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -189,10 +207,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 12,
   },
-  logoutText: { flex: 1, marginLeft: 15, fontSize: 16, color: "#E74C3C", fontWeight: "600" },
+  logoutText: { flex: 1, marginLeft: 15, fontSize: Theme.fontSizes.smedium, color: "#E74C3C", fontWeight: "600" },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" },
   modalBox: { width: "85%", backgroundColor: "#fff", borderRadius: 10, padding: 20 },
-  modalTitle: { fontSize: 18, fontWeight: "700", marginBottom: 15, textAlign: "center" },
+  modalTitle: { fontSize: Theme.fontSizes.medium, fontWeight: "700", marginBottom: 15, textAlign: "center" },
   input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginBottom: 12 },
   modalActions: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
   modalBtn: { flex: 1, marginHorizontal: 5, paddingVertical: 10, borderRadius: 8, alignItems: "center" },
