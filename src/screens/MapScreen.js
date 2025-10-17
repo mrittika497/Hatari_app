@@ -1,4 +1,3 @@
-// MapScreen.js
 import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
@@ -10,8 +9,8 @@ import {
   PermissionsAndroid,
   ActivityIndicator,
   Dimensions,
-  ScrollView,
   Alert,
+  StatusBar,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import Geolocation from "react-native-geolocation-service";
@@ -20,13 +19,13 @@ import SaveAddressModal from "../components/SaveAddressModal";
 import Theme from "../assets/theme";
 import { GOOGLE_API_KEY } from "../global_Url/googlemapkey";
 import DashboardScreen from "../components/DashboardScreen";
+import { useFocusEffect } from "@react-navigation/native";
 
-// Responsive helpers
 const { width, height } = Dimensions.get("window");
-const guidelineBaseWidth = 390; // base design width (e.g. iPhone 14)
+const guidelineBaseWidth = 390;
 const scale = (size) => (width / guidelineBaseWidth) * size;
 
-const MapScreen = () => {
+const MapScreen = ({ navigation }) => {
   const mapRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
@@ -41,6 +40,14 @@ const MapScreen = () => {
     city: "",
     state: "",
   });
+
+  // ✅ Hide bottom tab when MapScreen is active
+  useFocusEffect(
+    React.useCallback(() => {
+      navigation.getParent()?.setOptions({ tabBarStyle: { display: "none" } });
+      return () => navigation.getParent()?.setOptions({ tabBarStyle: undefined });
+    }, [navigation])
+  );
 
   useEffect(() => {
     requestLocationPermission();
@@ -86,12 +93,10 @@ const MapScreen = () => {
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
         });
-
         mapRef.current?.animateToRegion(
           { latitude, longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 },
           1000
         );
-
         await setAddressFromCoords(latitude, longitude);
         setLoading(false);
       },
@@ -142,7 +147,6 @@ const MapScreen = () => {
 
   const goToCurrentLocation = async () => {
     if (!currentLocation) return;
-
     setLocation({ ...currentLocation });
     mapRef.current?.animateToRegion(
       { ...currentLocation, latitudeDelta: 0.01, longitudeDelta: 0.01 },
@@ -156,6 +160,9 @@ const MapScreen = () => {
 
   return (
     <DashboardScreen>
+      {/* ✅ Hide status bar */}
+      <StatusBar hidden />
+
       <SafeAreaView style={styles.safeArea}>
         {loading ? (
           <View style={styles.loader}>
@@ -163,17 +170,19 @@ const MapScreen = () => {
             <Text style={styles.loadingText}>Fetching your location...</Text>
           </View>
         ) : (
-          <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-            <View style={styles.container}>
-              <View style={styles.topRow}>
-                <Text style={styles.addressText}>
-                  {location?.description || "Fetching..."}
-                </Text>
-                <TouchableOpacity onPress={goToCurrentLocation}>
-                  <Text style={styles.changeText}>Use Current</Text>
-                </TouchableOpacity>
-              </View>
+          <View style={styles.mainContainer}>
+            {/* Top Current Address */}
+            <View style={styles.topRow}>
+              <Text style={styles.addressText}>
+                {location?.description || "Fetching..."}
+              </Text>
+              <TouchableOpacity onPress={goToCurrentLocation}>
+                <Text style={styles.changeText}>Use Current</Text>
+              </TouchableOpacity>
+            </View>
 
+            {/* Map Section */}
+            <View style={styles.mapContainer}>
               <MapView
                 ref={mapRef}
                 style={styles.map}
@@ -208,7 +217,6 @@ const MapScreen = () => {
                     { ...loc, latitudeDelta: 0.01, longitudeDelta: 0.01 },
                     1000
                   );
-
                   await setAddressFromCoords(place.latitude, place.longitude);
                 }}
               />
@@ -219,17 +227,16 @@ const MapScreen = () => {
                   {location?.description || "No address selected"}
                 </Text>
               </View>
-
-              <View style={styles.bottomRow}>
-                <TouchableOpacity
-                  style={styles.nextBtn}
-                  onPress={() => setSaveModalVisible(true)}
-                >
-                  <Text style={styles.nextBtnText}>Next</Text>
-                </TouchableOpacity>
-              </View>
             </View>
-          </ScrollView>
+
+            {/* ✅ Floating Bottom Button */}
+            <TouchableOpacity
+              style={styles.floatingNextBtn}
+              onPress={() => setSaveModalVisible(true)}
+            >
+              <Text style={styles.nextBtnText}>Next</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         <SaveAddressModal
@@ -249,15 +256,18 @@ export default MapScreen;
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#fff" },
-  container: { flex: 1, backgroundColor: "#fff" },
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
   loadingText: { marginTop: scale(8), fontSize: scale(13), color: "#555" },
+  mainContainer: { height:"97%", justifyContent: "space-between" },
+
   topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     padding: scale(10),
     borderBottomWidth: 0.5,
     borderColor: "#ccc",
+    backgroundColor: "#fff",
+    paddingTop: Platform.OS === "android" ? scale(45) : 0,
   },
   addressText: {
     flex: 1,
@@ -271,32 +281,43 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: scale(13),
   },
+
+  mapContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
   map: {
     width: width * 0.96,
-    height: height * 0.55,
-    marginVertical: scale(10),
-    alignSelf: "center",
+    height: height * 0.6,
     borderRadius: scale(10),
+    marginVertical: scale(10),
   },
-  addressSection: { paddingHorizontal: scale(15), marginTop: scale(8) },
-  sectionTitle: { fontSize: scale(15), fontWeight: "700", marginBottom: scale(4) },
+  addressSection: {
+    paddingHorizontal: scale(15),
+    marginBottom: scale(10),
+  },
+  sectionTitle: {
+    fontSize: scale(15),
+    fontWeight: "700",
+    marginBottom: scale(4),
+  },
   subAddress: {
     fontSize: scale(12),
     color: "#c71616ff",
-    marginBottom: scale(10),
     lineHeight: scale(16),
   },
-  bottomRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    padding: scale(15),
-  },
-  nextBtn: {
+
+  // ✅ Floating "Next" button styling
+  floatingNextBtn: {
+    position: "absolute",
+    bottom: Platform.OS === "ios" ? scale(40) : scale(30),
+    right: scale(20),
     backgroundColor: Theme.colors.red,
     borderRadius: scale(25),
-    paddingVertical: scale(10),
+    paddingVertical: scale(12),
     paddingHorizontal: scale(30),
-    marginBottom: Platform.OS === "ios" ? scale(15) : scale(20),
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 4,
   },
   nextBtnText: {
     color: "#fff",

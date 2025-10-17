@@ -16,6 +16,7 @@ import OrderSuccessScreen from '../screens/ComfromScreen';
 import SearchScreen from '../screens/SearchScreen';
 import TableBookingShow from '../screens/TableBookingShow';
 import ItemDetalis from '../screens/ItemDetalis';
+import OrderDetailsScreen from '../screens/OrderDetailsScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -122,6 +123,12 @@ const StackNav = () => {
       component={ItemDetalis}
       options={{headerShown:false}}
       />
+      <Stack.Screen 
+      name='OrderDetailsScreen'
+      component={OrderDetailsScreen}
+      options={{headerShown:false}}
+      />
+      
   
       <Stack.Screen
         name="Bottom"

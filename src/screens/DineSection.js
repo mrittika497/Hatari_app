@@ -7,6 +7,7 @@ import {
   ScrollView,
   Image,
   TextInput,
+  ToastAndroid,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import moment from 'moment';
@@ -18,14 +19,10 @@ import {createTableBooking} from '../redux/slice/TableBookingSlice';
 import {fetchRestaurants} from '../redux/slice/AllRestaurantSlice';
 import {useNavigation} from '@react-navigation/native';
 
-// import { Ionicons } from 'react-native-vector-icons';
-
 const DinneScreen = () => {
   const navigation = useNavigation();
   const [selectedOutlet, setSelectedOutlet] = useState('');
   const [name, setName] = useState('');
-  console.log(name, '--------------name');
-
   const [phone, setPhone] = useState('');
   const [mealType, setMealType] = useState('Dinner');
   const [timeSlots, setTimeSlots] = useState([]);
@@ -36,11 +33,11 @@ const DinneScreen = () => {
   const [showOutletDropdown, setShowOutletDropdown] = useState(false);
   const [restaurantId, setRestaurantId] = useState();
   const [specialRequest, setSpecialRequest] = useState('');
+  
   const dispatch = useDispatch();
 
   const list = useSelector(state => state.restaurants);
   const restaurantsArray = list?.list || [];
-  console.log(restaurantsArray, '-------------------restaurantsArray');
 
   useEffect(() => {
     dispatch(fetchRestaurants());
@@ -68,9 +65,13 @@ const DinneScreen = () => {
 
   const handleProceed = () => {
     if (!selectedOutlet || !selectedTime) {
-      alert('Please select all options.');
+      ToastAndroid.show(
+        'Please select all options before proceeding.',
+        ToastAndroid.LONG,
+      );
       return;
     }
+
     const bookingData = {
       name: name,
       phone: phone,
@@ -79,13 +80,15 @@ const DinneScreen = () => {
       groupSize: guests,
       restaurantId: restaurantId,
       additional: specialRequest,
-      // specialRequest: 'Window seat',
     };
 
     dispatch(createTableBooking(bookingData));
-    alert(
+
+    ToastAndroid.show(
       `Table booked at ${selectedOutlet}\n${mealType} - ${selectedTime}\nDate: ${date}\nGuests: ${guests}`,
+      ToastAndroid.LONG,
     );
+
     navigation.navigate('TableBookingShow', {
       ...bookingData,
       restaurantName: selectedOutlet,
@@ -94,14 +97,12 @@ const DinneScreen = () => {
   };
 
   return (
-    <DashboardScreen>
+    <DashboardScreen scrollable={false}>
       <CustomHeader title="Dining" />
       <ScrollView
+  showsVerticalScrollIndicator={false}
         style={styles.container}
-        contentContainerStyle={{paddingBottom: 40}}>
-        {/* 1. Restaurant Image */}
-
-        {/* 2. Outlet Dropdown */}
+        contentContainerStyle={{paddingBottom: 100}}>
         <Text style={styles.label}>Please select an outlet</Text>
         <TouchableOpacity
           style={styles.dropdownBtn}
@@ -109,7 +110,6 @@ const DinneScreen = () => {
           <Text style={styles.dropdownText}>
             {selectedOutlet || 'Select Outlet'}
           </Text>
-          {/* <Ionicons name={showOutletDropdown ? 'chevron-up' : 'chevron-down'} size={20} /> */}
         </TouchableOpacity>
         {showOutletDropdown && (
           <View style={styles.dropdownList}>
@@ -134,7 +134,8 @@ const DinneScreen = () => {
           }}
           style={styles.restaurantImage}
         />
-        <Text style={styles.label}>name</Text>
+
+        <Text style={styles.label}>Name</Text>
         <TextInput
           style={styles.nameField}
           placeholder="Enter your name"
@@ -143,20 +144,19 @@ const DinneScreen = () => {
           placeholderTextColor="black"
         />
 
-        <Text style={styles.label}>phone</Text>
+        <Text style={styles.label}>Phone</Text>
         <TextInput
           style={styles.nameField}
           placeholder="Enter your phone"
           value={phone}
           onChangeText={text =>
             setPhone(text.replace(/[^0-9]/g, '').slice(0, 10))
-          } // only digits, max 10
+          }
           placeholderTextColor="black"
           keyboardType="phone-pad"
           maxLength={10}
         />
 
-        {/* 4. Date Picker */}
         <Text style={styles.label}>Select Date</Text>
         <TouchableOpacity
           style={styles.dateField}
@@ -179,7 +179,6 @@ const DinneScreen = () => {
           />
         )}
 
-        {/* 3. Meal Type Toggle */}
         <Text style={styles.sectionTitle}>Meal Type</Text>
         <View style={styles.toggleRow}>
           {['Lunch', 'Dinner'].map(type => (
@@ -202,7 +201,6 @@ const DinneScreen = () => {
           ))}
         </View>
 
-        {/* 5. Time Slots */}
         <Text style={styles.sectionTitle}>Choose Time Slot</Text>
         <ScrollView
           horizontal
@@ -228,7 +226,6 @@ const DinneScreen = () => {
           ))}
         </ScrollView>
 
-        {/* 6. Guests */}
         <Text style={styles.sectionTitle}>Guests</Text>
         <View style={styles.guestsRow}>
           {[...Array(10)].map((_, i) => (
@@ -249,7 +246,6 @@ const DinneScreen = () => {
           ))}
         </View>
 
-        {/* addtional  */}
         <Text style={styles.label}>Special Request (Optional)</Text>
         <TextInput
           style={styles.inputArea}
@@ -258,7 +254,7 @@ const DinneScreen = () => {
           onChangeText={setSpecialRequest}
           placeholderTextColor="black"
         />
-        {/* 7. Proceed Button */}
+
         <TouchableOpacity
           style={[
             styles.proceedButton,

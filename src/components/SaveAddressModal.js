@@ -1,4 +1,3 @@
-// SaveAddressModal.js
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -10,14 +9,14 @@ import {
   ScrollView,
   Alert,
   Dimensions,
-  Platform,
   ToastAndroid,
+  ActivityIndicator,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Theme from "../assets/theme";
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
-import { saveAddress } from "../redux/slice/addressSlice";
+import { addAddress } from "../redux/slice/addressSlice"; // ✅ Use API thunk, not just saveAddress
 import {
   responsiveWidth as rw,
   responsiveHeight as rh,
@@ -39,40 +38,32 @@ const SaveAddressModal = ({
   const dispatch = useDispatch();
 
   const { data } = useSelector((state) => state.deliverySettings);
-  console.log(data,"--------------------------------datamapaddres---12337777");
-    const savedAddress = useSelector(state => state.address.savedAddress);
-    console.log(savedAddress,"--------------------------postaddress");
-    
-  const storeDeliverySettingId = async (id) => {
-    try {
-      await AsyncStorage.setItem('deliverySettingId', id);
-      console.log('✅ 123 Setting ID saved:', id);
-    } catch (error) {
-      console.log('❌ Error saving deliverySettingId:', error);
-    }
-  };
-    useEffect(() => {
-    if (data?._id) {
-      storeDeliverySettingId(data._id);
-    }
-  }, [data]);
+  const { loading } = useSelector((state) => state.address);
+
+  const savedAddress = useSelector((state) => state.address.savedAddress);
+  console.log(savedAddress?._id,"-----------------------------------postsaveaddress-id----------");
+  
+
+
+
+
+
   const { experienceType } = useSelector((state) => state.experience);
-
   const minDistance = data?.minimum_distance || 10;
-
   const restaurantLat = 22.5726;
   const restaurantLng = 88.3639;
 
   const [selectedTag, setSelectedTag] = useState("Home");
-  const [name, setName] = useState();
-  const [contact, setContact] = useState();
-  const [flat, setFlat] = useState();
-  const [landmark, setLandmark] = useState();
+  const [name, setName] = useState("");
+  const [contact, setContact] = useState("");
+  const [flat, setFlat] = useState("");
+  const [landmark, setLandmark] = useState("");
   const [address, setAddress] = useState(location?.description || "");
   const [pin, setPin] = useState(addressDetails?.pin || "");
   const [area, setArea] = useState(addressDetails?.area || "");
   const [city, setCity] = useState(addressDetails?.city || "");
   const [state, setState] = useState(addressDetails?.state || "");
+
 
   useEffect(() => {
     setAddress(location?.description || "");
@@ -96,25 +87,33 @@ const SaveAddressModal = ({
     return R * c;
   };
 
-  const validateAndSave = () => {
+  // ✅ Save address using Redux API (with Toast messages)
+  const validateAndSave = async () => {
     if (!name || !contact || !flat || !address || !pin || !city || !state) {
-      Alert.alert("Missing Fields", "Please fill all required fields (*)");
+      ToastAndroid.show("Please fill all required fields!", ToastAndroid.SHORT);
       return;
     }
 
-    const distance = getDistanceKm(latitude, longitude, restaurantLat, restaurantLng);
+    const distance = getDistanceKm(
+      latitude,
+      longitude,
+      restaurantLat,
+      restaurantLng
+    );
 
     if (distance > minDistance) {
-   ToastAndroid.show(
-  `Your location is ${distance.toFixed(2)} km away. Delivery available only within ${minDistance} km.`,
-  ToastAndroid.LONG
-);
+      ToastAndroid.show(
+        `Your location is ${distance.toFixed(
+          2
+        )} km away. Delivery only within ${minDistance} km.`,
+        ToastAndroid.LONG
+      );
       return;
     }
 
     const finalData = {
       name,
-      mobilenum: contact,
+      mobileNumber: contact,
       apartment: flat,
       landmark,
       address,
@@ -125,15 +124,35 @@ const SaveAddressModal = ({
       type: experienceType,
       lat: latitude,
       lng: longitude,
+      addressType:selectedTag
     };
-console.log('finalData-----------------', finalData)
-    dispatch(saveAddress(finalData));
-    onRequestClose();
-    navigation.navigate("OrderSummaryScreen");
+
+    console.log("📦 Sending Address Data:", finalData);
+
+    try {
+      const res = await dispatch(addAddress(finalData)).unwrap();
+      console.log("✅ Address Saved Response:", res);
+
+      ToastAndroid.show("Address saved successfully!", ToastAndroid.SHORT);
+
+      onRequestClose();
+      navigation.navigate("OrderSummaryScreen");
+    } catch (err) {
+      console.log("❌ Address Save Error:", err);
+      ToastAndroid.show(
+        err?.message || "Failed to save address!",
+        ToastAndroid.LONG
+      );
+    }
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onRequestClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onRequestClose}
+    >
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <View style={styles.headerRow}>
@@ -148,8 +167,13 @@ console.log('finalData-----------------', finalData)
           <ScrollView showsVerticalScrollIndicator={false}>
             <Text style={styles.header}>Enter complete address</Text>
 
-            <TextInput style={styles.input} placeholder="Receiver's name *"
-             value={name} onChangeText={setName}   placeholderTextColor={Theme.colors.red} />
+            <TextInput
+              style={styles.input}
+              placeholder="Receiver's name *"
+              value={name}
+              onChangeText={setName}
+              placeholderTextColor="#999"
+            />
             <TextInput
               style={styles.input}
               placeholder="Receiver's contact number *"
@@ -157,36 +181,48 @@ console.log('finalData-----------------', finalData)
               value={contact}
               onChangeText={setContact}
               maxLength={10}
-                placeholderTextColor={Theme.colors.red}
+              placeholderTextColor="#999"
             />
 
-            <Text style={styles.helperText}>May help delivery partner to contact</Text>
+            <Text style={styles.helperText}>
+              May help delivery partner to contact
+            </Text>
 
             <TextInput
               style={styles.input}
               placeholder="Flat/House no/Building/Floor *"
               value={flat}
               onChangeText={setFlat}
-              placeholderTextColor={Theme.colors.red}
+              placeholderTextColor="#999"
             />
             <TextInput
               style={styles.input}
               placeholder="Landmark (optional)"
               value={landmark}
               onChangeText={setLandmark}
-                placeholderTextColor={Theme.colors.red}
+              placeholderTextColor="#999"
             />
             <TextInput
               style={styles.input}
               placeholder="Address/Area/Locality *"
               value={address}
               onChangeText={setAddress}
-                placeholderTextColor={Theme.colors.red}
+              placeholderTextColor="#999"
             />
-            <TextInput style={styles.input} placeholder="City *" 
-            value={city} onChangeText={setCity}   placeholderTextColor={Theme.colors.red}/>
-            <TextInput style={styles.input} 
-            placeholder="State *" value={state} onChangeText={setState}  placeholderTextColor={Theme.colors.red}/>
+            <TextInput
+              style={styles.input}
+              placeholder="City *"
+              value={city}
+              onChangeText={setCity}
+              placeholderTextColor="#999"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="State *"
+              value={state}
+              onChangeText={setState}
+              placeholderTextColor="#999"
+            />
             <TextInput
               style={styles.input}
               placeholder="Pin *"
@@ -194,20 +230,27 @@ console.log('finalData-----------------', finalData)
               value={pin}
               onChangeText={setPin}
               maxLength={6}
-                placeholderTextColor={Theme.colors.red}
+              placeholderTextColor="#999"
             />
 
+            {/* Address Tag */}
             <View style={styles.saveAsContainer}>
               <Text style={styles.saveAsText}>Save as</Text>
               <View style={styles.saveAsRow}>
                 {["Home", "Work", "Other"].map((tag) => (
                   <TouchableOpacity
                     key={tag}
-                    style={[styles.tag, selectedTag === tag && styles.activeTag]}
+                    style={[
+                      styles.tag,
+                      selectedTag === tag && styles.activeTag,
+                    ]}
                     onPress={() => setSelectedTag(tag)}
                   >
                     <Text
-                      style={[styles.tagText, selectedTag === tag && styles.activeTagText]}
+                      style={[
+                        styles.tagText,
+                        selectedTag === tag && styles.activeTagText,
+                      ]}
                     >
                       {tag}
                     </Text>
@@ -216,8 +259,17 @@ console.log('finalData-----------------', finalData)
               </View>
             </View>
 
-            <TouchableOpacity style={styles.saveBtn} onPress={validateAndSave}>
-              <Text style={styles.saveBtnText}>Save Address</Text>
+            {/* Save Button */}
+            <TouchableOpacity
+              style={styles.saveBtn}
+              onPress={validateAndSave}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.saveBtnText}>Save Address</Text>
+              )}
             </TouchableOpacity>
           </ScrollView>
         </View>

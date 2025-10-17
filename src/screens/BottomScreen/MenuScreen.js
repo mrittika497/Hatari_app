@@ -204,7 +204,7 @@ const MenuScreen = () => {
               keyExtractor={(item, index) => index.toString()}
               renderItem={renderItem}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{paddingBottom: 100}}
+              contentContainerStyle={{paddingBottom: 200}}
               ListEmptyComponent={
                 <Text style={styles.noResults}>
                   No items found for {activeCategory}

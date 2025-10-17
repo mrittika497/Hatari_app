@@ -9,6 +9,7 @@ import {
   Alert,
   Modal,
   ToastAndroid,
+  SafeAreaView,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useDispatch, useSelector} from 'react-redux';
@@ -33,13 +34,17 @@ const OrderSummaryScreen = ({navigation}) => {
 
   const {items: cartItems} = useSelector(state => state.cart);
   const savedAddress = useSelector(state => state.address.savedAddress);
+  console.log(savedAddress?._id,"-------------------------------getaddress_id");
+  const addressid = savedAddress?._id;
+  console.log(addressid,"----------------------------getaddress_id");
+  
   const {data} = useSelector(state => state.deliverySettings);
   const couponState = useSelector(state => state.coupons);
   const couponList = couponState?.list || [];
   const {token, user} = useSelector(state => state.auth);
   const [userid, setUserId] = useState(null);
-  const [addressid, setAddressId] = useState(null);
-  console.log(addressid, '-----------------useridddd---------------,');
+  // const [addressid, setAddressId] = useState(null);
+  // console.log(addressid, '-----------------useraddresssd---------------,');
   //  user_id --------------
   const getUserId = async () => {
     try {
@@ -55,23 +60,11 @@ const OrderSummaryScreen = ({navigation}) => {
     }
   };
 
-  const getDeliverySettingId = async () => {
-    try {
-      const storedId = await AsyncStorage.getItem('deliverySettingId');
-      if (storedId) {
-        console.log('📦 Stored Delivery Setting ID:', storedId);
-        setAddressId(storedId);
-      } else {
-        console.log('⚠️ No Delivery Setting ID found');
-      }
-    } catch (error) {
-      console.log('❌ Error retrieving deliverySettingId:', error);
-    }
-  };
+
 
   useEffect(() => {
     getUserId();
-    getDeliverySettingId();
+   
   }, []);
   // user id ------------------------
   const [selectedCoupon, setSelectedCoupon] = useState(null);
@@ -163,7 +156,7 @@ const handleProceed = () => {
     if (!addressid || !userid || !selectedRestaurant?._id) {
       console.log('User:', userid);
       console.log('Restaurant:', selectedRestaurant);
-      console.log('Saved Address:', addressid);
+      console.log('getaddressid -------------------------------------:', addressid);
       console.log('Missing info:', {
         userId: userid,
         restaurantId: selectedRestaurant?._id,
@@ -181,6 +174,8 @@ const handleProceed = () => {
       userId: userid,
       restaurantId: selectedRestaurant._id,
       address: addressid,
+      // billingName:savedAddress?.name,
+      // billingMobile:savedAddress?.contact,
       type: (experienceType || 'delivery').toLowerCase(),
       deliveryCharges: Number(data?.delivery_charges_value) || 0,
       foodDetails: cartItems.map(item => ({
@@ -191,7 +186,7 @@ const handleProceed = () => {
       totalAmount: Number(itemTotal) || 0,
       grossAmount: Number(grandTotal) || 0,
       convenienceCharges: Number(convenienceAmt) || 0,
-      otherCharges: Number(packingFee) || 0,
+      packingCharge: Number(packingFee) || 0,
       CGST: Number(cgstAmt.toFixed(2)) || 0,
       SGST: Number(sgstAmt.toFixed(2)) || 0,
       couponCode: selectedCoupon?.code || null,
@@ -206,7 +201,7 @@ const handleProceed = () => {
     try {
       // Use unwrap() to get payload directly or throw error
       const response = await dispatch(postBilling(billingData)).unwrap();
-      console.log('Billing API Response:', response);
+      console.log('apii---biilingcreatedresponse ---------------------res:', response);
 
       setCodModalVisible(false);
        ToastAndroid.show(
@@ -227,7 +222,7 @@ const handleProceed = () => {
   };
 
   return (
-    <DashboardScreen >
+    <DashboardScreen scrollable={false} >
       <CustomHeader title="Order Summary" />
       <ScrollView contentContainerStyle={{paddingBottom: 120}}>
         {/* Address Section */}
@@ -235,7 +230,7 @@ const handleProceed = () => {
           <View style={styles.addressCard}>
             <View style={{flex: 1}}>
               <Text style={styles.addrName}>
-                {savedAddress.name} ({experienceType})
+                {savedAddress.name} ({experienceType} {savedAddress?.addressType})
               </Text>
               <Text style={styles.addrDetails}>
                 {savedAddress.flat},{' '}
@@ -409,25 +404,27 @@ const handleProceed = () => {
       </ScrollView>
 
       {/* Bottom Bar */}
-      {cartItems.length > 0 && (
-        <View style={styles.bottomBar}>
-          <View>
-            <Text style={styles.bottomLabel}>To Pay</Text>
-            <Text style={styles.bottomTotal}>
-              {savedAddress ? `₹${grandTotal.toFixed(2)}` : '-'}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[
-              styles.continueBtn,
-              {backgroundColor: savedAddress ? Theme.colors.red : '#ccc'},
-            ]}
-            onPress={handleProceed}
-            disabled={!savedAddress}>
-            <Text style={styles.continueText}>Proceed to Pay</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+    {cartItems.length > 0 && (
+  // <SafeAreaView style={{backgroundColor: 'transparent'}}>
+    <View style={styles.bottomBar}>
+      <View>
+        <Text style={styles.bottomLabel}>To Pay</Text>
+        <Text style={styles.bottomTotal}>
+          {savedAddress ? `₹${grandTotal.toFixed(2)}` : '-'}
+        </Text>
+      </View>
+      <TouchableOpacity
+        style={[
+          styles.continueBtn,
+          {backgroundColor: savedAddress ? Theme.colors.red : '#ccc'},
+        ]}
+        onPress={handleProceed}
+        disabled={!savedAddress}>
+        <Text style={styles.continueText}>Proceed to Pay</Text>
+      </TouchableOpacity>
+    </View>
+  // </SafeAreaView>
+)}
 
       {/* COD Modal */}
       <Modal
@@ -514,19 +511,26 @@ const styles = StyleSheet.create({
   divider: {height: 1, backgroundColor: '#eee', marginVertical: 8},
   totalLabel: {fontSize: 14, fontWeight: '700'},
   totalValue: {fontSize: 15, fontWeight: '700', color: Theme.colors.red},
-  bottomBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderColor: '#eee',
-    padding: 15,
-    backgroundColor: '#fff',
-    position: 'absolute',
-    bottom: '3%',
-    left: 0,
-    right: 0,
-  },
+bottomBar: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  borderTopWidth: 1,
+  borderColor: '#eee',
+  paddingHorizontal: 15,
+  paddingVertical: 12,
+  backgroundColor: '#fff',
+  position: 'absolute',
+  bottom: "10%", // always stick to bottom
+  left: 0,
+  right: 0,
+  shadowColor: '#000',
+  shadowOpacity: 0.05,
+  shadowOffset: {width: 0, height: -2},
+  shadowRadius: 4,
+  elevation: 5,
+},
+
   bottomLabel: {fontSize: 12, color: '#555'},
   bottomTotal: {fontSize: 18, fontWeight: '700', color: Theme.colors.red},
   continueBtn: {paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20},
