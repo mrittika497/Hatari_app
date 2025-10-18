@@ -43,6 +43,8 @@ const OrderSummaryScreen = ({navigation}) => {
   const couponList = couponState?.list || [];
   const {token, user} = useSelector(state => state.auth);
   const [userid, setUserId] = useState(null);
+  console.log(userid, '--------------------------userid-----------------as per loing');
+  
   // const [addressid, setAddressId] = useState(null);
   // console.log(addressid, '-----------------useraddresssd---------------,');
   //  user_id --------------
@@ -174,8 +176,8 @@ const handleProceed = () => {
       userId: userid,
       restaurantId: selectedRestaurant._id,
       address: addressid,
-      // billingName:savedAddress?.name,
-      // billingMobile:savedAddress?.contact,
+      billingName:savedAddress?.name,
+      billingMobile:savedAddress?.contact,
       type: (experienceType || 'delivery').toLowerCase(),
       deliveryCharges: Number(data?.delivery_charges_value) || 0,
       foodDetails: cartItems.map(item => ({
@@ -224,7 +226,9 @@ const handleProceed = () => {
   return (
     <DashboardScreen scrollable={false} >
       <CustomHeader title="Order Summary" />
-      <ScrollView contentContainerStyle={{paddingBottom: 120}}>
+      <ScrollView contentContainerStyle={{paddingBottom: 180}} 
+      showsVerticalScrollIndicator={false}
+      >
         {/* Address Section */}
         {savedAddress ? (
           <View style={styles.addressCard}>
@@ -521,7 +525,7 @@ bottomBar: {
   paddingVertical: 12,
   backgroundColor: '#fff',
   position: 'absolute',
-  bottom: "10%", // always stick to bottom
+  bottom: "13%", // always stick to bottom
   left: 0,
   right: 0,
   shadowColor: '#000',

@@ -25,6 +25,8 @@ const SearchScreen = () => {
   const {AllFoodsData, page, hasMore, loading, error} = useSelector(
     state => state.FoodPagination,
   );
+  console.log(AllFoodsData,"-----------------------------AllFoodsData");
+  
 
   const [search, setSearch] = useState('');
 
