@@ -22,20 +22,18 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
-import DashboardScreen from '../../components/DashboardScreen';
-import CustomHeader from '../../components/CustomHeader';
-import Theme from '../../assets/theme';
 
-import {
-  updateQuantity,
-  removeFromCart,
-  updateNote,
-} from '../../redux/slice/cartSlice';
-import {postCustomizedFood} from '../../redux/slice/CustomizeSlice';
+
+
+import DashboardScreen from '../components/DashboardScreen';
+import CustomHeader from '../components/CustomHeader';
+import { removeFromCart, updateQuantity } from '../redux/slice/cartSlice';
+import { postCustomizedFood } from '../redux/slice/CustomizeSlice';
+import Theme from '../assets/theme';
 
 const {width, height} = Dimensions.get('window');
 
-const CartScreen = () => {
+const OderCartScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const {items: cartItems} = useSelector(state => state.cart);
@@ -158,7 +156,7 @@ const CartScreen = () => {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <TouchableOpacity
             style={styles.addMore}
-            onPress={() => navigation.navigate('HomeScreen')}>
+        onPress={() => navigation.navigate('Bottom', { screen: 'HomeScreen' })}>
             <Text style={{color: Theme.colors.red, fontWeight: '600'}}>
               + Add more Items
             </Text>
@@ -183,12 +181,11 @@ const CartScreen = () => {
                   style={{width: width * 0.35, height: width * 0.35, marginBottom: 10}}
                 />
                 <Text style={styles.emptyText}>Your cart is empty</Text>
-<TouchableOpacity
-  style={styles.homeButton}
-  onPress={() => navigation.navigate('bottom', { screen: 'HomeScreen' })}
->
-                  <Text style={styles.browseText}>Browse Menu</Text>
-                </TouchableOpacity>
+               <TouchableOpacity
+    style={styles.browseBtn}
+    onPress={() => navigation.navigate('Bottom', { screen: 'HomeScreen' })}>
+    <Text style={styles.browseText}>Browse Menu</Text>
+  </TouchableOpacity>
               </View>
             ) : (
               <>
@@ -201,7 +198,7 @@ const CartScreen = () => {
                 />
 
                 {/* ✅ Fixed Responsive Bottom Bar */}
-                <View style={[styles.bottomBar, {paddingBottom: insets.bottom || 16}]}>
+                <View style={[styles.bottomBar, {paddingBottom: insets.bottom || 10}]}>
                   <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
                     <Text style={{fontSize: width * 0.035, color: '#555', textAlign: 'center'}}>
                       🛒 Oops! Your cart is lonely. Tap "Continue" to see all the goodies!
@@ -255,7 +252,7 @@ const CartScreen = () => {
   );
 };
 
-export default CartScreen;
+export default OderCartScreen;
 
 const styles = StyleSheet.create({
   addMore: {alignSelf: 'flex-end', marginVertical: 10, marginRight: 15},
@@ -359,7 +356,7 @@ const styles = StyleSheet.create({
   qtyValue: {fontSize: width * 0.035, fontWeight: '600', marginHorizontal: 8, color: '#000'},
   bottomBar: {
     position: 'absolute',
-    bottom: "10%",
+    bottom: "3%",
     left: 0,
     right: 0,
     flexDirection: 'row',

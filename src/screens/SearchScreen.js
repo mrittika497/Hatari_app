@@ -11,31 +11,29 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useDispatch, useSelector} from 'react-redux';
+import {useNavigation} from '@react-navigation/native';
 
 import DashboardScreen from '../components/DashboardScreen';
 import CustomHeader from '../components/CustomHeader';
-import {fetchFoodPagination} from '../redux/slice/SearchFoodPaginationSlice';
 import SmallbtnReuseable from '../components/SmallbtnReuseable';
-import { useNavigation } from '@react-navigation/native';
+import {fetchFoodPagination} from '../redux/slice/SearchFoodPaginationSlice';
 import Theme from '../assets/theme';
 
 const SearchScreen = () => {
-    const navigation = useNavigation();
+  const navigation = useNavigation();
   const dispatch = useDispatch();
-  const {AllFoodsData, page, hasMore, loading, error} = useSelector(
+  const {AllFoodsData, page, hasMore, loading} = useSelector(
     state => state.FoodPagination,
   );
-  console.log(AllFoodsData,"-----------------------------AllFoodsData");
-  
 
   const [search, setSearch] = useState('');
 
-  // ✅ Fetch first page on mount
+  // ✅ Initial fetch
   useEffect(() => {
     dispatch(fetchFoodPagination({page: 1, limit: 10}));
   }, [dispatch]);
 
-  // ✅ Local filter
+  // ✅ Local search filter
   const filteredResults =
     search.trim().length > 0
       ? AllFoodsData.filter(item =>
@@ -43,101 +41,91 @@ const SearchScreen = () => {
         )
       : AllFoodsData;
 
-  // ✅ Load more pages
+  // ✅ Load more pagination
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
       dispatch(fetchFoodPagination({page: page + 1, limit: 10}));
     }
   }, [dispatch, page, hasMore, loading]);
 
-  // ✅ Footer loader
-const renderFooter = () => {
-  if (loading && page > 1) {
-    return (
-      <View style={{ paddingVertical: 20 }}>
-        <ActivityIndicator size="large" color="#FD9D56" />
-      </View>
-    );
-  }
-  return null;
-};
+  // ✅ Footer loader for infinite scroll
+  const renderFooter = () => {
+    if (loading && page > 1) {
+      return (
+        <View style={styles.footerLoader}>
+          <ActivityIndicator size="large" color="red" />
+        </View>
+      );
+    }
+    return null;
+  };
 
   // ✅ Render each food card
   const renderItem = ({item}) => {
     const food = item?.food || {};
     return (
-      <View key={item.food._id} style={styles.card}>
-                {/* Food Image */}
-                <Image source={{uri: item.food.image}} style={styles.image} />
+      <TouchableOpacity
+        key={food._id}
+        style={styles.card}
+        activeOpacity={0.9}
+        onPress={() =>
+          navigation.navigate('FoodDetailScreen', {foodItem: food})
+        }>
+        {/* Food Image */}
+        <Image source={{uri: food.image}} style={styles.image} />
 
-                {/* Details */}
-                <View style={styles.details}>
-                  {/* Cuisine type (dynamic) */}
-                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                    <Image
-                      source={require('../assets/images/dineBlack.png')}
-                      style={{width: 12, height: 12}}
-                    />
-                    <Text
-                      style={{
-                        marginLeft: 10,
-                        color: 'black',
-                        fontSize: 13,
-                        fontWeight: '500',
-                      }}>
-                      {item.food.cuisineType.join(', ')}
-                    </Text>
-                  </View>
+        {/* Details */}
+        <View style={styles.details}>
+          {/* Cuisine type */}
+          {food.cuisineType && food.cuisineType.length > 0 && (
+            <View style={styles.cuisineRow}>
+              <Ionicons name="restaurant" size={12} color="#666" />
+              <Text style={styles.cuisineText}>
+                {food.cuisineType.join(', ')}
+              </Text>
+            </View>
+          )}
 
-                  {/* Veg / Non-Veg */}
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      marginTop: 5,
-                    }}>
-                    <View
-                      style={[
-                        styles.typeIndicator,
-                        {
-                          borderColor: item.food.type.includes('non-veg')
-                            ? 'red'
-                            : 'green',
-                        },
-                      ]}>
-                      <View
-                        style={[
-                          styles.typeDot,
-                          {
-                            backgroundColor: item.food.type.includes('veg')
-                              ? 'green'
-                              : 'red',
-                          },
-                        ]}
-                      />
-                    </View>
-                    <Text style={styles.name}>{item.food.name}</Text>
-                  </View>
+          {/* Veg / Non-Veg */}
+          <View style={styles.typeRow}>
+            <View
+              style={[
+                styles.typeIndicator,
+                {
+                  borderColor: food.type?.includes('non-veg') ? 'red' : 'green',
+                },
+              ]}>
+              <View
+                style={[
+                  styles.typeDot,
+                  {
+                    backgroundColor: food.type?.includes('veg')
+                      ? 'green'
+                      : 'red',
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.name}>{food.name}</Text>
+          </View>
 
-                  {/* Price */}
-                  <Text style={styles.price}>₹{item.food.price}</Text>
+          {/* Price */}
+          <Text style={styles.price}>₹{food.price}</Text>
 
-                  {/* Rating */}
-                  <View style={styles.ratingWrapper}>
-                    <Text style={styles.ratingText}>★ {item.food.rating}</Text>
-                  </View>
+          {/* Rating */}
+          <View style={styles.ratingWrapper}>
+            <Ionicons name="star" color="#fff" size={10} />
+            <Text style={styles.ratingText}>{food.rating || 4.5}</Text>
+          </View>
+        </View>
 
-                </View>
-
-                {/* Button */}
-                <SmallbtnReuseable
-                  onPress={() => {
-                    navigation.navigate('FoodDetailScreen', {
-                      foodItem: item.food,
-                    });
-                  }}
-                />
-              </View>
+        {/* Add Button */}
+        <SmallbtnReuseable
+          onPress={() =>
+            navigation.navigate('FoodDetailScreen', {foodItem: food})
+          }
+        />
+      </TouchableOpacity>
     );
   };
 
@@ -148,7 +136,7 @@ const renderFooter = () => {
 
       {/* Search Bar */}
       <View style={styles.searchBox}>
-        <Ionicons name="search" size={22} color="#B00020" />
+        <Ionicons name="search" size={22} color="red" />
         <TextInput
           style={styles.input}
           placeholder="Try Pizza, Biryani, Sushi..."
@@ -158,42 +146,44 @@ const renderFooter = () => {
         />
       </View>
 
-      {/* Results */}
-      {filteredResults.length > 0 ? (
+      {/* Main Content */}
+      {loading && page === 1 ? (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="red" />
+        </View>
+      ) : filteredResults.length > 0 ? (
         <FlatList
           data={filteredResults}
           keyExtractor={(item, index) =>
             item?.food?._id?.toString() || index.toString()
           }
           renderItem={renderItem}
-          contentContainerStyle={{padding: 16}}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderFooter}
-            ListFooterComponentStyle={{ paddingVertical: 80 }}
-        />
-      ) : loading ? (
-        <ActivityIndicator
-          size="large"
-          color="#FD9D56"
-          style={{marginTop: 50}}
         />
       ) : (
         <View style={styles.emptyState}>
-          <Ionicons name="alert-circle-outline" size={40} color="#FD9D56" />
-          <Text style={styles.emptyText}>No results found</Text>
+          <Image
+            source={{
+              uri: 'https://cdn-icons-png.flaticon.com/512/4076/4076505.png',
+            }}
+            style={styles.emptyImage}
+          />
+          <Text style={styles.emptyText}>No items found</Text>
+          <Text style={styles.emptySubText}>
+            Try searching with a different keyword.
+          </Text>
         </View>
       )}
-
-      {/* Error */}
-      {error && (
-        <Text style={{color: 'red', textAlign: 'center', marginTop: 20}}>
-          {error}
-        </Text>
-      )}
+  
     </DashboardScreen>
   );
 };
+
+export default SearchScreen;
 
 const styles = StyleSheet.create({
   searchBox: {
@@ -203,13 +193,14 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: Theme.colors.red,
+    borderColor: 'red',
     shadowColor: '#000',
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 4,
     shadowOffset: {width: 0, height: 2},
-    elevation: 3,
-    margin: 16,
+    elevation: 2,
+    marginHorizontal: 10,
+    marginTop: 10,
   },
   input: {
     marginLeft: 8,
@@ -217,9 +208,15 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#333',
   },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 60,
+  },
   card: {
     flexDirection: 'row',
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#fff',
     borderRadius: 15,
     padding: 10,
     marginBottom: 15,
@@ -228,7 +225,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowOffset: {width: 0, height: 2},
     shadowRadius: 5,
-    elevation: 3,
+    elevation: 2,
   },
   image: {
     width: 80,
@@ -239,17 +236,19 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 10,
   },
-  name: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 5,
-    color: '#000',
+  cuisineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  price: {
-    fontSize: 14,
-    color: '#000',
-    marginVertical: 4,
-    fontWeight: '500',
+  cuisineText: {
+    marginLeft: 6,
+    color: '#555',
+    fontSize: 12,
+  },
+  typeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
   },
   typeIndicator: {
     width: 14,
@@ -264,29 +263,62 @@ const styles = StyleSheet.create({
     height: 7,
     borderRadius: 50,
   },
+  name: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginLeft: 8,
+    color: '#000',
+    flexShrink: 1,
+  },
+  price: {
+    fontSize: 14,
+    color: '#000',
+    marginVertical: 5,
+    fontWeight: '500',
+  },
   ratingWrapper: {
-    backgroundColor: 'green',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
+    backgroundColor: '#2e7d32',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
     alignSelf: 'flex-start',
   },
   ratingText: {
     color: '#fff',
     fontSize: 10,
     fontWeight: '600',
+    marginLeft: 2,
+  },
+  listContent: {
+    padding: 16,
+    paddingBottom: 120,
+  },
+  footerLoader: {
+    paddingVertical: 30,
+   
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 50,
+    marginTop: 40,
+  },
+  emptyImage: {
+    width: 90,
+    height: 90,
+    tintColor: '#ccc',
   },
   emptyText: {
     fontSize: 16,
-    marginTop: 8,
+    fontWeight: '600',
+    marginTop: 12,
+    color: '#555',
+  },
+  emptySubText: {
+    fontSize: 13,
     color: '#999',
+    marginTop: 4,
   },
 });
-
-export default SearchScreen;

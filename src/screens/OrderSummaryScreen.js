@@ -21,30 +21,56 @@ import {fetchDeliverySettings} from '../redux/slice/deliverySettingsSlice';
 import {fetchCoupons} from '../redux/slice/couponSlice';
 import {postBilling} from '../redux/slice/postBillingSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const OrderSummaryScreen = ({navigation}) => {
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useNavigation } from '@react-navigation/native';
+import { clearCart } from '../redux/slice/cartSlice';
+const OrderSummaryScreen = () => {
+  const navigation = useNavigation();
   const dispatch = useDispatch();
   const {selectedRestaurant, experienceType} = useSelector(
     state => state.experience,
   );
+  const [savedAddress,setSavedAddress] = useState("")
   console.log(
-    selectedRestaurant?._id,
-    '----------------selectedRestaurant ----------------123',
+ savedAddress,
+    '----------------v ----------------123',
   );
 
   const {items: cartItems} = useSelector(state => state.cart);
-  const savedAddress = useSelector(state => state.address.savedAddress);
-  console.log(savedAddress?._id,"-------------------------------getaddress_id");
+  // const c = useSelector(state => state.savedAddress);
+
   const addressid = savedAddress?._id;
-  console.log(addressid,"----------------------------getaddress_id");
-  
+  console.log(addressid, '----------------------------getaddress_id');
+
   const {data} = useSelector(state => state.deliverySettings);
+  console.log(data,"---------------------data");
+  
   const couponState = useSelector(state => state.coupons);
   const couponList = couponState?.list || [];
   const {token, user} = useSelector(state => state.auth);
   const [userid, setUserId] = useState(null);
-  console.log(userid, '--------------------------userid-----------------as per loing');
-  
+  console.log(
+    userid,
+    '--------------------------userid-----------------as per loing',
+  );
+
+useEffect(() => {
+  const loadSavedAddress = async () => {
+    try {
+      const saved = await AsyncStorage.getItem("savedAddress");
+    if (saved) {
+          setSavedAddress(JSON.parse(saved));
+        }
+      console.log(saved,"----------------------saved");
+      
+    } catch (error) {
+      console.log("❌ Error loading saved address:", error);
+    }
+  };
+  loadSavedAddress();
+}, []);;
+
+
   // const [addressid, setAddressId] = useState(null);
   // console.log(addressid, '-----------------useraddresssd---------------,');
   //  user_id --------------
@@ -62,15 +88,13 @@ const OrderSummaryScreen = ({navigation}) => {
     }
   };
 
-
-
   useEffect(() => {
     getUserId();
-   
   }, []);
   // user id ------------------------
   const [selectedCoupon, setSelectedCoupon] = useState(null);
   const [codModalVisible, setCodModalVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     dispatch(fetchDeliverySettings());
@@ -123,42 +147,45 @@ const OrderSummaryScreen = ({navigation}) => {
     discount;
 
   // Apply coupon
-const applyCoupon = (coupon) => {
-  // Check minimum order condition (e.g., ₹500)
-  if (itemTotal < 500) {
+  const applyCoupon = coupon => {
+    // Check minimum order condition (e.g., ₹500)
+    if (itemTotal < 500) {
+      ToastAndroid.show(
+        'Order must be ₹500 or more to apply a coupon!',
+        ToastAndroid.LONG,
+      );
+      return;
+    }
+
+    setSelectedCoupon(coupon);
     ToastAndroid.show(
-      'Order must be ₹500 or more to apply a coupon!',
-      ToastAndroid.LONG
+      `${coupon.code} applied successfully!`,
+      ToastAndroid.SHORT,
     );
-    return;
-  }
+  };
 
-  setSelectedCoupon(coupon);
-  ToastAndroid.show(
-    `${coupon.code} applied successfully!`,
-    ToastAndroid.SHORT
-  );
-};
+  // Proceed to COD
+  const handleProceed = () => {
+    if (!savedAddress) {
+      ToastAndroid.show(
+        'Please add a delivery address before proceeding.',
+        ToastAndroid.LONG,
+      );
+      return;
+    }
 
-// Proceed to COD
-const handleProceed = () => {
-  if (!savedAddress) {
-    ToastAndroid.show(
-      'Please add a delivery address before proceeding.',
-      ToastAndroid.LONG
-    );
-    return;
-  }
-
-  setCodModalVisible(true);
-};
+    setCodModalVisible(true);
+  };
 
   // Confirm COD
   const handleConfirmCOD = async () => {
     if (!addressid || !userid || !selectedRestaurant?._id) {
       console.log('User:', userid);
       console.log('Restaurant:', selectedRestaurant);
-      console.log('getaddressid -------------------------------------:', addressid);
+      console.log(
+        'getaddressid -------------------------------------:',
+        addressid,
+      );
       console.log('Missing info:', {
         userId: userid,
         restaurantId: selectedRestaurant?._id,
@@ -176,8 +203,8 @@ const handleProceed = () => {
       userId: userid,
       restaurantId: selectedRestaurant._id,
       address: addressid,
-      billingName:savedAddress?.name,
-      billingMobile:savedAddress?.contact,
+      billingName: savedAddress?.name,
+      billingMobile: savedAddress?.contact,
       type: (experienceType || 'delivery').toLowerCase(),
       deliveryCharges: Number(data?.delivery_charges_value) || 0,
       foodDetails: cartItems.map(item => ({
@@ -203,38 +230,40 @@ const handleProceed = () => {
     try {
       // Use unwrap() to get payload directly or throw error
       const response = await dispatch(postBilling(billingData)).unwrap();
-      console.log('apii---biilingcreatedresponse ---------------------res:', response);
-
+      console.log(
+        'apii---biilingcreatedresponse ---------------------res:',
+        response,
+      );
+ dispatch(clearCart());
       setCodModalVisible(false);
-       ToastAndroid.show(
-    response?.message || 'Your order has been placed successfully!',
-    ToastAndroid.LONG
-  );
-    setTimeout(() => {
-    navigation.navigate('OrderSuccessScreen');
-  }, 1000);
-
+      ToastAndroid.show(
+        response?.message || 'Your order has been placed successfully!',
+        ToastAndroid.LONG,
+      );
+      setTimeout(() => {
+        navigation.navigate('OrderSuccessScreen');
+      }, 1000);
     } catch (error) {
       console.log('Billing Failed:', error);
-    ToastAndroid.show(
-    error?.message || 'Failed to place order. Please try again.',
-    ToastAndroid.LONG
-  );
+      ToastAndroid.show(
+        error?.message || 'Failed to place order. Please try again.',
+        ToastAndroid.LONG,
+      );
     }
   };
 
   return (
-    <DashboardScreen scrollable={false} >
+    <DashboardScreen scrollable={false}>
       <CustomHeader title="Order Summary" />
-      <ScrollView contentContainerStyle={{paddingBottom: 180}} 
-      showsVerticalScrollIndicator={false}
-      >
+      <ScrollView
+        contentContainerStyle={{paddingBottom: 200}}
+        showsVerticalScrollIndicator={false}>
         {/* Address Section */}
         {savedAddress ? (
           <View style={styles.addressCard}>
             <View style={{flex: 1}}>
               <Text style={styles.addrName}>
-                {savedAddress.name} ({experienceType} {savedAddress?.addressType})
+               {savedAddress?.name} ({savedAddress?.addressType || 'Address'})
               </Text>
               <Text style={styles.addrDetails}>
                 {savedAddress.flat},{' '}
@@ -250,66 +279,72 @@ const handleProceed = () => {
             </TouchableOpacity>
           </View>
         ) : (
-          <TouchableOpacity
-            style={styles.addressCard}
-            onPress={() => navigation.navigate('MapScreen')}>
-            <Text style={{color: '#555'}}>+ Add Delivery Address</Text>
-          </TouchableOpacity>
+          <View style={styles.addressCard}>
+            <TouchableOpacity
+              style={{flex: 1}}
+              onPress={() => navigation.navigate('MapScreen')}>
+              <Text style={styles.addressText}>
+                {savedAddress ? savedAddress : '+ Add Delivery Address'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Down arrow opens modal */}
+            <TouchableOpacity onPress={() => setModalVisible(true)}>
+              <Icon name="keyboard-arrow-down" size={26} color="#f11b1bff" />
+            </TouchableOpacity>
+          </View>
         )}
 
         {/* Coupons */}
         {savedAddress &&
+          couponList.map(coupon => (
+            <View key={coupon._id} style={styles.sectionBox}>
+              <LinearGradient
+                colors={
+                  selectedCoupon?._id === coupon._id
+                    ? ['#f50606e6', '#c16280ff']
+                    : ['#e47369ff', '#db2b2bff']
+                }
+                start={{x: 0, y: 0}}
+                end={{x: 1, y: 0}}
+                style={styles.card}>
+                <View style={styles.leftSection}>
+                  <View style={styles.iconBox}>
+                    <Text style={styles.giftIcon}>🎁</Text>
+                  </View>
+                  <View style={{flex: 1}}>
+                    <Text style={styles.title}>{coupon.description}</Text>
+                    <Text style={styles.detailText}>
+                      Min Order: ₹{coupon?.minOrderAmount}
+                    </Text>
+                    <Text style={styles.detailText}>
+                      Discount: {coupon?.discountDisplay}
+                    </Text>
+                    <Text style={styles.expiry}>
+                      Expiry: {new Date(coupon.expiry).toLocaleDateString()}
+                    </Text>
+                  </View>
+                </View>
 
-       couponList.map(coupon => (
-  <View key={coupon._id} style={styles.sectionBox}>
-    <LinearGradient
-      colors={
-        selectedCoupon?._id === coupon._id
-          ? ['#f50606e6', '#c16280ff']
-          : ['#FF8C00', '#FFA500']
-      }
-      start={{x: 0, y: 0}}
-      end={{x: 1, y: 0}}
-      style={styles.card}>
-      <View style={styles.leftSection}>
-        <View style={styles.iconBox}>
-          <Text style={styles.giftIcon}>🎁</Text>
-        </View>
-        <View style={{flex: 1}}>
-          <Text style={styles.title}>{coupon.description}</Text>
-          <Text style={styles.detailText}>
-            Min Order: ₹{coupon?.minOrderAmount}
-          </Text>
-          <Text style={styles.detailText}>
-            Discount: ₹{coupon?.discountValue}
-          </Text>
-          <Text style={styles.expiry}>
-            Expiry: {new Date(coupon.expiry).toLocaleDateString()}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.rightSection}>
-        <View style={styles.codeBox}>
-          <Text style={styles.codeText}>{coupon.code}</Text>
-        </View>
-        <TouchableOpacity
-          style={[
-            styles.applyBtn,
-            selectedCoupon?._id === coupon._id && styles.appliedBtn,
-          ]}
-          onPress={() => applyCoupon(coupon)}
-          disabled={selectedCoupon?._id === coupon._id}>
-          <Text style={styles.applyText}>
-            {selectedCoupon?._id === coupon._id ? 'APPLIED' : 'APPLY'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </LinearGradient>
-  </View>
-))
-          
-          }
+                <View style={styles.rightSection}>
+                  <View style={styles.codeBox}>
+                    {/* <Text style={styles.codeText}>{coupon.code}</Text> */}
+                  </View>
+                  <TouchableOpacity
+                    style={[
+                      styles.applyBtn,
+                      selectedCoupon?._id === coupon._id && styles.appliedBtn,
+                    ]}
+                    onPress={() => applyCoupon(coupon)}
+                    disabled={selectedCoupon?._id === coupon._id}>
+                    <Text style={styles.applyText}>
+                      {selectedCoupon?._id === coupon._id ? 'APPLIED' : 'APPLY'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </LinearGradient>
+            </View>
+          ))}
 
         {/* Cart Items */}
         <View style={styles.sectionBox}>
@@ -321,21 +356,21 @@ const handleProceed = () => {
           ) : (
             cartItems.map(item => (
               <View key={item._id} style={styles.itemRow}>
-                <Image source={{uri: item.image}} style={styles.itemImage} />
+                <Image source={{uri: item?.image}} style={styles.itemImage} />
                 <View style={{flex: 1, marginLeft: 10}}>
                   <Text style={styles.itemName} numberOfLines={2}>
                     {item.name}
                   </Text>
                   <Text style={styles.itemPrice}>
-                    ₹{item.price} x {item.quantity}
+                    ₹{item?.price} x {item?.quantity}
                   </Text>
                   {item.note && (
-                    <Text style={styles.itemNote}>📝 {item.note}</Text>
+                    <Text style={styles.itemNote}>📝 {item?.note}</Text>
                   )}
                 </View>
                 {savedAddress && (
                   <Text style={styles.itemQty}>
-                    ₹{item.price * item.quantity}
+                    ₹{item?.price * item?.quantity}
                   </Text>
                 )}
               </View>
@@ -349,86 +384,124 @@ const handleProceed = () => {
             <Text style={styles.sectionTitle}>Bill Details</Text>
             <View style={styles.billRow}>
               <Text style={styles.billLabel}>Item Total</Text>
-              <Text style={styles.billValue}>₹{itemTotal.toFixed(2)}</Text>
+              <Text style={styles.billValue}>₹{itemTotal?.toFixed(2)}</Text>
             </View>
-        { experienceType === 'Delivery' && (
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Delivery Fee</Text>
-              <Text style={styles.billValue}>
-                ₹{(data?.delivery_charges_value || 0).toFixed(2)}
-              </Text>
-            </View>
-        )}
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Packing Fee</Text>
-              <Text style={styles.billValue}>₹{packingFee.toFixed(2)}</Text>
-            </View>
-            {data.Cgst && (
+            {experienceType === 'Delivery' && (
               <View style={styles.billRow}>
-                <Text style={styles.billLabel}>CGST ({data.Cgst})</Text>
-                <Text style={styles.billValue}>{cgstAmt.toFixed(2)}</Text>
+                <Text style={styles.billLabel}>Delivery Fee</Text>
+                <Text style={styles.billValue}>
+                  ₹{(data?.delivery_charges_value || 0).toFixed(2)}
+                </Text>
               </View>
             )}
-            {data.Sgst && (
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>Packing Fee</Text>
+              <Text style={styles.billValue}>₹{packingFee?.toFixed(2)}</Text>
+            </View>
+            {data?.Cgst && (
               <View style={styles.billRow}>
-                <Text style={styles.billLabel}>SGST ({data.Sgst})</Text>
-                <Text style={styles.billValue}>{sgstAmt.toFixed(2)}</Text>
+                <Text style={styles.billLabel}>CGST ({data?.Cgst})</Text>
+                <Text style={styles.billValue}>{cgstAmt?.toFixed(2)}</Text>
+              </View>
+            )}
+            {data?.Sgst && (
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>SGST ({data?.Sgst})</Text>
+                <Text style={styles.billValue}>{sgstAmt?.toFixed(2)}</Text>
               </View>
             )}
             {convenienceAmt > 0 && (
               <View style={styles.billRow}>
                 <Text style={styles.billLabel}>
                   Convenience Charges (
-                  {data.convenience_charges_type === 'percentage'
-                    ? `${data.convenience_charges_value}%`
+                  {data?.convenience_charges_type === 'percentage'
+                    ? `${data?.convenience_charges_value}%`
                     : 'Flat'}
                   )
                 </Text>
                 <Text style={styles.billValue}>
-                  {convenienceAmt.toFixed(2)}
+                  {convenienceAmt?.toFixed(2)}
                 </Text>
               </View>
             )}
             {selectedCoupon && (
               <View style={styles.billRow}>
                 <Text style={styles.billLabel}>
-                  Coupon Discount ({selectedCoupon.code})
+                  Coupon Discount ({selectedCoupon?.code})
                 </Text>
-                <Text style={styles.billValue}>-₹{discount.toFixed(2)}</Text>
+                <Text style={styles.billValue}>-₹{discount?.toFixed(2)}</Text>
               </View>
             )}
 
             <View style={styles.divider} />
             <View style={styles.billRow}>
               <Text style={styles.totalLabel}>Grand Total</Text>
-              <Text style={styles.totalValue}>₹{grandTotal.toFixed(2)}</Text>
+              <Text style={styles.totalValue}>₹{grandTotal?.toFixed(2)}</Text>
             </View>
           </View>
         )}
       </ScrollView>
 
       {/* Bottom Bar */}
-    {cartItems.length > 0 && (
-  // <SafeAreaView style={{backgroundColor: 'transparent'}}>
-    <View style={styles.bottomBar}>
-      <View>
-        <Text style={styles.bottomLabel}>To Pay</Text>
-        <Text style={styles.bottomTotal}>
-          {savedAddress ? `₹${grandTotal.toFixed(2)}` : '-'}
-        </Text>
-      </View>
-      <TouchableOpacity
-        style={[
-          styles.continueBtn,
-          {backgroundColor: savedAddress ? Theme.colors.red : '#ccc'},
-        ]}
-        onPress={handleProceed}
-        disabled={!savedAddress}>
-        <Text style={styles.continueText}>Proceed to Pay</Text>
-      </TouchableOpacity>
-    </View>
-  // </SafeAreaView>
-)}
+      {cartItems.length > 0 && (
+        // <SafeAreaView style={{backgroundColor: 'transparent'}}>
+        <View style={styles.bottomBar}>
+          <View>
+            <Text style={styles.bottomLabel}>To Pay</Text>
+            <Text style={styles.bottomTotal}>
+              {savedAddress ? `₹${grandTotal.toFixed(2)}` : '-'}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[
+              styles.continueBtn,
+              {backgroundColor: savedAddress ? Theme.colors.red : '#ccc'},
+            ]}
+            onPress={handleProceed}
+            disabled={!savedAddress}>
+            <Text style={styles.continueText}>Proceed to Pay</Text>
+          </TouchableOpacity>
+        </View>
+        // </SafeAreaView>
+      )}
+
+      {/* Modal */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContentAddress}>
+            <Text style={styles.modalTitle}>Select Address</Text>
+
+            {/* Example modal content */}
+            <TouchableOpacity
+              style={styles.option}
+              onPress={() => {
+                setModalVisible(false);
+                // Handle selection logic here
+              }}>
+              <Text style={styles.optionText}>Home Address</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.option}
+              onPress={() => {
+                setModalVisible(false);
+              }}>
+              <Text style={styles.optionText}>Work Address</Text>
+            </TouchableOpacity>
+
+            {/* Close button */}
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalVisible(false)}>
+              <Text style={styles.closeText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* COD Modal */}
       <Modal
@@ -477,6 +550,12 @@ const styles = StyleSheet.create({
     margin: 12,
     elevation: 2,
   },
+
+  addressText: {
+    color: '#555',
+    fontSize: 16,
+    fontWeight: '500',
+  },
   addrName: {fontSize: 15, fontWeight: '600', color: '#000'},
   addrDetails: {fontSize: 13, color: '#444', marginTop: 4},
   addrPhone: {fontSize: 13, marginTop: 2, color: '#444'},
@@ -493,7 +572,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 14,
     borderRadius: 10,
-    marginHorizontal: 12,
+    // marginHorizontal: 12,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#eee',
@@ -515,25 +594,25 @@ const styles = StyleSheet.create({
   divider: {height: 1, backgroundColor: '#eee', marginVertical: 8},
   totalLabel: {fontSize: 14, fontWeight: '700'},
   totalValue: {fontSize: 15, fontWeight: '700', color: Theme.colors.red},
-bottomBar: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  borderTopWidth: 1,
-  borderColor: '#eee',
-  paddingHorizontal: 15,
-  paddingVertical: 12,
-  backgroundColor: '#fff',
-  position: 'absolute',
-  bottom: "13%", // always stick to bottom
-  left: 0,
-  right: 0,
-  shadowColor: '#000',
-  shadowOpacity: 0.05,
-  shadowOffset: {width: 0, height: -2},
-  shadowRadius: 4,
-  elevation: 5,
-},
+  bottomBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderColor: '#eee',
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    position: 'absolute',
+    bottom: '13%', // always stick to bottom
+    left: 0,
+    right: 0,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: {width: 0, height: -2},
+    shadowRadius: 4,
+    elevation: 5,
+  },
 
   bottomLabel: {fontSize: 12, color: '#555'},
   bottomTotal: {fontSize: 18, fontWeight: '700', color: Theme.colors.red},
@@ -577,8 +656,8 @@ bottomBar: {
   },
   leftSection: {flex: 2},
   rightSection: {flex: 1, alignItems: 'flex-end'},
-  title: {color: '#fff', fontSize: 18, fontWeight: 'bold'},
-  expiry: {color: '#fff', marginTop: 5, fontSize: 12},
+  title: {color: '#fff', fontSize: 18, fontWeight: 'bold',marginBottom:10},
+  expiry: {color: '#fff', marginTop: 5, fontSize: 12,},
   code: {color: '#fff', fontWeight: 'bold', fontSize: 14, marginBottom: 8},
   applyBtn: {
     backgroundColor: '#fff',
@@ -587,4 +666,28 @@ bottomBar: {
     borderRadius: 8,
   },
   applyText: {color: '#FF8C00', fontWeight: 'bold', fontSize: 12},
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  modalContentAddress: {
+    backgroundColor: '#fff',
+    width: '100%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    elevation: 10,
+  },
+detailText: {
+  color: '#fff',
+  fontSize: 16,
+  fontWeight: '500',
+  letterSpacing: 0.5,
+  lineHeight: 22,
+  textAlign: 'left',
+},
+
 });

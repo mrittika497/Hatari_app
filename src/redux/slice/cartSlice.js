@@ -10,9 +10,8 @@ const cartSlice = createSlice({
     addToCart: (state, action) => {
       const item = action.payload;
       const existingIndex = state.items.findIndex((i) => i._id === item._id);
-
       if (existingIndex >= 0) {
-        state.items[existingIndex].quantity += item.quantity; // update qty
+        state.items[existingIndex].quantity += item.quantity;
       } else {
         state.items.push(item);
       }
@@ -23,16 +22,12 @@ const cartSlice = createSlice({
     updateQuantity: (state, action) => {
       const { id, quantity } = action.payload;
       const item = state.items.find((i) => i._id === id);
-      if (item) {
-        item.quantity = quantity;
-      }
+      if (item) item.quantity = quantity;
     },
     updateNote: (state, action) => {
       const { id, note } = action.payload;
       const item = state.items.find((i) => i._id === id);
-      if (item) {
-        item.note = note; // save customization
-      }
+      if (item) item.note = note;
     },
     clearCart: (state) => {
       state.items = [];

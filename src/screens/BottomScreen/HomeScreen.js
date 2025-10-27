@@ -4,183 +4,176 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TextInput,
   TouchableOpacity,
   Image,
   FlatList,
 } from 'react-native';
-import SectionDivider from '../../components/SectionDivider';
-import DashboardScreen from '../../components/DashboardScreen';
+import LinearGradient from 'react-native-linear-gradient';
 import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
-// import { useNavigation } from '@react-navigation/native';
-import SmallbtnReuseable from '../../components/SmallbtnReuseable';
 import {useNavigation} from '@react-navigation/native';
 import {useDispatch, useSelector} from 'react-redux';
+import {useBottomTabBarHeight} from '@react-navigation/bottom-tabs';
+
+import SectionDivider from '../../components/SectionDivider';
+import DashboardScreen from '../../components/DashboardScreen';
+import {setExperience, setRestaurant} from '../../redux/slice/experienceSlice';
+import Theme from '../../assets/theme';
 import {fetchRestaurants} from '../../redux/slice/AllRestaurantSlice';
 import {fetchBanners} from '../../redux/slice/BannerSlice';
 import {fetchAllFoods} from '../../redux/slice/AllFoodsSlice';
-import Theme from '../../assets/theme';
 import {fetchAllFoodCat} from '../../redux/slice/foodCategorySlice';
-import {isAsyncThunkAction} from '@reduxjs/toolkit';
-import {setExperience, setRestaurant} from '../../redux/slice/experienceSlice';
-import {useBottomTabBarHeight} from '@react-navigation/bottom-tabs';
 
 const HomeScreen = ({route}) => {
-  const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation();
   const dispatch = useDispatch();
+  const tabBarHeight = useBottomTabBarHeight();
+
   const cartItems = useSelector(state => state.cart.items);
-  const totalCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  // console.log(totalCount, '-------------totalCount');
+const totalCount = cartItems.length;
+
   const {experienceId, selectedRestaurant, experienceType} = useSelector(
     state => state.experience,
   );
-  // console.log(experienceType, '--------------go90998sselectedRestaurant');
-  const experienceState = useSelector(state => state.experience);
-  console.log(selectedRestaurant?._id, '---------------home');
-  const selectedRestaurantName = route?.params?.selectedRestaurantName;
-  const [selectedExperience, setSelectedExperience] = useState(experienceType);
+  const restaurantsArray = useSelector(state => state.restaurants.list) || [];
+  const bannerlist = useSelector(state => state.banners.bannerlist) || [];
+  const AllFoodsData = useSelector(state => state.allFoods.AllFoodsData?.data);
+  const {categories} = useSelector(state => state.foodCategory);
+  const homeCategories = categories?.foods || [];
+
   const [loading, setLoading] = useState(true);
   const [selectedOutlet, setSelectedOutlet] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
-  const list = useSelector(state => state.restaurants);
-  const restaurantsArray = list?.list || [];
-  const bannerlist = useSelector(state => state.banners);
-  const bannerlistBanner = bannerlist?.bannerlist || [];
-  const AllFoodsData = useSelector(state => state.allFoods);
-  const topPicks = AllFoodsData?.AllFoodsData?.data;
-  const {categories, error} = useSelector(state => state.foodCategory);
-  const homeCategories = categories?.foods;
-  console.log(homeCategories, '---------------alcategorieslFoods');
+  const [selectedExperience, setSelectedExperience] = useState(experienceType);
 
-  useEffect(() => {
-    dispatch(fetchRestaurants());
-    dispatch(fetchBanners());
-    dispatch(fetchAllFoods());
-    dispatch(fetchAllFoodCat());
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000); // Simulate API load
-    return () => clearTimeout(timer);
-  }, []);
-
-  // 👇 your existing array
   const experiences = [
     {
       id: 1,
       title: 'Delivery',
       img: require('../../assets/images/deliveryH.png'),
       redirection: 'HomeScreen',
-      allowOrder: true, // ✅ orders allowed
+      allowOrder: true,
     },
     {
       id: 2,
-      title: 'Dine in',
+      title: 'Dine In',
       img: require('../../assets/images/dineH.png'),
       redirection: 'DineSection',
-      allowOrder: false, // ❌ no orders
+      allowOrder: false,
     },
     {
       id: 3,
       title: 'Takeaway',
       img: require('../../assets/images/takeawayH.png'),
       redirection: 'HomeScreen',
-      allowOrder: true, // ✅ orders allowed
+      allowOrder: true,
     },
   ];
+
+  useEffect(() => {
+    dispatch(fetchRestaurants());
+    dispatch(fetchBanners());
+    dispatch(fetchAllFoods());
+    dispatch(fetchAllFoodCat());
+
+    const timer = setTimeout(() => setLoading(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <DashboardScreen scrollable={false}>
       {/* Header */}
-      <View style={styles.header}>
-        <View style={{flexDirection: 'row', width: '60%'}}>
-          <Image
-            source={require('../../assets/images/location.png')}
-            style={styles.logo}
-          />
-          <Text style={styles.locationText}>
-            {selectedOutlet ? selectedOutlet : selectedRestaurant?.name}
-          </Text>
+<View style={styles.headerContainer}>
+  {/* 🔸 Left Section - Location */}
+  <TouchableOpacity
+    style={styles.locationContainer}
+    onPress={() => setShowDropdown(!showDropdown)}>
+    <Image
+      source={require('../../assets/images/location.png')}
+      style={styles.locationIcon}
+    />
+    <View style={{flexDirection: 'row', alignItems: 'center'}}>
+      <Text style={styles.locationText}>
+        {selectedOutlet || selectedRestaurant?.name || 'Select Branch'}
+      </Text>
+      <Image
+        source={require('../../assets/images/downarrow.png')}
+        style={styles.dropdownIcon}
+      />
+    </View>
+  </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setShowDropdown(!showDropdown)}>
-            <Image
-              source={require('../../assets/images/downarrow.png')} // Your arrow icon
-              style={styles.arrowIcon}
-            />
-          </TouchableOpacity>
-        </View>
-        <Image
-          source={require('../../assets/images/project_logo.png')}
-          style={styles.projectLogo}
-        />
-      </View>
+  {/* 🔸 Right Section - Logo */}
+  <View style={styles.logoContainer}>
+    <Image
+      source={require('../../assets/images/project_logo.png')}
+      style={styles.logo}
+      resizeMode="contain"
+    />
+  </View>
+</View>
 
-      {/* Dropdown list */}
+
+      {/* Dropdown */}
       {showDropdown && (
         <View style={styles.dropdownList}>
           <ScrollView style={{maxHeight: 200}}>
-            {restaurantsArray?.map((restaurant, index) => (
+            {restaurantsArray.map((restaurant, index) => (
               <TouchableOpacity
                 key={restaurant._id || index}
                 style={styles.dropdownItem}
                 onPress={() => {
                   setSelectedOutlet(restaurant.name);
                   setShowDropdown(false);
-
-                  // Option 1: Just update restaurant
                   dispatch(setRestaurant(restaurant));
-
-                  // Option 2: If you want to also update experience
                   dispatch(
                     setExperience({
-                      id: experienceId, // keep current experience
+                      id: experienceId,
                       type: experienceType,
                       restaurant: restaurant,
                     }),
                   );
                 }}>
-                <Text style={styles.dropdownItemText}>{restaurant.name}</Text>
+                <Text style={styles.dropdownText}>{restaurant.name}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
       )}
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={styles.container}
+        contentContainerStyle={{paddingBottom: tabBarHeight + 100}}>
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <TouchableOpacity
             style={styles.searchBox}
-            onPress={() => {
-              navigation.navigate('SearchScreen');
-            }}>
+            onPress={() => navigation.navigate('SearchScreen')}>
             <Image
               source={require('../../assets/images/search.png')}
-              style={styles.searchIcon} 
+              style={styles.searchIcon}
             />
-          
-            <Text style={{color: 'black'}}>Search your favorite food</Text>
+            <Text style={styles.searchPlaceholder}>
+              Search your favorite food
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.cartBtn}
-            onPress={() => {
-              navigation.navigate('CartScreen');
-            }}>
+            onPress={() => navigation.navigate('OderCartScreen')}>
             <Image
               source={require('../../assets/images/cart.png')}
               style={styles.cartIcon}
             />
-            <View style={styles.cartBadge}>
-              <Text style={styles.cartCount}>{totalCount}</Text>
-            </View>
+            {totalCount > 0 && (
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartCount}>{totalCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
-        {/* Experiences */}
+        {/* Experience Tabs */}
         <View style={styles.experienceContainer}>
           {experiences.map(item => (
             <TouchableOpacity
@@ -190,8 +183,8 @@ const HomeScreen = ({route}) => {
                 selectedExperience === item.title && styles.activeExperience,
               ]}
               onPress={() => {
-                setSelectedExperience(item.title),
-                  navigation.navigate(item?.redirection);
+                setSelectedExperience(item.title);
+                navigation.navigate(item.redirection);
                 dispatch(setExperience({id: item.id, type: item.title}));
               }}>
               <Image source={item.img} style={styles.experienceImg} />
@@ -206,236 +199,221 @@ const HomeScreen = ({route}) => {
           ))}
         </View>
 
-        {/* Banner Section with Shimmer */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.bannerScroll}>
+        {/* Banner Section */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {loading ? (
             [1, 2, 3].map(i => (
-              <ShimmerPlaceholder
-                key={i}
-                style={{
-                  width: 300,
-                  height: 130,
-                  borderRadius: 10,
-                  marginRight: 10,
-                }}
-              />
+              <ShimmerPlaceholder key={i} style={styles.bannerShimmer} />
             ))
-          ) : bannerlistBanner?.length > 0 ? (
-            bannerlistBanner.map((banner, index) => (
-              <Image
+          ) : bannerlist?.length > 0 ? (
+            bannerlist.map((banner, index) => (
+              <LinearGradient
                 key={index}
-                source={{uri: banner?.fullImageUrl}}
-                style={styles.bannerImage}
-                resizeMode="cover"
-              />
+                colors={['#fce3ec', '#f8f8f8']}
+                style={styles.bannerCard}>
+                <Image
+                  source={{uri: banner?.fullImageUrl}}
+                  style={styles.bannerImage}
+                  resizeMode="cover"
+                />
+              </LinearGradient>
             ))
           ) : (
             <Text style={{margin: 10}}>No banners available</Text>
           )}
         </ScrollView>
 
-        {/* Categories */}
-        <SectionDivider title="Choose what you like" />
+        {/* Category Section */}
+        <SectionDivider title="Choose What You Like" />
         {loading ? (
-          <View style={{flexDirection: 'row', paddingVertical: 10}}>
+          <View style={styles.categoryShimmerRow}>
             {[1, 2, 3, 4].map(i => (
-              <ShimmerPlaceholder
-                key={i}
-                style={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: 40,
-                  marginRight: 15,
-                }}
-              />
+              <ShimmerPlaceholder key={i} style={styles.categoryShimmer} />
             ))}
           </View>
         ) : (
           <FlatList
             horizontal
-            data={homeCategories}
             showsHorizontalScrollIndicator={false}
-            // keyExtractor={item => item.id.toString()}
+            data={homeCategories}
             contentContainerStyle={{paddingVertical: 10}}
             renderItem={({item}) => (
               <TouchableOpacity
                 style={styles.categoryCard}
-                onPress={() => {
+                onPress={() =>
                   navigation.navigate('CatItemScreen', {
                     categoryId: item._id,
                     categoryName: item.name,
                     categoryType: item.type,
                     categoryIngredients: item?.ingredients,
                     restaurantId: selectedRestaurant?._id,
-                  });
-                }}>
+                  })
+                }>
                 <Image
                   source={{uri: item?.image}}
                   style={styles.categoryImage}
                 />
-                {/* <Text style={{color: 'red'}}>{item?.name}</Text> */}
+                <Text style={styles.categoryName}>{item?.name}</Text>
               </TouchableOpacity>
             )}
           />
         )}
 
-        {/* Top Picks */}
-        <SectionDivider
-          title="Top Picks"
-          containerStyle={{marginVertical: 10}}
-        />
-        {loading
-          ? [1, 2].map(i => (
-              <View key={i} style={[styles.foodCard, {alignItems: 'center'}]}>
-                <ShimmerPlaceholder
-                  style={{width: 80, height: 80, borderRadius: 10}}
-                />
-                <View style={{flex: 1, marginLeft: 10}}>
-                  <ShimmerPlaceholder
-                    style={{width: '60%', height: 12, marginBottom: 8}}
-                  />
-                  <ShimmerPlaceholder
-                    style={{width: '40%', height: 12, marginBottom: 8}}
-                  />
-                  <ShimmerPlaceholder style={{width: '30%', height: 12}} />
-                </View>
-              </View>
-            ))
-          : topPicks.map(item => (
-              <View key={item.food._id} style={styles.card}>
-                {/* Food Image */}
-                <Image source={{uri: item.food.image}} style={styles.image} />
+      
+     {/* ✅ Top Picks Section (3x3 Grid with Shimmer) */}
+<SectionDivider title="Top Picks" containerStyle={{ marginVertical: 10 }} />
 
-                {/* Details */}
-                <View style={styles.details}>
-                  {/* Cuisine type (dynamic) */}
-                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                    <Image
-                      source={require('../../assets/images/dineBlack.png')}
-                      style={{width: 12, height: 12}}
-                    />
-                    <Text
-                      style={{
-                        marginLeft: 10,
-                        color: 'black',
-                        fontSize: 13,
-                        fontWeight: '500',
-                      }}>
-                      {item.food.cuisineType.join(', ')}
-                    </Text>
-                  </View>
+{loading ? (
+  // 🔸 Shimmer Placeholder while loading
+  <View style={styles.topPickGrid}>
+    {[1, 2, 3, 4, 5, 6].map((i) => (
+      <ShimmerPlaceholder
+        key={i}
+        style={{
+          width: '30%',
+          height: 110,
+          borderRadius: 70,
+          marginBottom: 20,
+        }}
+      />
+    ))}
+  </View>
+) : (
+  // 🔸 Actual Grid once data is loaded
+  <View style={styles.topPickGrid}>
+    {AllFoodsData?.map((item, index) => (
+      <TouchableOpacity
+        key={index.toString()}
+        style={styles.topPickCard}
+        activeOpacity={0.8}
+      onPress={() =>
+                  navigation.navigate('CatItemScreen', {
+                    categoryId: item?.food?._id,
+                    categoryName: item?.food?.name,
+                    categoryType: item?.food?.type,
+                    categoryIngredients: item?.food?.ingredients,
+                    restaurantId: selectedRestaurant?._id,
+                  })
+                }>
+        <View style={styles.topPickCircle}>
+          <Image
+            source={{ uri: item?.food?.image }}
+            style={styles.topPickImage}
+            resizeMode="cover"
+          />
+        </View>
+        <Text
+          style={styles.topPickTitle}
+          numberOfLines={1}
+          ellipsizeMode="tail">
+          {item?.food?.name}
+        </Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+)}
 
-                  {/* Veg / Non-Veg */}
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      marginTop: 5,
-                    }}>
-                    <View
-                      style={[
-                        styles.typeIndicator,
-                        {
-                          borderColor: item.food.type.includes('non-veg')
-                            ? 'red'
-                            : 'green',
-                        },
-                      ]}>
-                      <View
-                        style={[
-                          styles.typeDot,
-                          {
-                            backgroundColor: item.food.type.includes('veg')
-                              ? 'green'
-                              : 'red',
-                          },
-                        ]}
-                      />
-                    </View>
-                    <Text style={styles.name}>{item.food.name}</Text>
-                  </View>
-
-                  {/* Price */}
-                  <Text style={styles.price}>₹{item.food.price}</Text>
-
-                  {/* Rating */}
-                  <View style={styles.ratingWrapper}>
-                    <Text style={styles.ratingText}>★ {item.food.rating}</Text>
-                  </View>
-                </View>
-
-                {/* Button */}
-                <SmallbtnReuseable
-                  onPress={() => {
-                    navigation.navigate('FoodDetailScreen', {
-                      foodItem: item.food,
-                    });
-                  }}
-                />
-              </View>
-            ))}
-                <View style={{height:170}}/>
       </ScrollView>
-  
     </DashboardScreen>
   );
 };
 
 const styles = StyleSheet.create({
   container: {backgroundColor: '#fff'},
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-    marginVertical: Theme.spacing.medium,
-  },
-  locationText: {
-    fontSize: Theme.fontSizes.small,
-    fontWeight: '500',
-    flex: 1,
-    marginLeft: Theme.spacing.tiny,
-    color: Theme.colors.black,
-  },
-  logo: {width: 20, height: 20, resizeMode: 'contain'},
-  projectLogo: {width: 50, height: 50, resizeMode: 'contain'},
+headerContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
 
-  searchContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 20,
-  },
-  searchBox: {
-    height: 46,
-    width: '75%',
+  paddingVertical: 10,
+  shadowOffset: {width: 0, height: 2},
+  shadowOpacity: 0.1,
+  shadowRadius: 3,
+  borderBottomLeftRadius: 12,
+  borderBottomRightRadius: 12,
+ 
+},
+
+locationContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  maxWidth: '70%',
+},
+
+locationIcon: {
+  width: 20,
+  height: 20,
+  marginRight: 6,
+  tintColor: '#FF6B00', // orange highlight
+},
+
+locationText: {
+  fontSize: 16,
+  fontWeight: '600',
+  color: '#333',
+},
+
+dropdownIcon: {
+  width: 14,
+  height: 14,
+  marginLeft: 5,
+  tintColor: '#555',
+},
+
+logoContainer: {
+  alignItems: 'flex-end',
+},
+
+logo: {
+  width: 90,
+  height: 35,
+  borderRadius: 8,
+},
+
+
+  dropdownList: {
     borderWidth: 1,
-    borderRadius: 17,
+    borderColor: '#eee',
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    elevation: 4,
+    marginBottom: 10,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  dropdownText: {fontSize: 14, color: '#333'},
+
+  searchContainer: {flexDirection: 'row', marginTop: 10},
+  searchBox: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    borderColor: '#ccc',
-  },
-  searchIcon: {width: 18, height: 18, marginRight: 8, tintColor: '#999'},
-  searchInput: {flex: 1, fontSize: 14},
-  cartBtn: {
-    position: 'relative',
+    backgroundColor: '#f4f4f4',
+    borderRadius: 12,
+    paddingHorizontal: 12,
     height: 46,
-    width: 60,
-    borderWidth: 1,
-    borderRadius: 17,
+  },
+  searchIcon: {width: 20, height: 20, tintColor: '#888', marginRight: 8},
+  searchPlaceholder: {color: '#666', fontSize: 14},
+  cartBtn: {
+    marginLeft: 10,
+    width: 50,
+    height: 46,
+    borderRadius: 12,
+    backgroundColor: '#f4f4f4',
     justifyContent: 'center',
     alignItems: 'center',
-    borderColor: '#ccc',
   },
   cartIcon: {width: 22, height: 22},
   cartBadge: {
     position: 'absolute',
     top: 4,
-    right: 4,
-    backgroundColor: 'red',
+    right: 6,
+    backgroundColor: '#e63946',
     borderRadius: 10,
     minWidth: 16,
     height: 16,
@@ -443,172 +421,116 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 4,
   },
-  cartCount: {color: '#fff', fontSize: Theme.fontSizes.xxs, textAlign: 'center'},
+  cartCount: {color: '#fff', fontSize: 10, fontWeight: '700'},
 
   experienceContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginVertical: 10,
-
-    width:"100%",
-   
+    justifyContent: 'space-between',
+    marginVertical: 15,
   },
   experienceCard: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 20,
-    paddingHorizontal: 10,
+    borderRadius: 30,
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    marginHorizontal: 5,
+    backgroundColor: '#fff',
+    elevation: 2,
   },
-  activeExperience: {backgroundColor: '#e63946', borderColor: '#e63946'},
-  experienceText: {marginLeft: 6, fontSize: Theme.fontSizes.xs, color: Theme.colors.black},
-  experienceImg: {width: 20, height: 20, resizeMode: 'contain'},
+  activeExperience: {
+    backgroundColor: '#e63946',
+    borderColor: '#e63946',
+    elevation: 5,
+  },
+  experienceImg: {width: 22, height: 22, resizeMode: 'contain'},
+  experienceText: {
+    marginLeft: 6,
+    fontSize: 13,
+    fontWeight: '500',
+    color: Theme.colors.black,
+  },
 
-  bannerScroll: {marginTop: 20},
-  bannerImage: {
+  bannerShimmer: {
     width: 300,
     height: 130,
-    borderRadius: 10,
+    borderRadius: 12,
     marginRight: 10,
-    marginBottom: 15,
   },
+  bannerCard: {
+    width: 300,
+    height: 130,
+    borderRadius: 12,
+    marginRight: 10,
+    overflow: 'hidden',
+  },
+  bannerImage: {width: '100%', height: '100%'},
 
+  categoryShimmerRow: {flexDirection: 'row', paddingVertical: 10},
+  categoryShimmer: {
+    width: 80,
+    height: 80,
+    borderRadius: 50,
+    marginRight: 15,
+  },
   categoryCard: {alignItems: 'center', marginRight: 15},
   categoryImage: {
     width: 80,
     height: 80,
     borderRadius: 50,
+    marginBottom: 6,
     borderWidth: 1,
     borderColor: '#eee',
   },
-  categoryText: {marginTop: 5, fontSize: Theme.fontSizes.small, fontWeight: '500'},
+  categoryName: {color: '#333', fontWeight: '600', fontSize: 13},
 
-  foodCard: {
+  // ✅ Top Picks 3x3 Grid Styles
+  topPickGrid: {
     flexDirection: 'row',
-    padding: 10,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    marginBottom: 15,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: {width: 0, height: 2},
-    shadowRadius: 4,
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 5,
   },
-  foodImage: {width: 80, height: 80, borderRadius: 10},
-  foodDetails: {flex: 1, marginLeft: 10},
-  foodType: {fontSize: Theme.fontSizes.xs, color: '#555', marginLeft: 5},
-  foodName: {fontSize: Theme.fontSizes.small, fontWeight: '600', marginVertical: 4},
-  foodPrice: {fontSize: Theme, color: '#333'},
-  foodTag: {fontSize: Theme.fontSizes.xs, color: 'red', marginTop: 4},
-  foodRight: {justifyContent: 'space-between', alignItems: 'flex-end'},
-  ratingBox: {
-    backgroundColor: '#d4edda',
-    borderRadius: 5,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-  },
-  ratingText: {fontSize: Theme.fontSizes.xs, color: '#155724'},
-  addBtn: {
-    backgroundColor: '#e63946',
-    paddingHorizontal: 15,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginTop: 10,
-  },
-  card: {
+  topPickGrid: {
     flexDirection: 'row',
-    backgroundColor: '#f9f9f9',
-    borderRadius: 15,
-    padding: 10,
-    marginBottom: 15,
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 5,
+  },
+  topPickCard: {
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: {width: 0, height: 2},
-    shadowRadius: 5,
-    elevation: 3,
+    width: '30%',
+    marginBottom: 20,
   },
-  image: {
+  topPickCircle: {
+    backgroundColor: '#fff',
+    borderRadius: 70,
+    width: 100,
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: '#f2f2f2',
+  },
+  topPickImage: {
     width: 80,
     height: 80,
-    borderRadius: 10,
+    borderRadius: 40,
   },
-  details: {
-    flex: 1,
-    marginLeft: 10,
-  },
-  name: {
-    fontSize: Theme.fontSizes.small,
+  topPickTitle: {
+    fontSize: 12,
     fontWeight: '600',
-    marginLeft: 5,
-    color: '#000',
+    color: '#333',
+    textAlign: 'center',
+    marginTop: 8,
+    width: '90%',
   },
-  price: {
-    fontSize: Theme.fontSizes.small,
-    color: '#000',
-    marginVertical: 4,
-    fontWeight: '500',
-  },
-  typeIndicator: {
-    width: 14,
-    height: 14,
-    borderWidth: 1,
-    borderRadius: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  typeDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 50,
-  },
-  ratingWrapper: {
-    backgroundColor: 'green',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  ratingText: {
-    color: '#fff',
-    fontSize: Theme.fontSizes.xs,
-    fontWeight: '600',
-  },
-  label: {fontSize: Theme.fontSizes.small, marginBottom: 8, color: '#444'},
-  dropdownBtn: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#f9f9f9',
-  },
-  dropdownText: {fontSize: Theme.fontSizes.smedium, color: '#444'},
-  arrowIcon: {width: 20, height: 20, resizeMode: 'contain'},
-  dropdownList: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 12,
-    marginTop: 4,
-    backgroundColor: '#fff',
-    maxHeight: 150,
-  },
-  dropdownItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  dropdownItemText: {fontSize: Theme.fontSizes.small, color: '#444'},
 });
-
-
 
 export default HomeScreen;

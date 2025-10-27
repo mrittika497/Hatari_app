@@ -7,22 +7,21 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Alert,
-  Dimensions,
   ToastAndroid,
   ActivityIndicator,
+  Dimensions,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Theme from "../assets/theme";
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
-import { addAddress } from "../redux/slice/addressSlice"; // ✅ Use API thunk, not just saveAddress
+import { addAddress } from "../redux/slice/addressSlice";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   responsiveWidth as rw,
   responsiveHeight as rh,
   responsiveFontSize as rf,
 } from "react-native-responsive-dimensions";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { height, width } = Dimensions.get("window");
 
@@ -37,19 +36,11 @@ const SaveAddressModal = ({
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
-  const { data } = useSelector((state) => state.deliverySettings);
+  const { data: deliveryData } = useSelector((state) => state.deliverySettings);
   const { loading } = useSelector((state) => state.address);
-
-  const savedAddress = useSelector((state) => state.address.savedAddress);
-  console.log(savedAddress?._id,"-----------------------------------postsaveaddress-id----------");
-  
-
-
-
-
-
   const { experienceType } = useSelector((state) => state.experience);
-  const minDistance = data?.minimum_distance || 10;
+
+  const minDistance = deliveryData?.minimum_distance || 10;
   const restaurantLat = 22.5726;
   const restaurantLng = 88.3639;
 
@@ -64,7 +55,6 @@ const SaveAddressModal = ({
   const [city, setCity] = useState(addressDetails?.city || "");
   const [state, setState] = useState(addressDetails?.state || "");
 
-
   useEffect(() => {
     setAddress(location?.description || "");
     setPin(addressDetails?.pin || "");
@@ -73,6 +63,7 @@ const SaveAddressModal = ({
     setState(addressDetails?.state || "");
   }, [location, addressDetails]);
 
+  // ✅ Calculate Distance in KM
   const getDistanceKm = (lat1, lon1, lat2, lon2) => {
     if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
     const R = 6371;
@@ -87,7 +78,17 @@ const SaveAddressModal = ({
     return R * c;
   };
 
-  // ✅ Save address using Redux API (with Toast messages)
+  // ✅ Save address to AsyncStorage
+  const saveAddressToStorage = async (addressData) => {
+    try {
+      await AsyncStorage.setItem("savedAddress", JSON.stringify(addressData));
+      console.log("✅ Address stored in AsyncStorage:", addressData);
+    } catch (e) {
+      console.log("❌ Failed to save address in storage:", e);
+    }
+  };
+
+  // ✅ Validate & Submit Address
   const validateAndSave = async () => {
     if (!name || !contact || !flat || !address || !pin || !city || !state) {
       ToastAndroid.show("Please fill all required fields!", ToastAndroid.SHORT);
@@ -124,7 +125,7 @@ const SaveAddressModal = ({
       type: experienceType,
       lat: latitude,
       lng: longitude,
-      addressType:selectedTag
+      addressType: selectedTag,
     };
 
     console.log("📦 Sending Address Data:", finalData);
@@ -133,10 +134,17 @@ const SaveAddressModal = ({
       const res = await dispatch(addAddress(finalData)).unwrap();
       console.log("✅ Address Saved Response:", res);
 
-      ToastAndroid.show("Address saved successfully!", ToastAndroid.SHORT);
-
-      onRequestClose();
-      navigation.navigate("OrderSummaryScreen");
+      if (res?.success && res?.newAddress) {
+        await saveAddressToStorage(res.newAddress);
+        ToastAndroid.show("Address saved successfully!", ToastAndroid.SHORT);
+        onRequestClose();
+        navigation.navigate("OrderSummaryScreen");
+      } else {
+        ToastAndroid.show(
+          res?.message || "Failed to save address!",
+          ToastAndroid.LONG
+        );
+      }
     } catch (err) {
       console.log("❌ Address Save Error:", err);
       ToastAndroid.show(
@@ -167,6 +175,7 @@ const SaveAddressModal = ({
           <ScrollView showsVerticalScrollIndicator={false}>
             <Text style={styles.header}>Enter complete address</Text>
 
+            {/* Input Fields */}
             <TextInput
               style={styles.input}
               placeholder="Receiver's name *"
@@ -183,11 +192,9 @@ const SaveAddressModal = ({
               maxLength={10}
               placeholderTextColor="#999"
             />
-
             <Text style={styles.helperText}>
               May help delivery partner to contact
             </Text>
-
             <TextInput
               style={styles.input}
               placeholder="Flat/House no/Building/Floor *"

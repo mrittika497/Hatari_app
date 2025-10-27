@@ -9,6 +9,7 @@ import HomeScreen from '../screens/BottomScreen/HomeScreen';
 import ProfileScreen from '../screens/BottomScreen/ProfileScreen';
 import CartScreen from '../screens/BottomScreen/CartScreen';
 import MenuScreen from '../screens/BottomScreen/MenuScreen';
+import OrderSummary from '../screens/BottomScreen/OrderSummary';
 
 const Tab = createBottomTabNavigator();
 
@@ -19,36 +20,16 @@ const Bottom = () => {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom']}>
       <View style={{ flex: 1 }}>
         <Tab.Navigator
+          initialRouteName="HomeScreen"
           screenOptions={({ route }) => ({
             headerShown: false,
             tabBarShowLabel: true,
-            tabBarActiveTintColor: '#ff6347',
-            tabBarInactiveTintColor: 'gray',
+            tabBarActiveTintColor: '#FF4D4D',
+            tabBarInactiveTintColor: '#999',
             tabBarLabelStyle: {
               fontSize: 12,
               fontWeight: '600',
               marginBottom: Platform.OS === 'ios' ? 4 : 6,
-            },
-            tabBarIcon: ({ focused, color }) => {
-              let iconName;
-              if (route.name === 'HomeScreen') {
-                iconName = focused ? 'home' : 'home-outline';
-              } else if (route.name === 'CartScreen') {
-                iconName = focused ? 'cart' : 'cart-outline';
-              } else if (route.name === 'MenuScreen') {
-                iconName = focused ? 'restaurant' : 'restaurant-outline';
-              } else if (route.name === 'ProfileScreen') {
-                iconName = focused ? 'person' : 'person-outline';
-              }
-
-              return (
-                <Ionicons
-                  name={iconName}
-                  size={26}
-                  color={color}
-                  style={{ marginBottom: Platform.OS === 'ios' ? -2 : 0 }}
-                />
-              );
             },
             tabBarStyle: [
               styles.tabBar,
@@ -60,6 +41,35 @@ const Bottom = () => {
                 paddingBottom: insets.bottom > 0 ? insets.bottom / 2 : 8,
               },
             ],
+            tabBarIcon: ({ focused, color }) => {
+              let iconName;
+              switch (route.name) {
+                case 'HomeScreen':
+                  iconName = focused ? 'home' : 'home-outline';
+                  break;
+                case 'MenuScreen':
+                  iconName = focused ? 'restaurant' : 'restaurant-outline';
+                  break;
+                case 'OrderSummary':
+                  iconName = focused ? 'receipt' : 'receipt-outline';
+                  break;
+                case 'CartScreen':
+                  iconName = focused ? 'cart' : 'cart-outline';
+                  break;
+                case 'ProfileScreen':
+                  iconName = focused ? 'person' : 'person-outline';
+                  break;
+              }
+
+              return (
+                <Ionicons
+                  name={iconName}
+                  size={26}
+                  color={color}
+                  style={{ marginBottom: Platform.OS === 'ios' ? -2 : 0 }}
+                />
+              );
+            },
           })}
         >
           <Tab.Screen
@@ -68,14 +78,14 @@ const Bottom = () => {
             options={{ tabBarLabel: 'Home' }}
           />
           <Tab.Screen
-            name="CartScreen"
-            component={CartScreen}
-            options={{ tabBarLabel: 'Cart' }}
-          />
-          <Tab.Screen
             name="MenuScreen"
             component={MenuScreen}
             options={{ tabBarLabel: 'Menu' }}
+          />
+          <Tab.Screen
+            name="OrderSummary"
+            component={OrderSummary}
+            options={{ tabBarLabel: 'Orders' }}
           />
           <Tab.Screen
             name="ProfileScreen"
@@ -95,12 +105,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 10,
     right: 10,
-    bottom: 0,
+    // bottom: 10,
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
-    borderRadius: 22,
     backgroundColor: '#fff',
-    elevation: 10, // for Android shadow
+    elevation: 10, // Android shadow
     shadowColor: '#000',
     shadowOpacity: 0.15,
     shadowRadius: 8,

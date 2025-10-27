@@ -11,6 +11,7 @@ import {
   Dimensions,
   Alert,
   StatusBar,
+  ToastAndroid,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import Geolocation from "react-native-geolocation-service";
@@ -20,6 +21,7 @@ import Theme from "../assets/theme";
 import { GOOGLE_API_KEY } from "../global_Url/googlemapkey";
 import DashboardScreen from "../components/DashboardScreen";
 import { useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width, height } = Dimensions.get("window");
 const guidelineBaseWidth = 390;
@@ -41,7 +43,7 @@ const MapScreen = ({ navigation }) => {
     state: "",
   });
 
-  // ✅ Hide bottom tab when MapScreen is active
+  // ✅ Hide bottom tab on focus
   useFocusEffect(
     React.useCallback(() => {
       navigation.getParent()?.setOptions({ tabBarStyle: { display: "none" } });
@@ -49,10 +51,55 @@ const MapScreen = ({ navigation }) => {
     }, [navigation])
   );
 
+  // ✅ On mount: load saved address or fetch GPS
   useEffect(() => {
-    requestLocationPermission();
+    checkSavedAddress();
   }, []);
 
+  // ✅ Load saved address if exists
+  const checkSavedAddress = async () => {
+    try {
+      const saved = await AsyncStorage.getItem("savedAddress");
+      if (saved) {
+        const address = JSON.parse(saved);
+        console.log("📦 Loaded saved address:", address);
+
+        const lat = parseFloat(address.lat);
+        const lng = parseFloat(address.lng);
+
+        setLocation({
+          latitude: lat,
+          longitude: lng,
+          description: address.address || address.area || "Saved Address",
+        });
+        setAddressDetails({
+          pin: address.pin || "",
+          area: address.area || "",
+          city: address.city || "",
+          state: address.state || "",
+        });
+
+        const region = {
+          latitude: lat,
+          longitude: lng,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        };
+        setMapRegion(region);
+        mapRef.current?.animateToRegion(region, 1000);
+        setLoading(false);
+
+        ToastAndroid.show("Loaded saved address", ToastAndroid.SHORT);
+      } else {
+        requestLocationPermission();
+      }
+    } catch (e) {
+      console.log("❌ Error loading saved address:", e);
+      requestLocationPermission();
+    }
+  };
+
+  // ✅ Ask for location permission
   const requestLocationPermission = async () => {
     if (Platform.OS === "android") {
       try {
@@ -60,7 +107,7 @@ const MapScreen = ({ navigation }) => {
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
           {
             title: "Location Permission",
-            message: "This app needs access to your location",
+            message: "App needs access to your location",
             buttonNeutral: "Ask Me Later",
             buttonNegative: "Cancel",
             buttonPositive: "OK",
@@ -80,46 +127,50 @@ const MapScreen = ({ navigation }) => {
     }
   };
 
-  const fetchCurrentLocation = () => {
+  // ✅ Fetch current location (live GPS)
+  const fetchCurrentLocation = async () => {
     setLoading(true);
     Geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        setCurrentLocation({ latitude, longitude });
-        setLocation({ latitude, longitude });
-        setMapRegion({
+
+        const region = {
           latitude,
           longitude,
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
-        });
-        mapRef.current?.animateToRegion(
-          { latitude, longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 },
-          1000
-        );
+        };
+
+        setCurrentLocation({ latitude, longitude });
+        setLocation({ latitude, longitude });
+        setMapRegion(region);
+        mapRef.current?.animateToRegion(region, 1000);
         await setAddressFromCoords(latitude, longitude);
         setLoading(false);
+        ToastAndroid.show("Current location updated", ToastAndroid.SHORT);
       },
       (error) => {
-        console.log(error);
+        console.log("❌ GPS Error:", error);
         setLoading(false);
-        Alert.alert("Error", "Unable to fetch location");
+        Alert.alert("Error", "Unable to fetch current location");
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
     );
   };
 
+  // ✅ Reverse geocode coordinates to readable address
   const setAddressFromCoords = async (lat, lng) => {
     try {
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`
       );
       const data = await response.json();
-      if (data.status === "OK") {
+
+      if (data.status === "OK" && data.results.length > 0) {
         const result = data.results[0];
         const address = result.formatted_address;
-
         const components = result.address_components;
+
         let pin = "",
           area = "",
           city = "",
@@ -127,42 +178,28 @@ const MapScreen = ({ navigation }) => {
 
         components.forEach((comp) => {
           if (comp.types.includes("postal_code")) pin = comp.long_name;
-          if (
-            comp.types.includes("sublocality") ||
-            comp.types.includes("sublocality_level_1")
-          )
+          if (comp.types.includes("sublocality") || comp.types.includes("sublocality_level_1"))
             area = comp.long_name;
           if (comp.types.includes("locality")) city = comp.long_name;
-          if (comp.types.includes("administrative_area_level_1"))
-            state = comp.long_name;
+          if (comp.types.includes("administrative_area_level_1")) state = comp.long_name;
         });
 
         setLocation((prev) => ({ ...prev, description: address }));
         setAddressDetails({ pin, area, city, state });
       }
     } catch (err) {
-      console.log("Reverse geocode error", err);
+      console.log("❌ Reverse geocode error", err);
     }
   };
 
+  // ✅ “Use Current” button handler (refetches GPS)
   const goToCurrentLocation = async () => {
-    if (!currentLocation) return;
-    setLocation({ ...currentLocation });
-    mapRef.current?.animateToRegion(
-      { ...currentLocation, latitudeDelta: 0.01, longitudeDelta: 0.01 },
-      1000
-    );
-    await setAddressFromCoords(
-      currentLocation.latitude,
-      currentLocation.longitude
-    );
+    await fetchCurrentLocation();
   };
 
   return (
     <DashboardScreen>
-      {/* ✅ Hide status bar */}
       <StatusBar hidden />
-
       <SafeAreaView style={styles.safeArea}>
         {loading ? (
           <View style={styles.loader}>
@@ -171,17 +208,15 @@ const MapScreen = ({ navigation }) => {
           </View>
         ) : (
           <View style={styles.mainContainer}>
-            {/* Top Current Address */}
             <View style={styles.topRow}>
               <Text style={styles.addressText}>
-                {location?.description || "Fetching..."}
+                {location?.description || "Fetching address..."}
               </Text>
               <TouchableOpacity onPress={goToCurrentLocation}>
                 <Text style={styles.changeText}>Use Current</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Map Section */}
             <View style={styles.mapContainer}>
               <MapView
                 ref={mapRef}
@@ -229,7 +264,6 @@ const MapScreen = ({ navigation }) => {
               </View>
             </View>
 
-            {/* ✅ Floating Bottom Button */}
             <TouchableOpacity
               style={styles.floatingNextBtn}
               onPress={() => setSaveModalVisible(true)}
@@ -258,7 +292,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#fff" },
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
   loadingText: { marginTop: scale(8), fontSize: scale(13), color: "#555" },
-  mainContainer: { height:"97%", justifyContent: "space-between" },
+  mainContainer: { height: "97%", justifyContent: "space-between" },
 
   topRow: {
     flexDirection: "row",
@@ -281,7 +315,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: scale(13),
   },
-
   mapContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
   map: {
     width: width * 0.96,
@@ -303,8 +336,6 @@ const styles = StyleSheet.create({
     color: "#c71616ff",
     lineHeight: scale(16),
   },
-
-  // ✅ Floating "Next" button styling
   floatingNextBtn: {
     position: "absolute",
     bottom: Platform.OS === "ios" ? scale(40) : scale(30),

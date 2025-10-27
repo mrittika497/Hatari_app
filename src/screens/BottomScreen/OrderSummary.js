@@ -9,15 +9,18 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import {useDispatch, useSelector} from 'react-redux';
-import {fetchFoodOrders} from '../redux/slice/getfoodorderSlice';
-import DashboardScreen from '../components/DashboardScreen';
-import CustomHeader from '../components/CustomHeader';
+
+
 import {useNavigation} from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import Theme from '../assets/theme';
 
-const ItemDetalis = () => {
+import DashboardScreen from '../../components/DashboardScreen';
+import CustomHeader from '../../components/CustomHeader';
+import Theme from '../../assets/theme';
+import { fetchFoodOrders } from '../../redux/slice/getfoodorderSlice';
+
+const OrderSummary = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const {orders, loading, error} = useSelector(state => state.foodOrder);
@@ -190,7 +193,7 @@ const ItemDetalis = () => {
   );
 };
 
-export default ItemDetalis;
+export default OrderSummary;
 
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#f9f9f9', padding: 10},

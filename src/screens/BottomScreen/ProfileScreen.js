@@ -100,11 +100,11 @@ navigation.getParent()?.reset({
         {/* ===== Menu Options ===== */}
         <View style={styles.menuContainer}>
           {[
-            { title: "Address", icon: "location-on" },
-            { title: "My Orders", icon: "shopping-cart" },
-            { title: "Help and Support", icon: "support-agent" },
+            { title: "Address", icon: "location-on",renavigation:"MapScreen" },
+            { title: "My Orders", icon: "shopping-cart" ,renavigation :"ItemDetalis"},
+            { title: "Help and Support", icon: "support-agent",renavigation: "jjjj" },
           ].map((item, index) => (
-            <TouchableOpacity key={index} style={styles.menuItem}>
+            <TouchableOpacity key={index} style={styles.menuItem} onPress={() => navigation.navigate(item.renavigation)}>
               <Icon name={item.icon} size={22} color="#444" />
               <Text style={styles.menuText}>{item.title}</Text>
               <Icon name="chevron-right" size={24} color="#ccc" />
@@ -138,6 +138,7 @@ navigation.getParent()?.reset({
               placeholder="Enter Name"
               value={editName}
               onChangeText={setEditName}
+              placeholderTextColor={"black"}
             />
             <TextInput
               style={styles.input}
@@ -145,6 +146,7 @@ navigation.getParent()?.reset({
               value={editPhone}
               onChangeText={setEditPhone}
               keyboardType="phone-pad"
+              placeholderTextColor={"black"}
             />
             <View style={styles.modalActions}>
               <TouchableOpacity
@@ -211,7 +213,7 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" },
   modalBox: { width: "85%", backgroundColor: "#fff", borderRadius: 10, padding: 20 },
   modalTitle: { fontSize: Theme.fontSizes.medium, fontWeight: "700", marginBottom: 15, textAlign: "center" },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginBottom: 12 ,color:"black"},
   modalActions: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
   modalBtn: { flex: 1, marginHorizontal: 5, paddingVertical: 10, borderRadius: 8, alignItems: "center" },
   modalBtnText: { color: "#fff", fontWeight: "600" },

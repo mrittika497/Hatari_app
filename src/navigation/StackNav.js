@@ -17,6 +17,7 @@ import SearchScreen from '../screens/SearchScreen';
 import TableBookingShow from '../screens/TableBookingShow';
 import ItemDetalis from '../screens/ItemDetalis';
 import OrderDetailsScreen from '../screens/OrderDetailsScreen';
+import OderCartScreen from '../screens/OderCartScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -126,6 +127,11 @@ const StackNav = () => {
       <Stack.Screen 
       name='OrderDetailsScreen'
       component={OrderDetailsScreen}
+      options={{headerShown:false}}
+      />
+         <Stack.Screen 
+      name='OderCartScreen'
+      component={OderCartScreen}
       options={{headerShown:false}}
       />
       
