@@ -11,6 +11,9 @@ export const fetchFoodPagination = createAsyncThunk(
         `${API.getfoodpagination}?page=${page}&limit=${limit}`
       );
 
+      console.log(response,"------------------------------response");
+      
+
       return {
         foods: response.data.data || [], // ✅ Always return array
         page: response.data.page || page,

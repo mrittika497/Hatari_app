@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import { fetchRestaurants } from '../../redux/slice/AllRestaurantSlice';
 import { fetchBanners } from '../../redux/slice/BannerSlice';
 import { fetchAllFoodCat } from '../../redux/slice/foodCategorySlice';
 import { fetchFoodPagination } from '../../redux/slice/SearchFoodPaginationSlice';
+import Theme from '../../assets/theme';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -31,7 +32,7 @@ const HomeScreen = () => {
   // Redux states
   const cartItems = useSelector(state => state.cart.items || []);
   const totalCount = cartItems.length;
-  const isVeg = useSelector(state => state.foodFilter.isVeg); // true=Veg, false=NonVeg, null=All
+  const isVeg = useSelector(state => state.foodFilter.isVeg);
   const { experienceId, selectedRestaurant, experienceType } = useSelector(
     state => state.experience,
   );
@@ -68,17 +69,6 @@ const HomeScreen = () => {
     }
   };
 
-  // ✅ Filter logic for Veg / Non-Veg when type is ARRAY
-  const filteredFoods = AllFoodsData.filter(item => {
-    const foodType = Array.isArray(item?.food?.type)
-      ? item.food.type.map(t => t.toLowerCase())
-      : [String(item?.food?.type || '').toLowerCase()];
-
-    if (isVeg === true) return foodType.includes('veg');
-    if (isVeg === false) return foodType.includes('non-veg') || foodType.includes('nonveg');
-    return true;
-  });
-
   const experiences = [
     {
       id: 1,
@@ -107,6 +97,7 @@ const HomeScreen = () => {
     <DashboardScreen scrollable={false}>
       {/* Header */}
       <View style={styles.headerContainer}>
+        {/* Left - Location */}
         <TouchableOpacity
           style={styles.locationContainer}
           onPress={() => setShowDropdown(!showDropdown)}>
@@ -125,6 +116,7 @@ const HomeScreen = () => {
           </View>
         </TouchableOpacity>
 
+        {/* Right - Logo */}
         <Image
           source={require('../../assets/images/project_logo.png')}
           style={styles.logo}
@@ -159,10 +151,10 @@ const HomeScreen = () => {
         </View>
       )}
 
-      {/* ✅ FlatList */}
+      {/* ✅ Main Scrollable FlatList (no nested scroll issues) */}
       <FlatList
         ref={flatListRef}
-        data={filteredFoods.slice(0, visibleCount)}
+        data={AllFoodsData.slice(0, visibleCount)}
         keyExtractor={(item, index) => item?.food?._id || index.toString()}
         numColumns={3}
         columnWrapperStyle={{ justifyContent: 'space-between' }}
@@ -232,7 +224,7 @@ const HomeScreen = () => {
               ))}
             </View>
 
-            {/* Banners */}
+            {/* Banner Section */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {loading ? (
                 [1, 2, 3].map(i => (
@@ -282,6 +274,7 @@ const HomeScreen = () => {
               )}
             />
 
+            {/* Top Picks Title */}
             <SectionDivider title="Top Picks" containerStyle={{ marginVertical: 10 }} />
           </>
         }
@@ -311,12 +304,12 @@ const HomeScreen = () => {
           </TouchableOpacity>
         )}
         ListFooterComponent={() =>
-          visibleCount < filteredFoods.length ? (
+          visibleCount < AllFoodsData.length ? (
             <TouchableOpacity
               style={styles.exploreBtn}
               onPress={() => {
                 const newCount = visibleCount + 9;
-                if (newCount <= filteredFoods.length) {
+                if (newCount <= AllFoodsData.length) {
                   setVisibleCount(newCount);
                 } else if (hasMore) {
                   dispatch(fetchFoodPagination({ page: page + 1, limit: 9 }));

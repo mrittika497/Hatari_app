@@ -8,7 +8,7 @@ export const fetchRestaurants = createAsyncThunk(
   async (_, {rejectWithValue}) => {
     try {
       const response = await axiosInstance.get(API.allRestaurant);
-      console.log(response, '--------------res');
+      // console.log(response, '--------------res');
 
       return response.data;
     } catch (error) {

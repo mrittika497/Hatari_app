@@ -1,6 +1,6 @@
 // Api/Global_Api.js
 export const BASE_URL = 'https://hatari.backend.sensegeofence.com/api/';
-
+// export const BASE_URL  = 'http://192.168.1.13:3006/api/'
 export const API = {
   sendOtp: `${BASE_URL}auth/sendOtp`,
   verifyOtp: `${BASE_URL}auth/verifyOtp`,

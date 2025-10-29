@@ -18,6 +18,8 @@ import deliverySettingsReducer from "../slice/deliverySettingsSlice";
  import postBillingReducer from '../slice/postBillingSlice';
  import couponReducer from '../slice/couponSlice';
  import getFoodOrderReducer from '../slice/getfoodorderSlice';
+ import toggleReducer from '../slice/toggleSlice';
+ import foodReducer from '../slice/foodSlice'
 const store = configureStore({
   reducer: {
     home: HomeReducer,
@@ -38,7 +40,9 @@ const store = configureStore({
     tableBooking:TableBookingRducer,
     coupons:couponReducer,
     billing:postBillingReducer,
-    foodOrder:getFoodOrderReducer
+    foodOrder:getFoodOrderReducer,
+    foodFilter:toggleReducer,
+     foods: foodReducer,
   },
 });
 

@@ -27,15 +27,40 @@ const CatItemScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const route = useRoute();
-
-  const {categoryId, categoryName, restaurantId, categoryIngredients} =
+ const isVeg = useSelector(state => state.foodFilter.isVeg);
+  const {categoryId, categoryName, restaurantId, categoryIngredients,categoryType} =
     route.params;
 
   const {data: categoryFoods, loading, error} = useSelector(
     state => state.catItems,
   );
-  const cartItems = useSelector(state => state.cart.items);
 
+
+  // 🥦 Filter logic based on Veg/Non-Veg toggle
+const filteredFoods = categoryFoods.filter(item => {
+  const food = item.food;
+  const typeArray = food?.type;
+  const type = Array.isArray(typeArray)
+    ? String(typeArray[0] || '').toLowerCase()
+    : String(typeArray || '').toLowerCase();
+
+  if (isVeg === true) {
+    // show only Veg
+    return type.includes('veg') && !type.includes('non');
+  } else if (isVeg === false) {
+    // show only Non-Veg
+    return type.includes('non');
+  } else {
+    // show all if filter not set
+    return true;
+  }
+});
+
+   useEffect(() => {
+    console.log('Category foods data:', categoryType);
+  }, [categoryType]);
+  const cartItems = useSelector(state => state.cart.items);
+  console.log(cartItems,"-------------------data");
   const [selectedFood, setSelectedFood] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
@@ -110,52 +135,72 @@ const CatItemScreen = () => {
     </View>
   );
 
-  const renderItem = ({item}) => {
-    const food = item.food;
-    return (
-      <View style={styles.card}>
-        <Image source={{uri: food.image}} style={styles.image} />
-        <View style={styles.details}>
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            <Image
-              source={require('../assets/images/dineBlack.png')}
-              style={{width: 12, height: 12}}
-            />
-            <Text style={styles.cuisine}>
-              {food.cuisineType?.[0] || 'Indian'}
-            </Text>
-          </View>
+ const renderItem = ({item}) => {
+  const food = item.food;
+  console.log(food,"------------------food");
+  
 
-          <View
-            style={{flexDirection: 'row', alignItems: 'center', marginTop: 4}}>
-            <View
-              style={[
-                styles.typeIndicator,
-                {borderColor: food.type?.[0] === 'veg' ? 'green' : 'red'},
-              ]}>
-              <View
-                style={[
-                  styles.typeDot,
-                  {backgroundColor: food.type?.[0] === 'veg' ? 'green' : 'red'},
-                ]}
-              />
-            </View>
-            <Text style={styles.name}>{food.name}</Text>
-          </View>
+  // Safely extract type (handles string or array)
+  const typeArray = food?.type;
+  console.log(typeArray,"--------------------typeArray");
+  
+  const type = Array.isArray(typeArray)
+    ? String(typeArray[0] || '').toLowerCase()
+    : String(typeArray || '').toLowerCase();
 
-          <Text style={styles.price}>₹{food.price}</Text>
+  return (
+    <View style={styles.card}>
+      <Image source={{uri: food.image}} style={styles.image} />
 
-          <View style={styles.ratingWrapper}>
-            <Text style={styles.ratingText}>★ {food.rating}</Text>
-          </View>
+      <View style={styles.details}>
+        {/* Cuisine */}
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <Image
+            source={require('../assets/images/dineBlack.png')}
+            style={{width: 12, height: 12, tintColor: '#555'}}
+          />
+          <Text style={styles.cuisine}>
+            {food.cuisineType?.[0] || 'Indian'}
+          </Text>
         </View>
 
-        <TouchableOpacity style={styles.addBtn} onPress={() => openModal(food)}>
-          <Text style={styles.addText}>Add</Text>
-        </TouchableOpacity>
+        {/* Name + Type */}
+        <View
+          style={{flexDirection: 'row', alignItems: 'center', marginTop: 4}}>
+          <View
+            style={[
+              styles.typeIndicator,
+              {borderColor: type.includes('veg') && !type.includes('non') ? 'green' : 'red'},
+            ]}>
+            <View
+              style={[
+                styles.typeDot,
+                {backgroundColor: type.includes('veg') && !type.includes('non') ? 'green' : 'red'},
+              ]}
+            />
+          </View>
+
+          <Text style={styles.name} numberOfLines={1}>
+            {food.name}
+          </Text>
+        </View>
+
+        {/* Price */}
+        <Text style={styles.price}>₹{food.price}</Text>
+
+        {/* Rating */}
+        <View style={styles.ratingWrapper}>
+          <Text style={styles.ratingText}>★ {food.rating || '4.2'}</Text>
+        </View>
       </View>
-    );
-  };
+
+      <TouchableOpacity style={styles.addBtn} onPress={() => openModal(food)}>
+        <Text style={styles.addText}>Add</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 
   // Confirm Add logic
   const handleConfirmAdd = () => {
@@ -197,7 +242,7 @@ const CatItemScreen = () => {
         ) : categoryFoods.length > 0 ? (
           <FlatList
             showsVerticalScrollIndicator={false}
-            data={categoryFoods}
+            data={filteredFoods}
             keyExtractor={item => item.food._id}
             renderItem={renderItem}
             contentContainerStyle={{paddingBottom: 120}}
