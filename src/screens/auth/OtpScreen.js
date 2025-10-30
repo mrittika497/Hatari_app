@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   Alert,
   ToastAndroid,
   ScrollView,
+  Animated,
+  Easing,
   Dimensions,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -18,24 +20,59 @@ import {
   useBlurOnFulfill,
   useClearByFocusCell,
 } from 'react-native-confirmation-code-field';
-import DashboardScreen from '../../components/DashboardScreen';
-import Theme from '../../assets/theme';
-import ReusableBtn from '../../components/ReuseableBtn';
+import LinearGradient from 'react-native-linear-gradient';
 import { sendOtp, verifyOtp, setAuth } from '../../redux/slice/authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Theme from '../../assets/theme';
 
 const CELL_COUNT = 6;
 const { width } = Dimensions.get('window');
-const CELL_WIDTH = Math.min(60, (width - 80) / 8); // responsive cell width
+const CELL_WIDTH = Math.min(60, (width - 80) / 8);
 
 const OtpScreen = ({ route, navigation }) => {
   const phone = route?.params?.phone;
   const dispatch = useDispatch();
   const { token, user } = useSelector(state => state.auth);
 
+  const [value, setValue] = useState('');
+  const ref = useBlurOnFulfill({ value, cellCount: CELL_COUNT });
+  const [props, getCellOnLayoutHandler] = useClearByFocusCell({
+    value,
+    setValue,
+  });
+
+  // Animations
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(bounceAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 70,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  useEffect(() => {
+    if (token && user) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'ExperienceScreen', params: { token, user } }],
+      });
+    }
+  }, [token, user]);
 
 
-    useEffect(() => {
+     useEffect(() => {
     const storeUserId = async () => {
       if (user?._id) {
         try {
@@ -50,22 +87,6 @@ const OtpScreen = ({ route, navigation }) => {
     storeUserId();
   }, [user]);
 
-  const [value, setValue] = useState('');
-  const ref = useBlurOnFulfill({ value, cellCount: CELL_COUNT });
-  const [props, getCellOnLayoutHandler] = useClearByFocusCell({
-    value,
-    setValue,
-  });
-
-  useEffect(() => {
-    if (token && user) {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'ExperienceScreen', params: { token, user } }],
-      });
-    }
-  }, [token, user]);
-
   const handleVerify = () => {
     if (value.length !== CELL_COUNT) {
       Alert.alert('Invalid OTP', 'Please enter a valid 6-digit OTP');
@@ -78,7 +99,6 @@ const OtpScreen = ({ route, navigation }) => {
 
         await AsyncStorage.setItem('userToken', token);
         await AsyncStorage.setItem('userData', JSON.stringify(user));
-
         dispatch(setAuth({ token, user }));
 
         navigation.reset({
@@ -106,65 +126,136 @@ const OtpScreen = ({ route, navigation }) => {
 
   const isButtonActive = value.length === CELL_COUNT;
 
+  useEffect(() => {
+    if (isButtonActive) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(buttonScale, {
+            toValue: 1.05,
+            duration: 700,
+            easing: Easing.ease,
+            useNativeDriver: true,
+          }),
+          Animated.timing(buttonScale, {
+            toValue: 1,
+            duration: 700,
+            easing: Easing.ease,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      buttonScale.stopAnimation();
+      buttonScale.setValue(1);
+    }
+  }, [isButtonActive]);
+
   return (
-    <DashboardScreen>
+    <LinearGradient
+      colors={['#FF4B2B', '#FF416C']}
+      style={{ flex: 1 }}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
       >
         <ScrollView
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
-          <Image
-            source={require('../../assets/images/project_logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.tagline}>Chinese • Indian • Tandoor</Text>
+          {/* Transparent White Card */}
+          <Animated.View
+            style={[
+              styles.card,
+              {
+                opacity: fadeAnim,
+                transform: [
+                  {
+                    scale: bounceAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.9, 1],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <Image
+              source={require('../../assets/images/project_logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.tagline}>Chinese • Indian • Tandoor</Text>
+            <Text style={styles.heading}>Enter the OTP</Text>
+            <Text style={styles.subText}>Sent to +91 {phone}</Text>
 
-          <Text style={styles.instruction}>Enter 6 digit OTP</Text>
+            {/* OTP Input */}
+            <CodeField
+              ref={ref}
+              {...props}
+              value={value}
+              onChangeText={setValue}
+              cellCount={CELL_COUNT}
+              rootStyle={styles.codeFieldRoot}
+              keyboardType="number-pad"
+              textContentType="oneTimeCode"
+              renderCell={({ index, symbol, isFocused }) => (
+                <Animated.View
+                  key={index}
+                  style={[
+                    styles.cell,
+                    {
+                      borderColor: isFocused ? '#FF3B30' : '#E5E5E5',
+                      transform: [{ scale: isFocused ? 1.1 : 1 }],
+                    },
+                  ]}
+                  onLayout={getCellOnLayoutHandler(index)}
+                >
+                  <Text style={styles.cellText}>
+                    {symbol || (isFocused ? <Cursor /> : null)}
+                  </Text>
+                </Animated.View>
+              )}
+            />
 
-          <CodeField
-            ref={ref}
-            {...props}
-            value={value}
-            onChangeText={setValue}
-            cellCount={CELL_COUNT}
-            rootStyle={styles.codeFieldRoot}
-            keyboardType="number-pad"
-            textContentType="oneTimeCode"
-            renderCell={({ index, symbol, isFocused }) => (
-              <View
-                key={index}
-                style={[styles.cell, isFocused && styles.focusCell]}
-                onLayout={getCellOnLayoutHandler(index)}
+            {/* Verify Button */}
+            <Animated.View
+              style={[
+                styles.buttonWrapper,
+                { transform: [{ scale: buttonScale }] },
+              ]}
+            >
+              <LinearGradient
+                colors={
+                  isButtonActive
+                    ? ['#FF3B30', '#FF6F61']
+                    : ['#ccc', '#bbb']
+                }
+                style={styles.gradientBtn}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
               >
-                <Text style={styles.cellText}>
-                  {symbol || (isFocused ? <Cursor /> : null)}
+                <Text
+                  style={styles.btnText}
+                  onPress={isButtonActive ? handleVerify : null}
+                >
+                  Verify OTP
                 </Text>
-              </View>
-            )}
-          />
+              </LinearGradient>
+            </Animated.View>
 
-          <ReusableBtn
-            title="Verify"
-            style={[isButtonActive ? styles.verifyBtn : styles.verifyBtnDisabled]}
-            onPress={handleVerify}
-            disabled={!isButtonActive}
-          />
-
-          <Text style={styles.resendText}>
-            Having any issue?
-            <Text style={styles.resendLink} onPress={handleResend}>
-              {' '}
-              Send again
+            <Text style={styles.resendText}>
+              Didn’t receive code?{' '}
+              <Text style={styles.resendLink} onPress={handleResend}>
+                Resend
+              </Text>
             </Text>
-          </Text>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </DashboardScreen>
+    </LinearGradient>
   );
 };
 
@@ -175,77 +266,87 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
+    paddingHorizontal: 24,
+    paddingVertical: 40,
+  },
+  card: {
+    width: '90%',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 20,
+    padding: 25,
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
   },
   logo: {
-    width: width * 0.3,
-    height: width * 0.3,
+    width: 120,
+    height: 120,
     marginBottom: 10,
   },
   tagline: {
-    fontSize: 14,
-    color: Theme.colors.red,
-    marginBottom: 20,
-    fontWeight: '500',
+    fontSize: 13,
+    color: '#FF3B30',
+    marginBottom: 25,
+    fontWeight: '600',
   },
-  instruction: {
-    fontSize: 16,
-    marginBottom: 20,
-    color: Theme.colors.black,
-    fontWeight: '500',
+  heading: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#222',
+    marginBottom: 8,
+  },
+  subText: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 25,
   },
   codeFieldRoot: {
-    marginBottom: 30,
+    marginBottom: 25,
     flexDirection: 'row',
     justifyContent: 'center',
   },
   cell: {
     width: CELL_WIDTH,
     height: CELL_WIDTH * 1.1,
-    borderWidth: 1,
-    borderColor: Theme.colors.red,
-    borderRadius: 8,
+    borderWidth: 1.5,
+    borderRadius: 10,
     marginHorizontal: 5,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Theme.colors.white,
+    backgroundColor: '#fff',
+    elevation: 2,
   },
   cellText: {
     fontSize: CELL_WIDTH * 0.45,
-    color: '#333',
+    color: '#222',
+    fontWeight: '600',
   },
-  focusCell: {
-    borderColor: Theme.colors.red,
+  buttonWrapper: {
+    width: '75%',
+    alignSelf: 'center',
+    marginBottom: 10,
   },
-  verifyBtn: {
-    width: '100%',
-    paddingVertical: 15,
+  gradientBtn: {
+    paddingVertical: 14,
     borderRadius: 30,
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Theme.colors.red,
-    elevation: 3,
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    marginBottom: 15,
+    elevation: 4,
   },
-  verifyBtnDisabled: {
-    width: '100%',
-    paddingVertical: 15,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ccc',
-    marginBottom: 15,
+  btnText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   resendText: {
     fontSize: 14,
-    color: Theme.colors.black,
+    color: '#555',
     marginTop: 15,
   },
   resendLink: {
-    color: Theme.colors.red,
-    fontWeight: 'bold',
+    color: '#FF3B30',
+    fontWeight: '700',
   },
 });

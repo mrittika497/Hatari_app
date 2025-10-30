@@ -5,10 +5,10 @@ import { API } from "../../global_Url/GlobalUrl";
 // ✅ Async thunk
 export const fetchFoodPagination = createAsyncThunk(
   "foods/fetchFoodPagination",
-  async ({ page = 1, limit = 10 }, { rejectWithValue }) => {
+  async ({ page = 1, limit = 10,type:isVeg }, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get(
-        `${API.getfoodpagination}?page=${page}&limit=${limit}`
+        `${API.getfoodpagination}?page=${page}&limit=${limit}&isVeg=${isVeg}`
       );
 
       console.log(response,"------------------------------response");

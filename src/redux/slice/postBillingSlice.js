@@ -6,11 +6,11 @@ import { API } from '../../global_Url/GlobalUrl';
 export const postBilling = createAsyncThunk(
   'billing/postBilling',
   async (billingData, { rejectWithValue }) => {
-    console.log(billingData,"------------billingData");
+    console.log(billingData,"------------billingData666666666666666666");
     
     try {
       const response = await axiosInstance.post(API.billing, billingData);
-      console.log(response?.data,"----------------------response");
+      console.log(response,"----------------------responsebiling");
       
       return response.data;
     } catch (error) {

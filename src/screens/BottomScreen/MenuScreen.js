@@ -28,8 +28,6 @@ import CustomHeader from '../../components/CustomHeader';
 import SmallbtnReuseable from '../../components/SmallbtnReuseable';
 import Theme from '../../assets/theme';
 import { addToCart } from '../../redux/slice/cartSlice';
-// import { fetchMenuFoods } from '../redux/slice/menucuisineTypeSlice';
-
 const categories = ['Indian', 'Chinese', 'Italian', 'Mexican', 'Top Picks'];
 const {width} = Dimensions.get('window');
 
@@ -337,6 +335,12 @@ const filteredItems = menuFoods.filter(item => {
               // opacity: boxAnim, // fade in
             },
           ]}>
+             <LinearGradient
+        colors={['#ff4d4d', '#ff6f61', '#ff8a65']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientBackground}
+      >
           <View style={styles.bottomBoxContent}>
             <Text style={styles.bottomText}>
               ✅ Item added successfully ({totalItemCount} item
@@ -346,6 +350,7 @@ const filteredItems = menuFoods.filter(item => {
               <Text style={styles.bottomButtonText}>Go to Cart</Text>
             </TouchableOpacity>
           </View>
+          </LinearGradient>
         </Animated.View>
       )}
     </DashboardScreen>
@@ -517,8 +522,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    elevation: 10,
-    paddingVertical: 20,
+    // elevation: 10,
+    // paddingVertical: 20,
+    // paddingHorizontal: 20,
+  },
+    gradientBackground: {
+    borderRadius: 20,
+    paddingVertical: 15,
     paddingHorizontal: 20,
   },
   bottomBoxContent: {alignItems: 'center'},

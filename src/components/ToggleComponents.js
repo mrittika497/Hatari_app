@@ -75,6 +75,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 8,
+    justifyContent:'flex-end',
+    marginTop:-4
   },
   toggleLabel: {
     fontSize: 12,
@@ -101,5 +103,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.5,
+    padding:6
   },
 });

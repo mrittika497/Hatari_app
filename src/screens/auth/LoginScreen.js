@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Image,
   KeyboardAvoidingView,
@@ -12,13 +12,18 @@ import {
   Alert,
   ScrollView,
   ToastAndroid,
+  Animated,
+  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Theme from "../../assets/theme";
 import { useDispatch, useSelector } from "react-redux";
 import { sendOtp } from "../../redux/slice/authSlice";
 import { useNavigation } from "@react-navigation/native";
+import LinearGradient from "react-native-linear-gradient";
+import Theme from "../../assets/theme";
 import ReusableBtn from "../../components/ReuseableBtn";
+
+const { width } = Dimensions.get("window");
 
 const LoginScreen = () => {
   const navigation = useNavigation();
@@ -26,12 +31,28 @@ const LoginScreen = () => {
   const [phone, setPhone] = useState("");
   const { loading } = useSelector((state) => state.auth);
 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        bounciness: 12,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   const handlePhoneChange = (text) => {
     const cleanedText = text.replace(/[^0-9]/g, "");
     setPhone(cleanedText);
-    if (cleanedText.length === 10) {
-      Keyboard.dismiss();
-    }
+    if (cleanedText.length === 10) Keyboard.dismiss();
   };
 
   const handleSendOtp = () => {
@@ -45,7 +66,6 @@ const LoginScreen = () => {
         Platform.OS === "android"
           ? ToastAndroid.show("OTP sent successfully ✅", ToastAndroid.SHORT)
           : Alert.alert("Success", "OTP sent successfully ✅");
-
         navigation.navigate("OtpScreen", { phone });
       } else {
         const errMsg =
@@ -58,70 +78,99 @@ const LoginScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={{ flex: 1 }}
+    <SafeAreaView style={styles.container}>
+      <LinearGradient
+        colors={["#ff3d3d", "#ff5c5c", "#fff"]}
+        style={styles.backgroundGradient}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          keyboardShouldPersistTaps="handled"
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
         >
-          {/* Logo */}
-          <Image
-            source={require("../../assets/images/project_logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-
-          {/* Subtitle */}
-          <Text style={styles.cuisine}>Chinese • Indian • Tandoor</Text>
-
-          {/* Heading */}
-          <Text style={styles.heading}>Login to Your Account</Text>
-
-          {/* Phone Input */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Enter phone number</Text>
-            <View style={styles.phoneWrapper}>
-              <View style={styles.countryCodeBox}>
-                <Text style={styles.countryCode}>+91</Text>
-              </View>
-              <TextInput
-                style={styles.input}
-                placeholder="12345 67890"
-                placeholderTextColor="#999"
-                keyboardType="number-pad"
-                maxLength={10}
-                value={phone}
-                onChangeText={handlePhoneChange}
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Animated Logo */}
+            <Animated.View
+              style={{
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+                alignItems: "center",
+              }}
+            >
+              <Image
+                source={require("../../assets/images/project_logo.png")}
+                style={styles.logo}
+                resizeMode="contain"
               />
-            </View>
-          </View>
+              <Text style={styles.cuisine}>Chinese • Indian • Tandoor</Text>
+            </Animated.View>
 
-          {/* Get OTP Button */}
-     
+            {/* Login Card */}
+            <Animated.View
+              style={[
+                styles.loginCard,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              <Text style={styles.heading}>Login to Continue</Text>
 
-<ReusableBtn
-  title={loading ? "Sending..." : "Get OTP"}
-  style={{
-    backgroundColor: phone.length === 10 ? '#FF3B30' : '#ccc', // active red or disabled gray
-    opacity: loading ? 0.8 : 1, // optional slight dim while loading
-  }}
-  onPress={handleSendOtp}
-  disabled={phone.length !== 10 || loading}
-/>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Phone Number</Text>
+                <View style={styles.phoneWrapper}>
+                  <View style={styles.countryCodeBox}>
+                    <Text style={styles.countryCode}>+91</Text>
+                  </View>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="12345 67890"
+                    placeholderTextColor="#aaa"
+                    keyboardType="number-pad"
+                    maxLength={10}
+                    value={phone}
+                    onChangeText={handlePhoneChange}
+                  />
+                </View>
+              </View>
 
+              {/* OTP Button */}
+              <TouchableOpacity
+                activeOpacity={0.9}
+                disabled={phone.length !== 10 || loading}
+                onPress={handleSendOtp}
+              >
+                <LinearGradient
+                  colors={
+                    phone.length === 10
+                      ? ["#ff3b30", "#ff6659"]
+                      : ["#cccccc", "#cccccc"]
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[
+                    styles.otpButton,
+                    { opacity: loading ? 0.8 : 1 },
+                  ]}
+                >
+                  <Text style={styles.otpText}>
+                    {loading ? "Sending..." : "Get OTP"}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
 
-
-
-          {/* Small Footer */}
-          <Text style={styles.footerText}>
-            By continuing, you agree to our{" "}
-            <Text style={styles.link}>Terms & Conditions</Text>
-          </Text>
-        </ScrollView>
-      </KeyboardAvoidingView>
+              {/* Footer */}
+              <Text style={styles.footerText}>
+                By continuing, you agree to our{" "}
+                <Text style={styles.link}>Terms & Conditions</Text>
+              </Text>
+            </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
     </SafeAreaView>
   );
 };
@@ -129,64 +178,61 @@ const LoginScreen = () => {
 export default LoginScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Theme.colors.background,
-  },
+  container: { flex: 1, backgroundColor: "#fff" },
+  backgroundGradient: { flex: 1 },
   scrollContainer: {
     flexGrow: 1,
     justifyContent: "center",
-    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 30,
   },
   logo: {
-    width: 140,
-    height: 140,
-    marginBottom: 10,
+    width: width * 0.4,
+    height: width * 0.4,
+    marginBottom: 5,
   },
   cuisine: {
-    textAlign: "center",
-    fontSize: 14,
-    color: Theme.colors.error,
-    marginTop: 4,
+    fontSize: 15,
+    color: "#fff",
     fontWeight: "500",
+    letterSpacing: 1,
     marginBottom: 40,
-    letterSpacing: 0.5,
+  },
+  loginCard: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   heading: {
-    textAlign: "center",
     fontSize: 22,
     fontWeight: "700",
-    color: Theme.colors.text,
+    color: "#222",
+    textAlign: "center",
     marginBottom: 25,
   },
-  inputContainer: {
-    width: "100%",
-    marginBottom: 25,
-  },
+  inputContainer: { marginBottom: 25 },
   label: {
     fontSize: 14,
-    color: Theme.colors.graylightblack,
+    fontWeight: "600",
+    color: "#555",
     marginBottom: 8,
-    fontWeight: "500",
   },
   phoneWrapper: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: Theme.colors.whiteddd,
-    backgroundColor: Theme.colors.whitefff,
+    borderColor: "#eee",
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 10,
-    elevation: 2,
-    shadowColor: Theme.colors.blackshadow,
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
+    backgroundColor: "#fafafa",
   },
   countryCodeBox: {
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#f2f2f2",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
@@ -195,40 +241,30 @@ const styles = StyleSheet.create({
   countryCode: {
     fontSize: 16,
     fontWeight: "600",
-    color: Theme.colors.blackshadow,
+    color: "#333",
   },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: Theme.colors.blackshadow,
-  },
-  button: {
-    width: "100%",
-    paddingVertical: 15,
-    borderRadius: 30,
+  input: { flex: 1, fontSize: 16, color: "#000" },
+  otpButton: {
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Theme.colors.red,
-    elevation: 3,
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    marginBottom: 15,
+    marginTop: 10,
   },
-  buttonText: {
-    textAlign: "center",
+  otpText: {
     color: "#fff",
-    fontSize: 17,
     fontWeight: "700",
+    fontSize: 16,
     letterSpacing: 0.5,
   },
   footerText: {
-    fontSize: 12,
-    color: "#888",
     textAlign: "center",
-    marginTop: 10,
+    color: "#666",
+    fontSize: 12,
+    marginTop: 20,
   },
   link: {
-    color: Theme.colors.red,
+    color: "#ff3b30",
     fontWeight: "600",
   },
 });

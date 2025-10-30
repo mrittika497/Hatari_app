@@ -334,6 +334,13 @@ const filteredFoods = categoryFoods.filter(item => {
               ],
             },
           ]}>
+      <LinearGradient
+        colors={['#ff4d4d', '#ff6f61', '#ff8a65']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientBackground}
+      >
+
           <View style={styles.bottomBoxContent}>
             <Text style={styles.bottomText}>
               ✅ Item added successfully ({totalItemCount} item
@@ -345,6 +352,7 @@ const filteredFoods = categoryFoods.filter(item => {
               <Text style={styles.bottomButtonText}>Go to Cart</Text>
             </TouchableOpacity>
           </View>
+          </LinearGradient>
         </Animated.View>
       )}
     </DashboardScreen>
@@ -490,13 +498,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    elevation: 10,
-    paddingVertical: 20,
-    paddingHorizontal: 20,
+    // elevation: 10,
+    // paddingVertical: 20,
+    // paddingHorizontal: 20,
   },
   bottomBoxContent: {
     flexDirection: 'column',
     alignItems: 'center',
+  },
+      gradientBackground: {
+    borderRadius: 20,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
   },
   bottomText: {
     fontSize: 15,

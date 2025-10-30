@@ -19,7 +19,7 @@ import deliverySettingsReducer from "../slice/deliverySettingsSlice";
  import couponReducer from '../slice/couponSlice';
  import getFoodOrderReducer from '../slice/getfoodorderSlice';
  import toggleReducer from '../slice/toggleSlice';
- import foodReducer from '../slice/foodSlice'
+
 const store = configureStore({
   reducer: {
     home: HomeReducer,
@@ -42,7 +42,7 @@ const store = configureStore({
     billing:postBillingReducer,
     foodOrder:getFoodOrderReducer,
     foodFilter:toggleReducer,
-     foods: foodReducer,
+   
   },
 });
 

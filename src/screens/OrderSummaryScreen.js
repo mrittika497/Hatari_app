@@ -48,7 +48,7 @@ const OrderSummaryScreen = () => {
   const couponState = useSelector(state => state.coupons);
   const couponList = couponState?.list || [];
   const {token, user} = useSelector(state => state.auth);
-  const [userid, setUserId] = useState(null);
+  const [userid, setUserId] = useState("68c121cdb40227b610ae2ad0");
   console.log(
     userid,
     '--------------------------userid-----------------as per loing',
@@ -180,8 +180,8 @@ useEffect(() => {
   // Confirm COD
   const handleConfirmCOD = async () => {
     if (!addressid || !userid || !selectedRestaurant?._id) {
-      console.log('User:', userid);
-      console.log('Restaurant:', selectedRestaurant);
+      console.log('User--------------------------------:', userid);
+      console.log('Restaurant:----------------------------', selectedRestaurant);
       console.log(
         'getaddressid -------------------------------------:',
         addressid,
@@ -194,6 +194,7 @@ useEffect(() => {
       Alert.alert(
         'Error',
         'User, restaurant, or address information is missing.',
+        userid,
       );
       return;
     }
@@ -244,6 +245,7 @@ useEffect(() => {
         navigation.navigate('OrderSuccessScreen');
       }, 1000);
     } catch (error) {
+      
       console.log('Billing Failed:', error);
       ToastAndroid.show(
         error?.message || 'Failed to place order. Please try again.',
@@ -667,12 +669,6 @@ const styles = StyleSheet.create({
   },
   applyText: {color: '#FF8C00', fontWeight: 'bold', fontSize: 12},
 
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
   modalContentAddress: {
     backgroundColor: '#fff',
     width: '100%',
