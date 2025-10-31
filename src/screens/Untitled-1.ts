@@ -1,5 +1,6 @@
 // src/screens/ExperienceScreen.js
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,7 +12,6 @@ import {
   PermissionsAndroid,
   Alert,
   ActivityIndicator,
-  Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Geolocation from 'react-native-geolocation-service';
@@ -24,8 +24,8 @@ import DashboardScreen from '../components/DashboardScreen';
 // Dummy experiences
 const experiences = [
   { id: 1, title: 'Delivery', icon: require('../assets/images/delivery.png'), redirection: "HomeScreen" },
-  // { id: 2, title: 'Dine in', icon: require('../assets/images/dinein.png'), redirection: "DinneScreen" },
-  { id: 2, title: 'Takeaway', icon: require('../assets/images/takeaway.png'), redirection: "HomeScreen" },
+  { id: 2, title: 'Dine in', icon: require('../assets/images/dinein.png'), redirection: "DinneScreen" },
+  { id: 3, title: 'Takeaway', icon: require('../assets/images/takeaway.png'), redirection: "HomeScreen" },
 ];
 
 const ExperienceScreen = () => {
@@ -37,43 +37,12 @@ const ExperienceScreen = () => {
     (state) => state.nearestRestaurants
   );
 
-  // Animation refs
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const pressAnim = useRef(new Animated.Value(1)).current;
-
-  // Animate when restaurant and experience are selected
-  useEffect(() => {
-    if (experienceId && selectedRestaurant) {
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        friction: 5,
-        tension: 100,
-      }).start(() => {
-        // subtle continuous pulse
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(scaleAnim, {
-              toValue: 1.05,
-              duration: 800,
-              useNativeDriver: true,
-            }),
-            Animated.timing(scaleAnim, {
-              toValue: 1,
-              duration: 800,
-              useNativeDriver: true,
-            }),
-          ])
-        ).start();
-      });
-    }
-  }, [experienceId, selectedRestaurant]);
-
-  // Location permission
+  // Request location permission on mount
   useEffect(() => {
     requestLocationPermission();
   }, []);
 
+  // Fetch nearest restaurants when location is available
   useEffect(() => {
     if (location) {
       dispatch(
@@ -137,26 +106,11 @@ const ExperienceScreen = () => {
     }
   };
 
-  const handlePressIn = () => {
-    Animated.spring(pressAnim, {
-      toValue: 0.95,
-      useNativeDriver: true,
-      friction: 3,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(pressAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      friction: 3,
-    }).start();
-  };
-
   return (
     <DashboardScreen
       contentStyle={{ alignItems: "center", justifyContent: "center" }}
     >
+      {/* Added LinearGradient wrapper for background */}
       <LinearGradient
         colors={['#fff', '#ffe6e6', '#fff']}
         style={styles.gradientContainer}
@@ -165,8 +119,9 @@ const ExperienceScreen = () => {
           <Text style={styles.title}>
             Welcome to <Text style={styles.brand}>Hatari</Text>
           </Text>
-          <Text style={styles.subtitle}>Elevate Your Experience</Text>
+          <Text style={styles.subtitle}>Elevate Your Dining Experience</Text>
 
+          {/* Nearest Restaurants */}
           <Text style={styles.sectionHeading}>Nearest Restaurants</Text>
           {loading && <ActivityIndicator size="large" color="#e53935" />}
           {error && <Text style={{ color: 'red' }}>{error}</Text>}
@@ -180,7 +135,7 @@ const ExperienceScreen = () => {
               ]}
               onPress={() => {
                 dispatch(setRestaurant(res));
-                dispatch(setExperience({ id: null, type: null }));
+                dispatch(setExperience({ id: null, type: null })); // reset experience
               }}
             >
               <Image source={{ uri: res.image }} style={styles.restaurantImage} />
@@ -188,12 +143,13 @@ const ExperienceScreen = () => {
                 <Text style={styles.restaurantName}>{res.name}</Text>
                 <Text style={styles.restaurantDetails}>{res.address}</Text>
                 <Text style={styles.restaurantDetails}>
-                  Distance: {(res.distance / 1000).toFixed(2)} km 
+                  Distance: {(res.distance / 1000).toFixed(2)} km | Rating: {res.rating}
                 </Text>
               </View>
             </TouchableOpacity>
           ))}
 
+          {/* Experience Selection */}
           <Text style={styles.sectionHeading}>Choose your experience</Text>
           <View style={styles.experienceContainer}>
             {experiences.map((item) => {
@@ -219,32 +175,28 @@ const ExperienceScreen = () => {
             })}
           </View>
 
-          {/* Animated Continue Button */}
-          {experienceId && selectedRestaurant && (
-            <Animated.View
-              style={{
-                transform: [
-                  { scale: Animated.multiply(scaleAnim, pressAnim) },
-                ],
-              }}
+          {/* Gradient Continue Button */}
+          <TouchableOpacity
+            onPress={handleContinue}
+            disabled={!experienceId || !selectedRestaurant}
+            activeOpacity={0.8}
+            style={[
+              (!experienceId || !selectedRestaurant) && styles.disabledButton,
+            ]}
+          >
+            <LinearGradient
+              colors={
+                !experienceId || !selectedRestaurant
+                  ? ['#ccc', '#ccc']
+                  : ['#ff3b30', '#ff6666']
+              }
+              style={styles.continueButton}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
             >
-              <TouchableOpacity
-                onPress={handleContinue}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={['#ff3b30', '#ff6666']}
-                  style={styles.continueButton}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                >
-                  <Text style={styles.continueText}>Continue</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
-          )}
+              <Text style={styles.continueText}>Continue</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </SafeAreaView>
       </LinearGradient>
     </DashboardScreen>
@@ -327,5 +279,6 @@ const styles = StyleSheet.create({
     width: 180,
     alignSelf: 'center',
   },
+  disabledButton: { opacity: 0.7 },
   continueText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

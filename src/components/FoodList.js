@@ -182,7 +182,8 @@ const HomeScreen = () => {
 
               <TouchableOpacity
                 style={styles.cartBtn}
-                onPress={() => navigation.navigate('OderCartScreen')}>
+                onPress={() => navigation.navigate('OderCartScreen')}
+                >
                 <Image
                   source={require('../../assets/images/cart.png')}
                   style={styles.cartIcon}

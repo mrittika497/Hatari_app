@@ -160,7 +160,7 @@ const filteredFoods = categoryFoods.filter(item => {
             style={{width: 12, height: 12, tintColor: '#555'}}
           />
           <Text style={styles.cuisine}>
-            {food.cuisineType?.[0] || 'Indian'}
+            {food?.cuisineType}
           </Text>
         </View>
 

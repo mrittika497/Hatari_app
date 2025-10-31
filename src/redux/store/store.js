@@ -19,6 +19,7 @@ import deliverySettingsReducer from "../slice/deliverySettingsSlice";
  import couponReducer from '../slice/couponSlice';
  import getFoodOrderReducer from '../slice/getfoodorderSlice';
  import toggleReducer from '../slice/toggleSlice';
+ import saveAddressReducer from '../slice/saveaddressSlice';
 
 const store = configureStore({
   reducer: {
@@ -42,7 +43,7 @@ const store = configureStore({
     billing:postBillingReducer,
     foodOrder:getFoodOrderReducer,
     foodFilter:toggleReducer,
-   
+   address:saveAddressReducer,
   },
 });
 

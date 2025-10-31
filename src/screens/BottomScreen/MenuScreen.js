@@ -28,7 +28,7 @@ import CustomHeader from '../../components/CustomHeader';
 import SmallbtnReuseable from '../../components/SmallbtnReuseable';
 import Theme from '../../assets/theme';
 import { addToCart } from '../../redux/slice/cartSlice';
-const categories = ['Indian', 'Chinese', 'Italian', 'Mexican', 'Top Picks'];
+const categories = ['Indian', 'Chinese', 'Tandoor'];
 const {width} = Dimensions.get('window');
 
 // src/screens/MenuScreen.js
@@ -133,7 +133,21 @@ const filteredItems = menuFoods.filter(item => {
     <View style={styles.card}>
       <Image source={{uri: item.food?.image}} style={styles.image} />
       <View style={styles.details}>
+
+             {/* Cuisine */}
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <Image
+                    source={require('../../assets/images/dineBlack.png')}
+                    style={{width: 12, height: 12, tintColor: '#555'}}
+                  />
+                  <Text style={styles.cuisine}>
+                    {item?.food?.cuisineType}
+                  </Text>
+                </View>
+        
         <View style={styles.nameRow}>
+
+
           <View
             style={[
               styles.typeIndicator,
@@ -369,7 +383,7 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     marginRight: 10,
     height: 30,
-    width: 80,
+    width: "56%",
     justifyContent: 'center',
     marginVertical: 10,
   },
@@ -413,6 +427,12 @@ const styles = StyleSheet.create({
   image: {width: 80, height: 80, borderRadius: 10},
   details: {flex: 1, marginLeft: 12, justifyContent: 'center'},
   nameRow: {flexDirection: 'row', alignItems: 'center', marginBottom: 2},
+    cuisine: {
+    marginLeft: 10,
+    color: 'black',
+    fontSize: Theme.fontSizes.small,
+    fontWeight: '500',
+  },
   name: {
     fontSize: Theme.fontSizes.small,
     fontWeight: 'bold',

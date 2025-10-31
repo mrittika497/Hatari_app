@@ -10,6 +10,7 @@ import {
   Modal,
   ToastAndroid,
   SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useDispatch, useSelector} from 'react-redux';
@@ -22,20 +23,22 @@ import {fetchCoupons} from '../redux/slice/couponSlice';
 import {postBilling} from '../redux/slice/postBillingSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useNavigation } from '@react-navigation/native';
-import { clearCart } from '../redux/slice/cartSlice';
+import {useNavigation} from '@react-navigation/native';
+import {clearCart} from '../redux/slice/cartSlice';
+import { fetchUserAddresses } from '../redux/slice/saveaddressSlice';
+
 const OrderSummaryScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const {selectedRestaurant, experienceType} = useSelector(
     state => state.experience,
   );
-  const [savedAddress,setSavedAddress] = useState("")
-  console.log(
- savedAddress,
-    '----------------v ----------------123',
-  );
+  const [savedAddress, setSavedAddress] = useState([]);
+  console.log(savedAddress, '----------------v ----------------123');
+const { addresses, loading } = useSelector(state => state.address);
+console.log(addresses,"-----------------addresses");
 
+// log(addresses, '-----------------addresses-----------------');
   const {items: cartItems} = useSelector(state => state.cart);
   // const c = useSelector(state => state.savedAddress);
 
@@ -43,33 +46,32 @@ const OrderSummaryScreen = () => {
   console.log(addressid, '----------------------------getaddress_id');
 
   const {data} = useSelector(state => state.deliverySettings);
-  console.log(data,"---------------------data");
-  
+  console.log(data, '---------------------data');
+
   const couponState = useSelector(state => state.coupons);
   const couponList = couponState?.list || [];
   const {token, user} = useSelector(state => state.auth);
-  const [userid, setUserId] = useState("68c121cdb40227b610ae2ad0");
+  const [userid, setUserId] = useState(null);
   console.log(
     userid,
     '--------------------------userid-----------------as per loing',
   );
 
-useEffect(() => {
-  const loadSavedAddress = async () => {
-    try {
-      const saved = await AsyncStorage.getItem("savedAddress");
-    if (saved) {
+  useEffect(() => {
+    const loadSavedAddress = async () => {
+      try {
+        const saved = await AsyncStorage.getItem('savedAddress');
+        if (saved) {
           setSavedAddress(JSON.parse(saved));
         }
-      console.log(saved,"----------------------saved");
-      
-    } catch (error) {
-      console.log("❌ Error loading saved address:", error);
-    }
-  };
-  loadSavedAddress();
-}, []);;
-
+        console.log(saved, '----------------------saved');
+      } catch (error) {
+        console.log('❌ Error loading saved address:', error);
+      }
+    };
+    loadSavedAddress();
+    dispatch(fetchUserAddresses(token));
+  }, []);
 
   // const [addressid, setAddressId] = useState(null);
   // console.log(addressid, '-----------------useraddresssd---------------,');
@@ -95,7 +97,7 @@ useEffect(() => {
   const [selectedCoupon, setSelectedCoupon] = useState(null);
   const [codModalVisible, setCodModalVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-
+  const [modalsaveVisible, setModalsaveVisible] = useState(false);
   useEffect(() => {
     dispatch(fetchDeliverySettings());
     dispatch(fetchCoupons());
@@ -174,6 +176,14 @@ useEffect(() => {
       return;
     }
 
+  if (grandTotal < 500) {
+    ToastAndroid.show(
+      'Minimum order amount should be ₹500 to place an order.',
+      ToastAndroid.LONG,
+    );
+    return;
+  }
+
     setCodModalVisible(true);
   };
 
@@ -181,7 +191,10 @@ useEffect(() => {
   const handleConfirmCOD = async () => {
     if (!addressid || !userid || !selectedRestaurant?._id) {
       console.log('User--------------------------------:', userid);
-      console.log('Restaurant:----------------------------', selectedRestaurant);
+      console.log(
+        'Restaurant:----------------------------',
+        selectedRestaurant,
+      );
       console.log(
         'getaddressid -------------------------------------:',
         addressid,
@@ -235,7 +248,7 @@ useEffect(() => {
         'apii---biilingcreatedresponse ---------------------res:',
         response,
       );
- dispatch(clearCart());
+      dispatch(clearCart());
       setCodModalVisible(false);
       ToastAndroid.show(
         response?.message || 'Your order has been placed successfully!',
@@ -245,7 +258,6 @@ useEffect(() => {
         navigation.navigate('OrderSuccessScreen');
       }, 1000);
     } catch (error) {
-      
       console.log('Billing Failed:', error);
       ToastAndroid.show(
         error?.message || 'Failed to place order. Please try again.',
@@ -265,7 +277,7 @@ useEffect(() => {
           <View style={styles.addressCard}>
             <View style={{flex: 1}}>
               <Text style={styles.addrName}>
-               {savedAddress?.name} ({savedAddress?.addressType || 'Address'})
+                {savedAddress?.name} ({savedAddress?.addressType || 'Address'})
               </Text>
               <Text style={styles.addrDetails}>
                 {savedAddress.flat},{' '}
@@ -274,11 +286,18 @@ useEffect(() => {
               </Text>
               <Text style={styles.addrPhone}>{savedAddress.contact}</Text>
             </View>
-            <TouchableOpacity
-              style={styles.changeBtn}
-              onPress={() => navigation.navigate('MapScreen')}>
-              <Text style={styles.changeText}>Change</Text>
-            </TouchableOpacity>
+            <View>
+              <TouchableOpacity
+                style={styles.saveBtn}
+                onPress={() => setModalVisible(true)}>
+                <Text style={styles.saveText}>Save</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.changeBtn}
+                onPress={() => navigation.navigate('MapScreen')}>
+                <Text style={styles.changeText}>Change</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         ) : (
           <View style={styles.addressCard}>
@@ -311,9 +330,7 @@ useEffect(() => {
                 end={{x: 1, y: 0}}
                 style={styles.card}>
                 <View style={styles.leftSection}>
-                  <View style={styles.iconBox}>
-                    <Text style={styles.giftIcon}>🎁</Text>
-                  </View>
+                
                   <View style={{flex: 1}}>
                     <Text style={styles.title}>{coupon.description}</Text>
                     <Text style={styles.detailText}>
@@ -468,42 +485,68 @@ useEffect(() => {
       )}
 
       {/* Modal */}
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContentAddress}>
-            <Text style={styles.modalTitle}>Select Address</Text>
+    {/* Address Selection Modal */}
+<Modal
+  visible={modalVisible}
+  transparent
+  animationType="slide"
+  onRequestClose={() => setModalVisible(false)}>
+  <View style={styles.savemodalView}>
+    {/* Header */}
+    <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+      <Text style={styles.modalTitle}>Select Address</Text>
+      <TouchableOpacity onPress={() => setModalVisible(false)}>
+        <Icon name="close" size={26} color="#f11b1bff" />
+      </TouchableOpacity>
+    </View>
 
-            {/* Example modal content */}
-            <TouchableOpacity
-              style={styles.option}
-              onPress={() => {
-                setModalVisible(false);
-                // Handle selection logic here
-              }}>
-              <Text style={styles.optionText}>Home Address</Text>
-            </TouchableOpacity>
+    {/* Address List */}
+    {loading ? (
+      <ActivityIndicator size="large" color="#f11b1b" style={{marginTop: 20}} />
+    ) : addresses?.length > 0 ? (
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {addresses?.map((item, index) => (
+          <TouchableOpacity
+            key={item._id || index}
+            style={styles.addressItem}
+            onPress={() => {
+              setSavedAddress(item);
+              AsyncStorage.setItem('savedAddress', JSON.stringify(item));
+              setModalVisible(false);
+              ToastAndroid.show('Address selected successfully!', ToastAndroid.SHORT);
+            }}>
+            <View style={{flex: 1}}>
+              <Text style={styles.addressType}>{item?.addressType}</Text>
+              <Text style={styles.addressText}>
+                {item.flat}, {item.address}
+                {item.landmark ? `, ${item.landmark}` : ''}
+              </Text>
+              <Text style={styles.nameText}>
+                {item.name} — {item.mobileNumber}
+              </Text>
+            </View>
+            {savedAddress?._id === item._id && (
+              <Ionicons name="checkmark-circle" size={24} color="#f11b1b" />
+            )}
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    ) : (
+      <View style={{alignItems: 'center', marginTop: 30}}>
+        <Text style={{color: '#777'}}>No saved addresses found.</Text>
+        <TouchableOpacity
+          onPress={() => {
+            setModalVisible(false);
+            navigation.navigate('MapScreen');
+          }}
+          style={{marginTop: 10}}>
+          <Text style={{color: '#f11b1b', fontWeight: '600'}}>+ Add New Address</Text>
+        </TouchableOpacity>
+      </View>
+    )}
+  </View>
+</Modal>
 
-            <TouchableOpacity
-              style={styles.option}
-              onPress={() => {
-                setModalVisible(false);
-              }}>
-              <Text style={styles.optionText}>Work Address</Text>
-            </TouchableOpacity>
-
-            {/* Close button */}
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setModalVisible(false)}>
-              <Text style={styles.closeText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
 
       {/* COD Modal */}
       <Modal
@@ -535,6 +578,9 @@ useEffect(() => {
           </View>
         </View>
       </Modal>
+
+
+
     </DashboardScreen>
   );
 };
@@ -561,6 +607,18 @@ const styles = StyleSheet.create({
   addrName: {fontSize: 15, fontWeight: '600', color: '#000'},
   addrDetails: {fontSize: 13, color: '#444', marginTop: 4},
   addrPhone: {fontSize: 13, marginTop: 2, color: '#444'},
+  saveBtn: {
+    alignSelf: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: Theme.colors.red,
+    borderRadius: 6,
+    marginVertical:10
+  },
+  saveText: {
+   color: Theme.colors.red, fontSize: 12, fontWeight: '600'
+  },
   changeBtn: {
     alignSelf: 'center',
     paddingHorizontal: 12,
@@ -633,7 +691,27 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
   },
-  modalTitle: {fontSize: 18, fontWeight: '700', marginVertical: 10},
+  modalTitle: {fontSize: 18, fontWeight: '700', marginVertical: 10,color:"red"},
+  addressItem: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  paddingVertical: 12,
+  borderBottomWidth: 1,
+  borderBottomColor: '#eee',
+},
+    addressType: {
+    fontWeight: 'bold',
+    color: '#f11b1b',
+    marginBottom: 5,
+  },
+  addressText: {
+    color: '#333',
+  },
+  nameText: {
+    color: '#555',
+    marginTop: 4,
+  },
   modalText: {
     fontSize: 14,
     color: '#555',
@@ -658,9 +736,9 @@ const styles = StyleSheet.create({
   },
   leftSection: {flex: 2},
   rightSection: {flex: 1, alignItems: 'flex-end'},
-  title: {color: '#fff', fontSize: 18, fontWeight: 'bold',marginBottom:10},
-  expiry: {color: '#fff', marginTop: 5, fontSize: 12,},
-  code: {color: '#fff', fontWeight: 'bold', fontSize: 14, marginBottom: 8},
+  title: {color: '#fff', fontSize: 14, fontWeight: 'bold', marginBottom: 10},
+  expiry: {color: '#fff', marginTop: 5, fontSize: 12},
+  code: {color: '#fff', fontWeight: 'bold', fontSize: 10, marginBottom: 8},
   applyBtn: {
     backgroundColor: '#fff',
     paddingVertical: 5,
@@ -677,13 +755,23 @@ const styles = StyleSheet.create({
     padding: 20,
     elevation: 10,
   },
-detailText: {
-  color: '#fff',
-  fontSize: 16,
-  fontWeight: '500',
-  letterSpacing: 0.5,
-  lineHeight: 22,
-  textAlign: 'left',
-},
-
+  detailText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '500',
+    letterSpacing: 0.5,
+    lineHeight: 22,
+    textAlign: 'left',
+  },
+  savemodalView:{
+  height: 400,
+  width: '100%',
+  backgroundColor: 'white',
+  borderTopLeftRadius: 20,
+  borderTopRightRadius: 20,
+  padding: 20,
+  position: 'absolute',
+  bottom: 0,
+  elevation: 10,
+  }
 });

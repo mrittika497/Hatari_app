@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {
   StyleSheet,
   Text,
@@ -13,14 +13,15 @@ import {
   Easing,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigation } from '@react-navigation/native';
+import {useDispatch, useSelector} from 'react-redux';
+import {useNavigation} from '@react-navigation/native';
 
 import DashboardScreen from '../components/DashboardScreen';
 import CustomHeader from '../components/CustomHeader';
-import { fetchFoodPagination } from '../redux/slice/SearchFoodPaginationSlice';
-import { addToCart } from '../redux/slice/cartSlice';
+import {fetchFoodPagination} from '../redux/slice/SearchFoodPaginationSlice';
+import {addToCart} from '../redux/slice/cartSlice';
 import LinearGradient from 'react-native-linear-gradient';
+import Theme from '../assets/theme';
 
 const SearchScreen = () => {
   const navigation = useNavigation();
@@ -36,7 +37,7 @@ const SearchScreen = () => {
   const boxAnim = useRef(new Animated.Value(150)).current;
 
   // Redux states
-  const { AllFoodsData, page, hasMore, loading } = useSelector(
+  const {AllFoodsData, page, hasMore, loading} = useSelector(
     state => state.FoodPagination,
   );
   const isVeg = useSelector(state => state.foodFilter.isVeg);
@@ -47,7 +48,7 @@ const SearchScreen = () => {
 
   // ✅ Fetch data once
   useEffect(() => {
-    dispatch(fetchFoodPagination({ page: 1, limit: 70 ,type:isVeg}));
+    dispatch(fetchFoodPagination({page: 1, limit: 70, type: isVeg}));
   }, [dispatch]);
 
   // ✅ Proper Veg / Non-Veg + Search filter
@@ -68,7 +69,9 @@ const SearchScreen = () => {
       matchVegFilter = types.includes('veg');
     } else if (isVeg === false) {
       matchVegFilter =
-        types.includes('non-veg') || types.includes('nonveg') || types.includes('chicken');
+        types.includes('non-veg') ||
+        types.includes('nonveg') ||
+        types.includes('chicken');
     }
 
     return matchSearch && matchVegFilter;
@@ -77,7 +80,7 @@ const SearchScreen = () => {
   // ✅ Load more pagination
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
-      dispatch(fetchFoodPagination({ page: page + 1, limit: 10 }));
+      dispatch(fetchFoodPagination({page: page + 1, limit: 10}));
     }
   }, [dispatch, page, hasMore, loading]);
 
@@ -116,7 +119,7 @@ const SearchScreen = () => {
 
   // ✅ Add to cart confirm
   const handleConfirmAdd = () => {
-    dispatch(addToCart({ ...selectedFood, quantity }));
+    dispatch(addToCart({...selectedFood, quantity}));
     closeModal();
 
     // Show bottom box with animation
@@ -140,26 +143,46 @@ const SearchScreen = () => {
   };
 
   // ✅ Render food card
-  const renderItem = ({ item }) => {
+  const renderItem = ({item}) => {
     const food = item?.food || {};
     return (
       <TouchableOpacity
         key={food?._id?.toString()}
         style={styles.card}
         activeOpacity={0.9}
-        onPress={() => navigation.navigate('FoodDetailScreen', { foodItem: food })}>
-        <Image source={{ uri: food?.image }} style={styles.image} />
+    >
+        <Image source={{uri: food?.image}} style={styles.image} />
         <View style={styles.details}>
+
+     {/* Cuisine */}
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <Image
+                    source={require('../assets/images/dineBlack.png')}
+                    style={{width: 12, height: 12, tintColor: '#555'}}
+                  />
+                  <Text style={styles.cuisine}>
+                    {item?.food?.cuisineType}
+                  </Text>
+                </View>
+          
           <View style={styles.typeRow}>
             <View
               style={[
                 styles.typeIndicator,
-                { borderColor: food?.type?.includes('non-veg') ? 'red' : 'green' },
+                {
+                  borderColor: food?.type?.includes('non-veg')
+                    ? 'red'
+                    : 'green',
+                },
               ]}>
               <View
                 style={[
                   styles.typeDot,
-                  { backgroundColor: food?.type?.includes('veg') ? 'green' : 'red' },
+                  {
+                    backgroundColor: food?.type?.includes('veg')
+                      ? 'green'
+                      : 'red',
+                  },
                 ]}
               />
             </View>
@@ -203,7 +226,9 @@ const SearchScreen = () => {
       ) : filteredResults?.length > 0 ? (
         <FlatList
           data={filteredResults}
-          keyExtractor={(item, index) => item?.food?._id?.toString() || index.toString()}
+          keyExtractor={(item, index) =>
+            item?.food?._id?.toString() || index.toString()
+          }
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
@@ -229,7 +254,11 @@ const SearchScreen = () => {
       {/* Quantity Modal */}
       <Modal transparent visible={modalVisible} animationType="none">
         <View style={styles.modalOverlay}>
-          <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={closeModal} />
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={closeModal}
+          />
           <Animated.View
             style={[
               styles.modalContent,
@@ -248,28 +277,41 @@ const SearchScreen = () => {
             {selectedFood && (
               <>
                 <View style={styles.modalFoodRow}>
-                  <Image source={{ uri: selectedFood.image }} style={styles.modalImage} />
-                  <View style={{ flex: 1, marginLeft: 10 }}>
-                    <Text style={styles.modalFoodName}>{selectedFood.name}</Text>
-                    <Text style={styles.modalFoodPrice}>₹{selectedFood.price}</Text>
+                  <Image
+                    source={{uri: selectedFood.image}}
+                    style={styles.modalImage}
+                  />
+                  <View style={{flex: 1, marginLeft: 10}}>
+                    <Text style={styles.modalFoodName}>
+                      {selectedFood.name}
+                    </Text>
+                    <Text style={styles.modalFoodPrice}>
+                      ₹{selectedFood.price}
+                    </Text>
                   </View>
                 </View>
 
                 <View style={styles.quantityBox}>
                   <TouchableOpacity
                     style={styles.qtyBtn}
-                    onPress={() => setQuantity(quantity > 1 ? quantity - 1 : 1)}>
+                    onPress={() =>
+                      setQuantity(quantity > 1 ? quantity - 1 : 1)
+                    }>
                     <Text style={styles.qtyText}>-</Text>
                   </TouchableOpacity>
                   <Text style={styles.qtyValue}>{quantity}</Text>
-                  <TouchableOpacity style={styles.qtyBtn} onPress={() => setQuantity(quantity + 1)}>
+                  <TouchableOpacity
+                    style={styles.qtyBtn}
+                    onPress={() => setQuantity(quantity + 1)}>
                     <Text style={styles.qtyText}>+</Text>
                   </TouchableOpacity>
                 </View>
 
                 <View style={styles.modalFooter}>
                   <Text style={styles.totalText}>Total: ₹{totalPrice}</Text>
-                  <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirmAdd}>
+                  <TouchableOpacity
+                    style={styles.confirmBtn}
+                    onPress={handleConfirmAdd}>
                     <Text style={styles.confirmBtnText}>Confirm Add</Text>
                   </TouchableOpacity>
                 </View>
@@ -295,21 +337,22 @@ const SearchScreen = () => {
               ],
             },
           ]}>
-                      <LinearGradient
-                    colors={['#ff4d4d', '#ff6f61', '#ff8a65']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.gradientBackground}
-                  >
-          <View style={styles.bottomBoxContent}>
-            <Text style={styles.bottomText}>
-              ✅ Item added successfully ({totalItemCount} item
-              {totalItemCount > 1 ? 's' : ''} in cart)
-            </Text>
-            <TouchableOpacity style={styles.bottomButton} onPress={handleGoToCart}>
-              <Text style={styles.bottomButtonText}>Go to Cart</Text>
-            </TouchableOpacity>
-          </View>
+          <LinearGradient
+            colors={['#ff4d4d', '#ff6f61', '#ff8a65']}
+            start={{x: 0, y: 0}}
+            end={{x: 1, y: 1}}
+            style={styles.gradientBackground}>
+            <View style={styles.bottomBoxContent}>
+              <Text style={styles.bottomText}>
+                ✅ Item added successfully ({totalItemCount} item
+                {totalItemCount > 1 ? 's' : ''} in cart)
+              </Text>
+              <TouchableOpacity
+                style={styles.bottomButton}
+                onPress={handleGoToCart}>
+                <Text style={styles.bottomButtonText}>Go to Cart</Text>
+              </TouchableOpacity>
+            </View>
           </LinearGradient>
         </Animated.View>
       )}
@@ -332,8 +375,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     marginTop: 10,
   },
-  input: { marginLeft: 8, fontSize: 16, flex: 1, color: '#333' },
-  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 60 },
+  input: {marginLeft: 8, fontSize: 16, flex: 1, color: '#333'},
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 60,
+  },
   card: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -343,9 +391,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 2,
   },
-  image: { width: 80, height: 80, borderRadius: 10 },
-  details: { flex: 1, marginLeft: 10 },
-  typeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+  image: {width: 80, height: 80, borderRadius: 10},
+  details: {flex: 1, marginLeft: 10},
+  typeRow: {flexDirection: 'row', alignItems: 'center', marginTop: 6},
+    cuisine: {
+    marginLeft: 10,
+    color: 'black',
+    fontSize: Theme.fontSizes.small,
+    fontWeight: '500',
+  },
   typeIndicator: {
     width: 14,
     height: 14,
@@ -354,9 +408,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  typeDot: { width: 7, height: 7, borderRadius: 50 },
-  name: { fontSize: 15, fontWeight: '600', marginLeft: 8, color: '#000', flexShrink: 1 },
-  price: { fontSize: 14, color: '#000', marginVertical: 5, fontWeight: '500' },
+  typeDot: {width: 7, height: 7, borderRadius: 50},
+  name: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginLeft: 8,
+    color: '#000',
+    flexShrink: 1,
+  },
+  price: {fontSize: 14, color: '#000', marginVertical: 5, fontWeight: '500'},
   ratingWrapper: {
     backgroundColor: '#2e7d32',
     flexDirection: 'row',
@@ -366,22 +426,48 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignSelf: 'flex-start',
   },
-  ratingText: { color: '#fff', fontSize: 10, fontWeight: '600', marginLeft: 2 },
-  listContent: { padding: 16, paddingBottom: 120 },
-  footerLoader: { paddingVertical: 30 },
-  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 40 },
-  emptyImage: { width: 90, height: 90, tintColor: '#ccc' },
-  emptyText: { fontSize: 16, fontWeight: '600', marginTop: 12, color: '#555' },
-  emptySubText: { fontSize: 13, color: '#999', marginTop: 4 },
-  addBtn: { backgroundColor: '#FF4D4D', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  addText: { color: '#fff', fontWeight: '600', fontSize: 13 },
-  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.3)' },
-  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 },
-  modalHandle: { width: 50, height: 5, backgroundColor: '#ccc', borderRadius: 3, alignSelf: 'center', marginBottom: 10 },
-  modalFoodRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
-  modalImage: { width: 70, height: 70, borderRadius: 10 },
-  modalFoodName: { fontSize: 16, fontWeight: 'bold', color: '#000' },
-  modalFoodPrice: { fontSize: 14, color: '#777', marginTop: 4 },
+  ratingText: {color: '#fff', fontSize: 10, fontWeight: '600', marginLeft: 2},
+  listContent: {padding: 16, paddingBottom: 120},
+  footerLoader: {paddingVertical: 30},
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 40,
+  },
+  emptyImage: {width: 90, height: 90, tintColor: '#ccc'},
+  emptyText: {fontSize: 16, fontWeight: '600', marginTop: 12, color: '#555'},
+  emptySubText: {fontSize: 13, color: '#999', marginTop: 4},
+  addBtn: {
+    backgroundColor: '#FF4D4D',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  addText: {color: '#fff', fontWeight: '600', fontSize: 13},
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+  },
+  modalHandle: {
+    width: 50,
+    height: 5,
+    backgroundColor: '#ccc',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginBottom: 10,
+  },
+  modalFoodRow: {flexDirection: 'row', alignItems: 'center', marginBottom: 15},
+  modalImage: {width: 70, height: 70, borderRadius: 10},
+  modalFoodName: {fontSize: 16, fontWeight: 'bold', color: '#000'},
+  modalFoodPrice: {fontSize: 14, color: '#777', marginTop: 4},
   quantityBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -392,13 +478,36 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     marginVertical: 10,
   },
-  qtyBtn: { width: 30, height: 30, backgroundColor: '#fff', borderRadius: 15, justifyContent: 'center', alignItems: 'center', elevation: 2 },
-  qtyText: { fontSize: 18, fontWeight: 'bold', color: '#FF4D4D' },
-  qtyValue: { fontSize: 16, fontWeight: 'bold', color: '#000', marginHorizontal: 15 },
-  modalFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
-  totalText: { fontSize: 16, fontWeight: 'bold', color: '#000' },
-  confirmBtn: { backgroundColor: '#FF4D4D', borderRadius: 25, paddingVertical: 12, paddingHorizontal: 25 },
-  confirmBtnText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
+  qtyBtn: {
+    width: 30,
+    height: 30,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+  },
+  qtyText: {fontSize: 18, fontWeight: 'bold', color: '#FF4D4D'},
+  qtyValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
+    marginHorizontal: 15,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  totalText: {fontSize: 16, fontWeight: 'bold', color: '#000'},
+  confirmBtn: {
+    backgroundColor: '#FF4D4D',
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+  },
+  confirmBtnText: {color: '#fff', fontSize: 15, fontWeight: 'bold'},
   bottomBox: {
     position: 'absolute',
     bottom: '15%',
@@ -410,11 +519,21 @@ const styles = StyleSheet.create({
     // paddingVertical: 20,
     // paddingHorizontal: 20,
   },
-  bottomBoxContent: { alignItems: 'center' },
-  bottomText: { fontSize: 15, fontWeight: '600', color: '#000', marginBottom: 10 },
-  bottomButton: { backgroundColor: '#FF4D4D', paddingVertical: 10, paddingHorizontal: 30, borderRadius: 25 },
-  bottomButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
-      gradientBackground: {
+  bottomBoxContent: {alignItems: 'center'},
+  bottomText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 10,
+  },
+  bottomButton: {
+    backgroundColor: '#FF4D4D',
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+  },
+  bottomButtonText: {color: '#fff', fontWeight: 'bold', fontSize: 15},
+  gradientBackground: {
     borderRadius: 20,
     paddingVertical: 15,
     paddingHorizontal: 20,

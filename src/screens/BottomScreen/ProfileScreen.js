@@ -51,15 +51,11 @@ const ProfileScreen = ({ navigation }) => {
 
 const handleLogout = async () => {
   try {
-    // Clear all stored data
     await AsyncStorage.removeItem("userToken");
-    await AsyncStorage.removeItem("userData");
-
-    // Reset navigation to LoginScreen (prevents going back)
-navigation.getParent()?.reset({
-  index: 0,
-  routes: [{ name: "LoginScreen" }],
-});
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "LoginScreen" }],
+    });
   } catch (err) {
     console.log("Logout Error:", err);
   }
@@ -102,7 +98,7 @@ navigation.getParent()?.reset({
           {[
             { title: "Address", icon: "location-on",renavigation:"MapScreen" },
             { title: "My Orders", icon: "shopping-cart" ,renavigation :"ItemDetalis"},
-            { title: "Help and Support", icon: "support-agent",renavigation: "jjjj" },
+            { title: "Help and Support", icon: "support-agent",renavigation: "HelpScreen" },
           ].map((item, index) => (
             <TouchableOpacity key={index} style={styles.menuItem} onPress={() => navigation.navigate(item.renavigation)}>
               <Icon name={item.icon} size={22} color="#444" />
