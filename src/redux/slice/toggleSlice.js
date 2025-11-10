@@ -1,17 +1,13 @@
-// redux/slice/foodFilterSlice.js
 import { createSlice } from '@reduxjs/toolkit';
 
-const toggleSlice = createSlice({
+const foodFilterSlice = createSlice({
   name: 'foodFilter',
-  initialState: { isVeg: true },
+  initialState: { isVeg: false }, // false = non-veg, true = veg
   reducers: {
     toggleFilter: (state) => { state.isVeg = !state.isVeg; },
     setFilter: (state, action) => { state.isVeg = !!action.payload; },
   },
 });
 
-export const { toggleFilter, setFilter } = toggleSlice.actions;
-export default toggleSlice.reducer;
-
-
-
+export const { toggleFilter, setFilter } = foodFilterSlice.actions;
+export default foodFilterSlice.reducer;

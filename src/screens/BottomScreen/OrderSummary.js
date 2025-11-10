@@ -325,7 +325,7 @@ deliveryTimeText: {
   paymentStatus: {marginLeft: 6, fontSize: 13, fontWeight: '600'},
   viewDetailsButton: {
     backgroundColor: Theme.colors.red,
-    paddingHorizontal: 12,
+    paddingHorizontal: 12, 
     paddingVertical: 6,
     borderRadius: 8,
   },

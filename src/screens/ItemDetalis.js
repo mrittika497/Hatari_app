@@ -106,15 +106,7 @@ const ItemDetalis = () => {
                   <Text style={styles.restaurantName}>
                     {restaurant?.name || 'Restaurant Name'}
                   </Text>
-                  <View style={styles.deliveryTimeRow}>
-                    <Ionicons
-                      name="time-outline"
-                      size={14}
-                      color="#FF6347"
-                      style={{marginRight: 5}}
-                    />
-                    <Text style={styles.deliveryTimeText}>{deliveryTime}</Text>
-                  </View>
+                 
                 </View>
                 <View style={styles.statusBadge(statusColor)}>
                   <Text style={styles.statusBadgeText}>{status}</Text>

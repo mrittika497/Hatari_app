@@ -20,7 +20,7 @@ import deliverySettingsReducer from "../slice/deliverySettingsSlice";
  import getFoodOrderReducer from '../slice/getfoodorderSlice';
  import toggleReducer from '../slice/toggleSlice';
  import saveAddressReducer from '../slice/saveaddressSlice';
-
+import subCategoryReducer from '../slice/subCategoriSlice';
 const store = configureStore({
   reducer: {
     home: HomeReducer,
@@ -44,6 +44,7 @@ const store = configureStore({
     foodOrder:getFoodOrderReducer,
     foodFilter:toggleReducer,
    address:saveAddressReducer,
+   subCategories:subCategoryReducer,
   },
 });
 

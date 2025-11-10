@@ -187,8 +187,8 @@ const styles = StyleSheet.create({
     paddingVertical: 30,
   },
   logo: {
-    width: width * 0.4,
-    height: width * 0.4,
+    width: width * 0.6,
+    height: width * 0.6,
     marginBottom: 5,
   },
   cuisine: {

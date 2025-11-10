@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
   bottomText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#000',
+    color: '#f8f3f3ff',
     marginBottom: 10,
   },
   bottomButton: {

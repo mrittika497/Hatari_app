@@ -158,13 +158,13 @@ const ExperienceScreen = () => {
       contentStyle={{ alignItems: "center", justifyContent: "center" }}
     >
       <LinearGradient
-        colors={['#fff', '#ffe6e6', '#fff']}
+     colors={["#ff3d3d", "#ff5c5c", "#fff"]}
         style={styles.gradientContainer}
       >
         <SafeAreaView style={{ flex: 1, width: '100%', alignItems: 'center' }}>
           <Text style={styles.title}>
-            Welcome to <Text style={styles.brand}>Hatari</Text>
-          </Text>
+            Welcome to Hatari</Text>
+        
           <Text style={styles.subtitle}>Elevate Your Experience</Text>
 
           <Text style={styles.sectionHeading}>Nearest Restaurants</Text>
@@ -221,13 +221,13 @@ const ExperienceScreen = () => {
 
           {/* Animated Continue Button */}
           {experienceId && selectedRestaurant && (
-            <Animated.View
-              style={{
-                transform: [
-                  { scale: Animated.multiply(scaleAnim, pressAnim) },
-                ],
-              }}
-            >
+            // <Animated.View
+            //   style={{
+            //     transform: [
+            //       { scale: Animated.multiply(scaleAnim, pressAnim) },
+            //     ],
+            //   }}
+            // >
               <TouchableOpacity
                 onPress={handleContinue}
                 onPressIn={handlePressIn}
@@ -243,7 +243,7 @@ const ExperienceScreen = () => {
                   <Text style={styles.continueText}>Continue</Text>
                 </LinearGradient>
               </TouchableOpacity>
-            </Animated.View>
+            // </Animated.View>
           )}
         </SafeAreaView>
       </LinearGradient>
@@ -270,12 +270,12 @@ const styles = StyleSheet.create({
   brand: { color: '#e53935', fontWeight: '700' },
   subtitle: {
     fontSize: 14,
-    color: '#e53935',
+    color: '#080808ff',
     marginBottom: 15,
     fontWeight: '500',
     textAlign: 'center',
   },
-  sectionHeading: {
+  sectionHeading: { 
     fontSize: 16,
     color: '#000',
     fontWeight: '500',

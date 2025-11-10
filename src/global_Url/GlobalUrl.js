@@ -19,6 +19,7 @@ export const API = {
   coupon :`${BASE_URL}coupon`,
   billing:`${BASE_URL}billing/create`,
   getfoodOrder :`${BASE_URL}billing`,
-  saveaddress: `${BASE_URL}users/getUserAddress`
+  saveaddress: `${BASE_URL}users/getUserAddress`,
+  getAllSubCategory:`${BASE_URL}catfood/getAllSubCategory`,
 
 };

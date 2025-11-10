@@ -27,7 +27,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import DashboardScreen from '../components/DashboardScreen';
 import CustomHeader from '../components/CustomHeader';
-import { removeFromCart, updateQuantity } from '../redux/slice/cartSlice';
+import { removeFromCart, updateQuantity ,updateNote} from '../redux/slice/cartSlice';
 import { postCustomizedFood } from '../redux/slice/CustomizeSlice';
 import Theme from '../assets/theme';
 

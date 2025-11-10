@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import {
   Easing,
   Dimensions,
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {
   CodeField,
   Cursor,
@@ -21,21 +21,21 @@ import {
   useClearByFocusCell,
 } from 'react-native-confirmation-code-field';
 import LinearGradient from 'react-native-linear-gradient';
-import { sendOtp, verifyOtp, setAuth } from '../../redux/slice/authSlice';
+import {sendOtp, verifyOtp, setAuth} from '../../redux/slice/authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Theme from '../../assets/theme';
 
 const CELL_COUNT = 6;
-const { width } = Dimensions.get('window');
+const {width} = Dimensions.get('window');
 const CELL_WIDTH = Math.min(60, (width - 80) / 8);
 
-const OtpScreen = ({ route, navigation }) => {
+const OtpScreen = ({route, navigation}) => {
   const phone = route?.params?.phone;
   const dispatch = useDispatch();
-  const { token, user } = useSelector(state => state.auth);
+  const {token, user} = useSelector(state => state.auth);
 
   const [value, setValue] = useState('');
-  const ref = useBlurOnFulfill({ value, cellCount: CELL_COUNT });
+  const ref = useBlurOnFulfill({value, cellCount: CELL_COUNT});
   const [props, getCellOnLayoutHandler] = useClearByFocusCell({
     value,
     setValue,
@@ -66,13 +66,12 @@ const OtpScreen = ({ route, navigation }) => {
     if (token && user) {
       navigation.reset({
         index: 0,
-        routes: [{ name: 'ExperienceScreen', params: { token, user } }],
+        routes: [{name: 'ExperienceScreen', params: {token, user}}],
       });
     }
   }, [token, user]);
 
-
-     useEffect(() => {
+  useEffect(() => {
     const storeUserId = async () => {
       if (user?._id) {
         try {
@@ -93,17 +92,17 @@ const OtpScreen = ({ route, navigation }) => {
       return;
     }
 
-    dispatch(verifyOtp({ phone, value })).then(async res => {
+    dispatch(verifyOtp({phone, value})).then(async res => {
       if (res.meta.requestStatus === 'fulfilled') {
-        const { token, user } = res.payload;
+        const {token, user} = res.payload;
 
         await AsyncStorage.setItem('userToken', token);
         await AsyncStorage.setItem('userData', JSON.stringify(user));
-        dispatch(setAuth({ token, user }));
+        dispatch(setAuth({token, user}));
 
         navigation.reset({
           index: 0,
-          routes: [{ name: 'ExperienceScreen' }],
+          routes: [{name: 'ExperienceScreen'}],
         });
       }
     });
@@ -142,7 +141,7 @@ const OtpScreen = ({ route, navigation }) => {
             easing: Easing.ease,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       ).start();
     } else {
       buttonScale.stopAnimation();
@@ -152,19 +151,26 @@ const OtpScreen = ({ route, navigation }) => {
 
   return (
     <LinearGradient
-      colors={['#FF4B2B', '#FF416C']}
-      style={{ flex: 1 }}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-    >
+     colors={["#ff3d3d", "#ff5c5c", "#fff"]}
+      style={{flex: 1}}
+      start={{x: 0, y: 0}}
+      end={{x: 1, y: 1}}>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+        style={{flex: 1}}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+
+        
         <ScrollView
           contentContainerStyle={styles.container}
-          keyboardShouldPersistTaps="handled"
-        >
+          keyboardShouldPersistTaps="handled">
+
+
+                        <Image
+              source={require('../../assets/images/project_logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.tagline}>Chinese • Indian • Tandoor</Text>
           {/* Transparent White Card */}
           <Animated.View
             style={[
@@ -180,14 +186,8 @@ const OtpScreen = ({ route, navigation }) => {
                   },
                 ],
               },
-            ]}
-          >
-            <Image
-              source={require('../../assets/images/project_logo.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Text style={styles.tagline}>Chinese • Indian • Tandoor</Text>
+            ]}>
+
             <Text style={styles.heading}>Enter the OTP</Text>
             <Text style={styles.subText}>Sent to +91 {phone}</Text>
 
@@ -201,18 +201,17 @@ const OtpScreen = ({ route, navigation }) => {
               rootStyle={styles.codeFieldRoot}
               keyboardType="number-pad"
               textContentType="oneTimeCode"
-              renderCell={({ index, symbol, isFocused }) => (
+              renderCell={({index, symbol, isFocused}) => (
                 <Animated.View
                   key={index}
                   style={[
                     styles.cell,
                     {
                       borderColor: isFocused ? '#FF3B30' : '#E5E5E5',
-                      transform: [{ scale: isFocused ? 1.1 : 1 }],
+                      transform: [{scale: isFocused ? 1.1 : 1}],
                     },
                   ]}
-                  onLayout={getCellOnLayoutHandler(index)}
-                >
+                  onLayout={getCellOnLayoutHandler(index)}>
                   <Text style={styles.cellText}>
                     {symbol || (isFocused ? <Cursor /> : null)}
                   </Text>
@@ -221,30 +220,26 @@ const OtpScreen = ({ route, navigation }) => {
             />
 
             {/* Verify Button */}
-            <Animated.View
+            {/* <Animated.View
               style={[
                 styles.buttonWrapper,
                 { transform: [{ scale: buttonScale }] },
               ]}
-            >
-              <LinearGradient
-                colors={
-                  isButtonActive
-                    ? ['#FF3B30', '#FF6F61']
-                    : ['#ccc', '#bbb']
-                }
-                style={styles.gradientBtn}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Text
-                  style={styles.btnText}
-                  onPress={isButtonActive ? handleVerify : null}
-                >
-                  Verify OTP
-                </Text>
-              </LinearGradient>
-            </Animated.View>
+            > */}
+            <LinearGradient
+              colors={
+                isButtonActive ? ['#FF3B30', '#FF6F61'] : ['#ccc', '#bbb']
+              }
+              style={styles.gradientBtn}
+              start={{x: 0, y: 0}}
+              end={{x: 1, y: 1}}>
+              <Text
+                style={styles.btnText}
+                onPress={isButtonActive ? handleVerify : null}>
+                Verify OTP
+              </Text>
+            </LinearGradient>
+            {/* </Animated.View> */}
 
             <Text style={styles.resendText}>
               Didn’t receive code?{' '}
@@ -270,26 +265,26 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   card: {
-    width: '90%',
     backgroundColor: 'rgba(255,255,255,0.95)',
     borderRadius: 20,
     padding: 25,
     alignItems: 'center',
-    elevation: 6,
+    elevation: 5,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 10,
   },
   logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 10,
+    width: width * 0.6,
+    height: width * 0.6,
+    marginBottom: 5,
   },
   tagline: {
-    fontSize: 13,
-    color: '#FF3B30',
-    marginBottom: 25,
-    fontWeight: '600',
+    fontSize: 15,
+    color: "#fff",
+    fontWeight: "500",
+    letterSpacing: 1,
+    marginBottom: 40,
   },
   heading: {
     fontSize: 22,
@@ -305,7 +300,6 @@ const styles = StyleSheet.create({
   codeFieldRoot: {
     marginBottom: 25,
     flexDirection: 'row',
-    justifyContent: 'center',
   },
   cell: {
     width: CELL_WIDTH,
@@ -330,9 +324,11 @@ const styles = StyleSheet.create({
   },
   gradientBtn: {
     paddingVertical: 14,
-    borderRadius: 30,
+    borderRadius: 20,
     alignItems: 'center',
     elevation: 4,
+    width: '100%',
+    paddingHorizontal:"33%"
   },
   btnText: {
     color: '#fff',
