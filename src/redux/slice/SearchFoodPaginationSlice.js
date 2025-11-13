@@ -5,13 +5,13 @@ import { API } from "../../global_Url/GlobalUrl";
 // ✅ Async thunk
 export const fetchFoodPagination = createAsyncThunk(
   "foods/fetchFoodPagination",
-  async ({ page = 1, limit = 10, isVeg }, { rejectWithValue }) => {
+  async ({ page = 1, limit = 10, isVeg,name }, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get(
-        `${API.getfoodpagination}?page=${page}&limit=${limit}&isVeg=${isVeg}`
+        `${API.getfoodpagination}?page=${page}&limit=${limit}&isVeg=${isVeg}&name=${name}`
       );
 
-      console.log(response, "------------------------------response");
+      console.log(response, "------------------------------responsepagenation");
 
       return {
         foods: response.data.data || [],
@@ -20,6 +20,8 @@ export const fetchFoodPagination = createAsyncThunk(
           response.data.page * response.data.limit < response.data.total,
       };
     } catch (error) {
+      console.log("error---------------------------",error);
+      
       return rejectWithValue(error.response?.data || error.message);
     }
   }

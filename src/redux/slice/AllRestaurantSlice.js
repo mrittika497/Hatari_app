@@ -43,8 +43,12 @@ const AllRestaurantSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       });
+      
   },
+  resetBranchInfo :state => {
+      state.list = [];
+    },
 });
 
-export const {clearRestaurants} = AllRestaurantSlice.actions;
+export const {clearRestaurants,resetBranchInfo} = AllRestaurantSlice.actions;
 export default AllRestaurantSlice.reducer;

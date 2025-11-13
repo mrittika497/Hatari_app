@@ -13,6 +13,7 @@ import {
   Platform,
   Modal,
   SafeAreaView,
+  ToastAndroid,
 } from 'react-native';
 import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
 import LinearGradient from 'react-native-linear-gradient';
@@ -21,10 +22,6 @@ import {useSelector, useDispatch} from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-
-
-
-
 import DashboardScreen from '../components/DashboardScreen';
 import CustomHeader from '../components/CustomHeader';
 import { removeFromCart, updateQuantity ,updateNote} from '../redux/slice/cartSlice';
@@ -39,7 +36,11 @@ const OderCartScreen = () => {
   const {items: cartItems} = useSelector(state => state.cart);
   const [loading, setLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  console.log(cartItems,"----------------------selectedItemodercatScreen---------------");
+  
   const [noteText, setNoteText] = useState('');
+  console.log(noteText,"------------------------------noteText");
+  
   const insets = useSafeAreaInsets();
 
   const formatCurrency = amount => `₹${amount.toLocaleString('en-IN')}`;
@@ -54,33 +55,83 @@ const OderCartScreen = () => {
     dispatch(removeFromCart(id));
   };
 
+  // const openModal = item => {
+  //   setSelectedItem(item);
+  //   setNoteText(item.note || '');
+  // };
+
   const openModal = item => {
-    setSelectedItem(item);
-    setNoteText(item.note || '');
-  };
+  setSelectedItem(item);
+  setNoteText(item.note || '');
+ 
+};
   const closeModal = () => {
     setSelectedItem(null);
     setNoteText('');
+   
   };
 
-  const handleSaveNote = async () => {
-    if (selectedItem) {
-      dispatch(updateNote({id: selectedItem._id, note: noteText}));
-      const resultAction = await dispatch(
-        postCustomizedFood({
-          food: selectedItem._id,
-          quantity: selectedItem.quantity,
-          note: noteText,
-        }),
-      );
-      if (postCustomizedFood.fulfilled.match(resultAction)) {
-        alert('Customization saved!');
+  // const handleSaveNote = async () => {
+  //   console.log("close");
+    
+  //   if (selectedItem) {
+  //     dispatch(updateNote({id: selectedItem.id, note: noteText}));
+  //     const resultAction = await dispatch(
+  //       postCustomizedFood({
+  //         food: selectedItem.id,
+  //         quantity: selectedItem.quantity,
+  //         note: noteText,
+  //       }),
+  //     );
+  //     if (postCustomizedFood.fulfilled.match(resultAction)) {
+       
+  //     } else {
+     
+  //     }
+  //   }
+  //   closeModal();
+  // };
+
+const handleSaveNote = async () => {
+  if (!selectedItem) return;
+
+  try {
+    dispatch(updateNote({ id: selectedItem.id, note: noteText }));
+
+    const resultAction = await dispatch(
+      postCustomizedFood({
+        food: selectedItem.id,
+        quantity: selectedItem.quantity,
+        note: noteText,
+      }),
+    );
+
+    if (postCustomizedFood.fulfilled.match(resultAction)) {
+      // ✅ Success message
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Customization saved!', ToastAndroid.SHORT);
       } else {
-        alert('Failed to save customization');
+        Alert.alert('Success', 'Customization saved!');
+      }
+    } else {
+      // ❌ Error message
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Failed to save customization', ToastAndroid.SHORT);
+      } else {
+        Alert.alert('Error', 'Failed to save customization');
       }
     }
-    closeModal();
-  };
+  } catch (error) {
+    console.error('Error saving note:', error);
+    if (Platform.OS === 'android') {
+      ToastAndroid.show('Something went wrong!', ToastAndroid.SHORT);
+    } else {
+      Alert.alert('Error', 'Something went wrong!');
+    }
+  } finally {
+    closeModal(); // ✅ Always close modal
+  }
+};
 
   const renderItem = ({item}) => (
     <View style={styles.itemCard}>
@@ -117,7 +168,7 @@ const OderCartScreen = () => {
             <Text style={styles.customizeText}>Customize</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteItem(item._id)}>
+          <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteItem(item.id)}>
             <Ionicons name="trash-outline" size={18} color="red" />
             <Text style={styles.deleteText}>Remove</Text>
           </TouchableOpacity>
@@ -125,7 +176,7 @@ const OderCartScreen = () => {
 
         {item.note ? (
           <View style={styles.noteTag}>
-            <Text style={styles.noteText}>📝 {item.note}</Text>
+            <Text style={styles.noteText}>📝 {item?.note}</Text>
           </View>
         ) : null}
       </View>
@@ -133,13 +184,13 @@ const OderCartScreen = () => {
       <View style={styles.quantityBox}>
         <TouchableOpacity
           style={styles.qtyBtn}
-          onPress={() => decrementQty(item._id, item.quantity)}>
+          onPress={() => decrementQty(item.id, item.quantity)}>
           <Text style={styles.qtyText}>-</Text>
         </TouchableOpacity>
         <Text style={styles.qtyValue}>{item.quantity}</Text>
         <TouchableOpacity
           style={styles.qtyBtn}
-          onPress={() => incrementQty(item._id, item.quantity)}>
+          onPress={() => incrementQty(item.id, item.quantity)}>
           <Text style={styles.qtyText}>+</Text>
         </TouchableOpacity>
       </View>
@@ -191,7 +242,7 @@ const OderCartScreen = () => {
               <>
                 <FlatList
                   data={cartItems}
-                  keyExtractor={item => item._id}
+                  keyExtractor={item => item.id}
                   renderItem={renderItem}
                   contentContainerStyle={{paddingBottom: height * 0.15}}
                   showsVerticalScrollIndicator={false}
@@ -256,7 +307,7 @@ export default OderCartScreen;
 
 const styles = StyleSheet.create({
   addMore: {alignSelf: 'flex-end', marginVertical: 10, marginRight: 15},
-  container: {flex: 1, backgroundColor: '#fff'},
+  container: {flex: 1},
   emptyContainer: {flex: 1, justifyContent: 'center', alignItems: 'center'},
   emptyText: {fontSize: width * 0.045, color: '#555', fontWeight: '600'},
   browseBtn: {

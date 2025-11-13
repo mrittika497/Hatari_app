@@ -21,5 +21,7 @@ export const API = {
   getfoodOrder :`${BASE_URL}billing`,
   saveaddress: `${BASE_URL}users/getUserAddress`,
   getAllSubCategory:`${BASE_URL}catfood/getAllSubCategory`,
+  searchFood:`${BASE_URL}food/filter`,
+  Categoryitem :`${BASE_URL}food/by`
 
 };

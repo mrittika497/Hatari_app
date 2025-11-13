@@ -22,8 +22,8 @@ const HomeHeader = () => {
   );
   const restaurantList = useSelector(state => state.restaurants.list || []);
   const cartItems = useSelector(state => state.cart.items || []);
-  const totalCount = cartItems.length;
-
+  // const totalCount =  cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+const totalCount = cartItems.length;
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedExperience, setSelectedExperience] = useState('Delivery');
 

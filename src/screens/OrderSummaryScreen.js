@@ -11,6 +11,7 @@ import {
   ToastAndroid,
   SafeAreaView,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useDispatch, useSelector} from 'react-redux';
@@ -27,7 +28,7 @@ import Theme from '../assets/theme';
 import DashboardScreen from '../components/DashboardScreen';
 import CustomHeader from '../components/CustomHeader';
 import {useEffect, useState} from 'react';
-
+const {width, height} = Dimensions.get('window');
 const OrderSummaryScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -37,6 +38,8 @@ const OrderSummaryScreen = () => {
   );
   const {addresses, loading} = useSelector(state => state.address);
   const {items: cartItems} = useSelector(state => state.cart);
+  console.log(cartItems,"----------------------------cartItems");
+  
   const {token} = useSelector(state => state.auth);
   const {data} = useSelector(state => state.deliverySettings);
   const couponState = useSelector(state => state.coupons);
@@ -44,6 +47,8 @@ const OrderSummaryScreen = () => {
 
   const [savedAddress, setSavedAddress] = useState(null);
   const [userid, setUserId] = useState(null);
+  console.log(userid,"--------------------------------userid");
+  
   const [selectedCoupon, setSelectedCoupon] = useState(null);
   const [codModalVisible, setCodModalVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -257,10 +262,17 @@ const OrderSummaryScreen = () => {
                 <Text style={styles.itemPrice}>
                   ₹{item.price} × {item.quantity}
                 </Text>
+                {}
+                 {item.note ? (
+                     <View style={styles.noteTag}>
+                       <Text style={styles.noteText}>📝 {item?.note}</Text>
+                     </View>
+                   ) : null}
               </View>
               <Text style={styles.itemTotal}>
                 ₹{item.price * item.quantity}
               </Text>
+            
             </View>
           ))}
         </View>
@@ -479,6 +491,16 @@ const styles = StyleSheet.create({
   itemName: {fontSize: 14, fontWeight: '600', color: '#000'},
   itemPrice: {fontSize: 13, color: '#444'},
   itemTotal: {fontSize: 13, fontWeight: '700', color: '#000'},
+    noteTag: {
+    marginTop: 6,
+    backgroundColor: '#FFF6E5',
+    borderLeftWidth: 3,
+    borderLeftColor: '#FF9800',
+    padding: 6,
+    borderRadius: 6,
+    width: width * 0.55,
+  },
+  noteText: {fontSize: width * 0.035, color: '#444'},
   billRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

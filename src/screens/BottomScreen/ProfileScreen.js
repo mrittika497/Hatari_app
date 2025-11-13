@@ -15,6 +15,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import DashboardScreen from "../../components/DashboardScreen";
 import CustomHeader from "../../components/CustomHeader";
 import Theme from "../../assets/theme";
+import { clearCart } from "../../redux/slice/cartSlice";
+import { resetBranchInfo } from "../../redux/slice/AllRestaurantSlice";
 
 const ProfileScreen = ({ navigation }) => {
   const [user, setUser] = useState({
@@ -51,7 +53,20 @@ const ProfileScreen = ({ navigation }) => {
 
 const handleLogout = async () => {
   try {
-    await AsyncStorage.removeItem("userToken");
+    // Clear AsyncStorage
+    await AsyncStorage.multiRemove([
+      "userToken",
+      // "userData",
+      "selectedBranch",
+      "cartItems",
+    ]);
+
+    // Reset Redux states
+    dispatch(clearCart());
+  
+    dispatch(resetBranchInfo());
+
+    // Navigate to Login Screen
     navigation.reset({
       index: 0,
       routes: [{ name: "LoginScreen" }],

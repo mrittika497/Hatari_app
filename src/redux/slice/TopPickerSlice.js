@@ -2,28 +2,29 @@ import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
 import axiosInstance from '../../global_Url/axiosInstance';
 import {API} from '../../global_Url/GlobalUrl';
 
-export const fetchCategoryFoods = createAsyncThunk(
+export const fetchCategoryFoodsBySubcat = createAsyncThunk(
   'catItems/fetch',
   async (
-    {categoryId, categoryIngredients, restaurantId, cuisineType, page = 1, limit = 100},
+    { subCategoryId, categoryIngredients, restaurantId, cuisineType, page = 1, limit = 100,},
     {rejectWithValue},
   ) => {
     try {
       const params = new URLSearchParams();
 
-      if (categoryId) params.append('categoryId', categoryId);
+      if (subCategoryId) params.append('subCategoryId', subCategoryId);
       if (categoryIngredients) params.append('ingredients', categoryIngredients);
       if (restaurantId) params.append('restaurantId', restaurantId);
       if (cuisineType) params.append('cuisineType', cuisineType); // 👈 use correct key
+         
 
       params.append('page', page);
       params.append('limit', limit);
 
-      const url = `${API.getCatItemfoods}?${params.toString()}`;
+      const url = `${API.Categoryitem}?${params.toString()}`;
       console.log('🔍 Final URL:', url);
 
       const response = await axiosInstance.get(url);
-      console.log('📦 Category Foods Response:', response.data);
+      console.log('📦 BySub-------------------Category Foods Response:', response.data);
 
       // extract actual data array safely
       const items = response.data?.data || [];
@@ -38,8 +39,8 @@ export const fetchCategoryFoods = createAsyncThunk(
   },
 );
 
-const catItemSlice = createSlice({
-  name: 'catItems',
+const TopPickerSlice = createSlice({
+  name: 'catItemsbySubcat',
   initialState: {
     data: [],
     loading: false,
@@ -58,11 +59,11 @@ const catItemSlice = createSlice({
   },
   extraReducers: builder => {
     builder
-      .addCase(fetchCategoryFoods.pending, state => {
+      .addCase(fetchCategoryFoodsBySubcat.pending, state => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchCategoryFoods.fulfilled, (state, action) => {
+      .addCase(fetchCategoryFoodsBySubcat.fulfilled, (state, action) => {
         state.loading = false;
         const {page, data} = action.payload;
         if (page === 1) {
@@ -73,12 +74,14 @@ const catItemSlice = createSlice({
         state.hasMore = data.length > 0;
         state.page = page;
       })
-      .addCase(fetchCategoryFoods.rejected, (state, action) => {
+      .addCase(fetchCategoryFoodsBySubcat.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || 'Failed to fetch category items';
       });
   },
 });
 
-export const {clearCategoryFoods} = catItemSlice.actions;
-export default catItemSlice.reducer;
+export const {clearCategoryFoods} = TopPickerSlice.actions;
+export default TopPickerSlice.reducer;
+
+

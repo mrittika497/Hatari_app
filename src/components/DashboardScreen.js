@@ -53,7 +53,7 @@ export default DashboardScreen;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f4eaeaff",
     paddingHorizontal: responsiveWidth(5), // ~5% of screen width
   },
   wrapper: {

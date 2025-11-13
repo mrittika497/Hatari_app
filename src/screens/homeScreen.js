@@ -312,8 +312,8 @@ const filteredCategories = categories?.foods?.filter(item => {
       style={styles.topPickCard}
       activeOpacity={0.8}
       onPress={() =>
-        navigation.navigate('CatItemScreen', {
-          categoryId: item?.food?._id,
+        navigation.navigate('TopPicksScreen', {
+          SubcategoryId: item?.food?._id,
           categoryName: item?.food?.name,
           categoryType: item?.food?.type,
           categoryIngredients: item?.food?.ingredients,

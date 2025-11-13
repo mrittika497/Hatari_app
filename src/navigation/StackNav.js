@@ -19,6 +19,7 @@ import ItemDetalis from '../screens/ItemDetalis';
 import OrderDetailsScreen from '../screens/OrderDetailsScreen';
 import OderCartScreen from '../screens/OderCartScreen';
 import CouponesScreen from '../screens/CouponesScreen';
+import TopPicksScreen from '../screens/TopPicksScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -139,6 +140,11 @@ const StackNav = () => {
              <Stack.Screen 
       name='CouponesScreen'
       component={CouponesScreen}
+      options={{headerShown:false}}
+      />
+               <Stack.Screen 
+      name='TopPicksScreen'
+      component={TopPicksScreen}
       options={{headerShown:false}}
       />
   

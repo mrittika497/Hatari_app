@@ -10,6 +10,8 @@ import {
   Modal,
   Animated,
   Easing,
+    ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useDispatch, useSelector} from 'react-redux';
@@ -17,69 +19,117 @@ import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
 import LinearGradient from 'react-native-linear-gradient';
 import DashboardScreen from '../components/DashboardScreen';
 import CustomHeader from '../components/CustomHeader';
-import {fetchCategoryFoods} from '../redux/slice/catItemSlice';
+import {fetchCategoryFoods, clearCategoryFoods} from '../redux/slice/catItemSlice';
 import {addToCart} from '../redux/slice/cartSlice';
 import Theme from '../assets/theme';
 
 const {width} = Dimensions.get('window');
 
+
+
 const CatItemScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const route = useRoute();
- const isVeg = useSelector(state => state.foodFilter.isVeg);
-  const {categoryId, categoryName, restaurantId, categoryIngredients,categoryType} =
-    route.params;
 
-  const {data: categoryFoods, loading, error} = useSelector(
+  const isVeg = useSelector(state => state.foodFilter.isVeg);
+  const {categoryId, categoryName, restaurantId, categoryIngredients, cuisineType} =
+    route.params;
+    console.log(cuisineType,"------------------------cuisineType");
+    
+
+  const {data: categoryFoods, loading, error, page, hasMore} = useSelector(
     state => state.catItems,
   );
-
-
-  // 🥦 Filter logic based on Veg/Non-Veg toggle
-const filteredFoods = categoryFoods.filter(item => {
-  const food = item.food;
-  const typeArray = food?.type;
-  const type = Array.isArray(typeArray)
-    ? String(typeArray[0] || '').toLowerCase()
-    : String(typeArray || '').toLowerCase();
-
-  if (isVeg === true) {
-    // show only Veg
-    return type.includes('veg') && !type.includes('non');
-  } else if (isVeg === false) {
-    // show only Non-Veg
-    return type.includes('non');
-  } else {
-    // show all if filter not set
-    return true;
-  }
-});
-
-   useEffect(() => {
-    console.log('Category foods data:', categoryType);
-  }, [categoryType]);
   const cartItems = useSelector(state => state.cart.items);
-  console.log(cartItems,"-------------------data");
+
   const [selectedFood, setSelectedFood] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
   const [bottomBoxVisible, setBottomBoxVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const slideAnim = useRef(new Animated.Value(0)).current;
-  const boxAnim = useRef(new Animated.Value(150)).current; // animation for bottom view
+  const boxAnim = useRef(new Animated.Value(150)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  // 🧠 Fetch category foods on mount or when filters change
   useEffect(() => {
+    // dispatch(clearCategoryFoods());
     dispatch(
       fetchCategoryFoods({
         categoryId,
         categoryIngredients,
         restaurantId,
+        cuisineType,
+        page: 1,
       }),
     );
-  }, [dispatch, categoryId, categoryIngredients]);
 
-  // Modal Animation Handlers
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
+  }, [dispatch, categoryId, cuisineType, restaurantId]);
+
+  // 🧭 Pagination handler
+  const handleLoadMore = () => {
+    if (!loading && hasMore) {
+      dispatch(
+        fetchCategoryFoods({
+          categoryId,
+          categoryIngredients,
+          restaurantId,
+          cuisineType,
+          page: page + 1,
+        }),
+      );
+    }
+  };
+
+  // 🔁 Pull to refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    // await dispatch(clearCategoryFoods());
+    await dispatch(
+      fetchCategoryFoods({
+        categoryId,
+        categoryIngredients,
+        restaurantId,
+        cuisineType,
+        page: 1,
+      }),
+    );
+    setRefreshing(false);
+  };
+
+  // 🥦 Filter logic based on Veg/Non-Veg and Cuisine Type
+  const filteredFoods = categoryFoods.filter(item => {
+    const food = item.food;
+    const cuisineType = food?.cuisineType?.toLowerCase() || '';
+    const selectedCuisine = cuisineType?.toLowerCase() || '';
+    console.log(filteredFoods,"------------------------------filteredFoods");
+    
+
+    // Filter by cuisine
+    if (selectedCuisine && cuisineType !== selectedCuisine) return false;
+
+    // Veg/Non-Veg filter
+    const typeArray = food?.type;
+    const type = Array.isArray(typeArray)
+      ? String(typeArray[0] || '').toLowerCase()
+      : String(typeArray || '').toLowerCase();
+
+    if (isVeg === true) {
+      return type.includes('veg') && !type.includes('non');
+    } else if (isVeg === false) {
+      return type.includes('non');
+    }
+    return true;
+  });
+
+  // 🧊 Modal animations
   const openModal = food => {
     setSelectedFood(food);
     setQuantity(1);
@@ -100,10 +150,12 @@ const filteredFoods = categoryFoods.filter(item => {
     }).start(() => setModalVisible(false));
   };
 
-  const totalPrice = selectedFood ? selectedFood.price * quantity : 0;
+//  const totalItemCount = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+const totalItemCount = cartItems.length;
+ console.log(totalItemCount,"---------------------------------totalItemCount");
+ 
 
-  // Count distinct items only
-  const totalItemCount = cartItems.length;
+const totalPrice = selectedFood?.price ? selectedFood.price * quantity : 0;
 
   const renderSkeleton = () => (
     <View style={styles.card}>
@@ -111,21 +163,11 @@ const filteredFoods = categoryFoods.filter(item => {
       <View style={{flex: 1, marginLeft: 10}}>
         <ShimmerPlaceHolder
           LinearGradient={LinearGradient}
-          style={{
-            width: width * 0.4,
-            height: 14,
-            marginBottom: 6,
-            borderRadius: 4,
-          }}
+          style={{width: width * 0.4, height: 14, marginBottom: 6, borderRadius: 4}}
         />
         <ShimmerPlaceHolder
           LinearGradient={LinearGradient}
-          style={{
-            width: width * 0.25,
-            height: 14,
-            marginBottom: 6,
-            borderRadius: 4,
-          }}
+          style={{width: width * 0.25, height: 14, marginBottom: 6, borderRadius: 4}}
         />
         <ShimmerPlaceHolder
           LinearGradient={LinearGradient}
@@ -135,79 +177,71 @@ const filteredFoods = categoryFoods.filter(item => {
     </View>
   );
 
- const renderItem = ({item}) => {
-  const food = item.food;
-  console.log(food,"------------------food");
-  
+  const renderItem = ({item}) => {
+    console.log(item,"--------------------item:-----77777");
+    
+    const food = item.food;
+    const typeArray = food?.type;
+    const type = Array.isArray(typeArray)
+      ? String(typeArray[0] || '').toLowerCase()
+      : String(typeArray || '').toLowerCase();
 
-  // Safely extract type (handles string or array)
-  const typeArray = food?.type;
-  console.log(typeArray,"--------------------typeArray");
-  
-  const type = Array.isArray(typeArray)
-    ? String(typeArray[0] || '').toLowerCase()
-    : String(typeArray || '').toLowerCase();
-
-  return (
-    <View style={styles.card}>
-      <Image source={{uri: food.image}} style={styles.image} />
-
-      <View style={styles.details}>
-        {/* Cuisine */}
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
-          <Image
-            source={require('../assets/images/dineBlack.png')}
-            style={{width: 12, height: 12, tintColor: '#555'}}
-          />
-          <Text style={styles.cuisine}>
-            {food?.cuisineType}
-          </Text>
-        </View>
-
-        {/* Name + Type */}
-        <View
-          style={{flexDirection: 'row', alignItems: 'center', marginTop: 4}}>
-          <View
-            style={[
-              styles.typeIndicator,
-              {borderColor: type.includes('veg') && !type.includes('non') ? 'green' : 'red'},
-            ]}>
-            <View
-              style={[
-                styles.typeDot,
-                {backgroundColor: type.includes('veg') && !type.includes('non') ? 'green' : 'red'},
-              ]}
+    return (
+      <View style={styles.card}>
+        <Image source={{uri: food.image}} style={styles.image} />
+        <View style={styles.details}>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <Image
+              source={require('../assets/images/dineBlack.png')}
+              style={{width: 12, height: 12, tintColor: '#555'}}
             />
+            <Text style={styles.cuisine}>{food?.cuisineType}</Text>
           </View>
 
-          <Text style={styles.name} numberOfLines={1}>
-            {food.name}
-          </Text>
+          <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 4}}>
+            <View
+              style={[
+                styles.typeIndicator,
+                {
+                  borderColor:
+                    type.includes('veg') && !type.includes('non') ? 'green' : 'red',
+                },
+              ]}>
+              <View
+                style={[
+                  styles.typeDot,
+                  {
+                    backgroundColor:
+                      type.includes('veg') && !type.includes('non')
+                        ? 'green'
+                        : 'red',
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.name} numberOfLines={1}>
+              {food.name}
+            </Text>
+          </View>
+
+          <Text style={styles.price}>₹{food.price}</Text>
+
+          <View style={styles.ratingWrapper}>
+            <Text style={styles.ratingText}>★ {food.rating || '4.2'}</Text>
+          </View>
         </View>
 
-        {/* Price */}
-        <Text style={styles.price}>₹{food.price}</Text>
-
-        {/* Rating */}
-        <View style={styles.ratingWrapper}>
-          <Text style={styles.ratingText}>★ {food.rating || '4.2'}</Text>
-        </View>
+        <TouchableOpacity style={styles.addBtn} onPress={() => openModal(food)}>
+          <Text style={styles.addText}>Add</Text>
+        </TouchableOpacity>
       </View>
+    );
+  };
 
-      <TouchableOpacity style={styles.addBtn} onPress={() => openModal(food)}>
-        <Text style={styles.addText}>Add</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-
-  // Confirm Add logic
   const handleConfirmAdd = () => {
     dispatch(addToCart({...selectedFood, quantity}));
     closeModal();
 
-    // Show bottom box with animation
     setBottomBoxVisible(true);
     Animated.timing(boxAnim, {
       toValue: 0,
@@ -229,35 +263,46 @@ const filteredFoods = categoryFoods.filter(item => {
 
   return (
     <DashboardScreen scrollable={false}>
-      <CustomHeader title="Category Item" />
+    <CustomHeader
+  title={categoryName}
+  // gradientColors={["#FF4B2B", "#FF9068"]} // custom gradient (optional)
+  // textColor="#fff"
+/>
       <View style={styles.container}>
-        <Text style={styles.header}>{categoryName} Items</Text>
+        {/* <Text style={styles.header}>{categoryName} Items</Text> */}
 
-        {loading ? (
-          Array.from({length: 5}).map((_, i) => (
-            <View key={i}>{renderSkeleton()}</View>
-          ))
+        {loading && categoryFoods.length === 0 ? (
+          Array.from({length: 5}).map((_, i) => <View key={i}>{renderSkeleton()}</View>)
         ) : error ? (
           <Text style={styles.error}>{error}</Text>
-        ) : categoryFoods.length > 0 ? (
-          <FlatList
-            showsVerticalScrollIndicator={false}
-            data={filteredFoods}
-            keyExtractor={item => item.food._id}
-            renderItem={renderItem}
-            contentContainerStyle={{paddingBottom: 120}}
-          />
+        ) : filteredFoods.length > 0 ? (
+          <Animated.View style={{opacity: fadeAnim, flex: 1}}>
+            <FlatList
+              showsVerticalScrollIndicator={false}
+              data={filteredFoods}
+              keyExtractor={item => item.food._id}
+              renderItem={renderItem}
+              contentContainerStyle={{paddingBottom: 120}}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.5}
+              ListFooterComponent={
+                loading && hasMore ? (
+                  <ActivityIndicator size="large" color="#FF4D4D" style={{margin: 10}} />
+                ) : null
+              }
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
+            />
+          </Animated.View>
         ) : (
-          <Text style={styles.noData}>No items found in {categoryName}</Text>
+          <Text style={styles.noData}>   Please wait, your items are loading. Items found in {categoryName}</Text>
         )}
       </View>
 
       {/* Quantity Modal */}
       <Modal transparent visible={modalVisible} animationType="none">
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={closeModal}
-          style={styles.modalOverlay}>
+        <TouchableOpacity activeOpacity={1} onPress={closeModal} style={styles.modalOverlay}>
           <Animated.View
             style={[
               styles.modalContent,
@@ -276,24 +321,57 @@ const filteredFoods = categoryFoods.filter(item => {
             {selectedFood && (
               <>
                 <View style={styles.modalFoodRow}>
-                  <Image
-                    source={{uri: selectedFood.image}}
-                    style={styles.modalImage}
-                  />
+                  <Image source={{uri: selectedFood.image}} style={styles.modalImage} />
                   <View style={{flex: 1, marginLeft: 10}}>
                     <Text style={styles.modalFoodName}>{selectedFood.name}</Text>
-                    <Text style={styles.modalFoodPrice}>
-                      ₹{selectedFood.price}
-                    </Text>
+               
+          {/* ✅ Half / Full Selection
+          {selectedFood.hasVariation && (
+            <View style={styles.selectionRow}>
+              <TouchableOpacity
+                style={[
+                  styles.selectionOption,
+                  selectedSize === 'half' && styles.selectionActive,
+                ]}
+                onPress={() => {
+                  setSelectedSize('half');
+                  setSelectedPrice(selectedFood.halfPrice);
+                }}>
+                <Text
+                  style={[
+                    styles.selectionText,
+                    selectedSize === 'half' && styles.selectionTextActive,
+                  ]}>
+                  Half ₹67
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.selectionOption,
+                  selectedSize === 'full' && styles.selectionActive,
+                ]}
+                onPress={() => {
+                  setSelectedSize('full');
+                  setSelectedPrice(selectedFood.fullPrice);
+                }}>
+                <Text
+                  style={[
+                    styles.selectionText,
+                    selectedSize === 'full' && styles.selectionTextActive,
+                  ]}>
+                  Full ₹77
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )} */}
                   </View>
                 </View>
 
                 <View style={styles.quantityBox}>
                   <TouchableOpacity
                     style={styles.qtyBtn}
-                    onPress={() =>
-                      setQuantity(quantity > 1 ? quantity - 1 : 1)
-                    }>
+                    onPress={() => setQuantity(quantity > 1 ? quantity - 1 : 1)}>
                     <Text style={styles.qtyText}>-</Text>
                   </TouchableOpacity>
                   <Text style={styles.qtyValue}>{quantity}</Text>
@@ -306,9 +384,7 @@ const filteredFoods = categoryFoods.filter(item => {
 
                 <View style={styles.modalFooter}>
                   <Text style={styles.totalText}>Total: ₹{totalPrice}</Text>
-                  <TouchableOpacity
-                    style={styles.confirmBtn}
-                    onPress={handleConfirmAdd}>
+                  <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirmAdd}>
                     <Text style={styles.confirmBtnText}>Confirm Add</Text>
                   </TouchableOpacity>
                 </View>
@@ -318,7 +394,7 @@ const filteredFoods = categoryFoods.filter(item => {
         </TouchableOpacity>
       </Modal>
 
-      {/* Bottom Confirmation Box */}
+      {/* Bottom success box */}
       {bottomBoxVisible && (
         <Animated.View
           style={[
@@ -334,24 +410,20 @@ const filteredFoods = categoryFoods.filter(item => {
               ],
             },
           ]}>
-      <LinearGradient
-        colors={['#ff4d4d', '#ff6f61', '#ff8a65']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradientBackground}
-      >
-
-          <View style={styles.bottomBoxContent}>
-            <Text style={styles.bottomText}>
-              ✅ Item added successfully ({totalItemCount} item
-              {totalItemCount > 1 ? 's' : ''} in cart)
-            </Text>
-            <TouchableOpacity
-              style={styles.bottomButton}
-              onPress={handleGoToCart}>
-              <Text style={styles.bottomButtonText}>Go to Cart</Text>
-            </TouchableOpacity>
-          </View>
+          <LinearGradient
+            colors={['#ff4d4d', '#ff6f61', '#ff8a65']}
+            start={{x: 0, y: 0}}
+            end={{x: 1, y: 1}}
+            style={styles.gradientBackground}>
+            <View style={styles.bottomBoxContent}>
+              <Text style={styles.bottomText}>
+                ✅ Item added successfully ({totalItemCount} item
+                {totalItemCount > 1 ? 's' : ''} in cart)
+              </Text>
+              <TouchableOpacity style={styles.bottomButton} onPress={handleGoToCart}>
+                <Text style={styles.bottomButtonText}>Go to Cart</Text>
+              </TouchableOpacity>
+            </View>
           </LinearGradient>
         </Animated.View>
       )}
@@ -361,8 +433,9 @@ const filteredFoods = categoryFoods.filter(item => {
 
 export default CatItemScreen;
 
+
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#fff', marginTop: 20},
+  container: {flex: 1, marginTop: 20},
   header: {
     fontSize: Theme.fontSizes.smedium,
     fontWeight: '600',
@@ -426,7 +499,6 @@ const styles = StyleSheet.create({
   },
   addText: {color: '#fff', fontWeight: '600', fontSize: 13},
 
-  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -446,11 +518,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 10,
   },
-  modalFoodRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
+  modalFoodRow: {flexDirection: 'row', alignItems: 'center', marginBottom: 15},
   modalImage: {width: 70, height: 70, borderRadius: 10},
   modalFoodName: {fontSize: 16, fontWeight: 'bold', color: '#000'},
   modalFoodPrice: {fontSize: 14, color: '#777', marginTop: 4},
@@ -489,8 +557,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 25,
   },
   confirmBtnText: {color: '#fff', fontSize: 15, fontWeight: 'bold'},
-
-  // Bottom Confirmation Box
   bottomBox: {
     position: 'absolute',
     bottom: 0,
@@ -498,19 +564,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    // elevation: 10,
-    // paddingVertical: 20,
-    // paddingHorizontal: 20,
   },
-  bottomBoxContent: {
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-      gradientBackground: {
-    borderRadius: 20,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-  },
+  gradientBackground: {borderRadius: 20, paddingVertical: 15, paddingHorizontal: 20},
+  bottomBoxContent: {flexDirection: 'column', alignItems: 'center'},
   bottomText: {
     fontSize: 15,
     fontWeight: '600',
@@ -523,9 +579,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     borderRadius: 25,
   },
-  bottomButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 15,
-  },
+  bottomButtonText: {color: '#fff', fontWeight: 'bold', fontSize: 15},
 });
