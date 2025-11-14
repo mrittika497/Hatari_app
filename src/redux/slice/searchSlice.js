@@ -1,37 +1,33 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axiosInstance from '../../global_Url/axiosInstance';
-import { API } from '../../global_Url/GlobalUrl';
+// src/redux/slice/searchSlice.js
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axiosInstance from "../../global_Url/axiosInstance";
+import { API } from "../../global_Url/GlobalUrl";
 
-// 🔹 Async thunk to fetch search results from backend
 export const fetchSearchResults = createAsyncThunk(
-  'search/fetchSearchResults',
+  "search/fetchSearchResults",
   async (query, { rejectWithValue }) => {
     try {
-      if (!query || query.trim() === '') {
-        return []; // don't fetch if query is empty
-      }
+      if (!query || query.trim() === "") return [];
 
       const response = await axiosInstance.post(API.searchFood, {
-        search: query, // ✅ sending query in body
+        name: query.trim(),
       });
+      console.log(response,"----------------response");
+      
 
-      console.log('🔍 Search API Responsedfhgvgvhgchf:', response);
-
-      // some APIs wrap the array in a data key, so we handle both cases
-      const results = response.data?.data || response.data || [];
-
-      return results;
+      return response.data?.data || [];
     } catch (error) {
-      console.log('❌ Search API Error:', error.response?.data || error.message);
-      return rejectWithValue(error.response?.data?.message || 'Something went wrong');
+      return rejectWithValue(
+        error.response?.data?.message || "Search failed"
+      );
     }
   }
 );
 
 const searchSlice = createSlice({
-  name: 'search',
+  name: "search",
   initialState: {
-    query: '',
+    query: "",
     results: [],
     loading: false,
     error: null,
@@ -41,7 +37,7 @@ const searchSlice = createSlice({
       state.query = action.payload;
     },
     clearSearch: (state) => {
-      state.query = '';
+      state.query = "";
       state.results = [];
       state.error = null;
     },
@@ -54,11 +50,13 @@ const searchSlice = createSlice({
       })
       .addCase(fetchSearchResults.fulfilled, (state, action) => {
         state.loading = false;
-        state.results = action.payload;
+        state.results = Array.isArray(action.payload)
+          ? action.payload
+          : [];
       })
       .addCase(fetchSearchResults.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || 'Failed to fetch search results';
+        state.error = action.payload;
       });
   },
 });

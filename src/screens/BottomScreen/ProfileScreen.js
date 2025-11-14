@@ -56,7 +56,7 @@ const handleLogout = async () => {
     // Clear AsyncStorage
     await AsyncStorage.multiRemove([
       "userToken",
-      // "userData",
+      "userData",
       "selectedBranch",
       "cartItems",
     ]);

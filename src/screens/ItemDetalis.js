@@ -22,10 +22,10 @@ const ItemDetalis = () => {
   const dispatch = useDispatch();
   const {orders, loading, error} = useSelector(state => state.foodOrder);
   const orderData = orders?.data || [];
-  console.log(
-    orderData[0]?.restaurant?.image,
-    '------------------------------orderData',
-  );
+  // console.log(
+  //   orderData[0]?.restaurant?.image,
+  //   '------------------------------orderData',
+  // );
 
   useEffect(() => {
     dispatch(fetchFoodOrders());

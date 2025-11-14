@@ -134,6 +134,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     elevation: 8,
+    marginTop:13
   },
   headerTop: {
     flexDirection: 'row',

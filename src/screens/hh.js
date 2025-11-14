@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -6,481 +6,217 @@ import {
   TouchableOpacity,
   Image,
   FlatList,
-  ScrollView,
-  Animated,
+  TextInput,
+  ActivityIndicator,
   Dimensions,
-} from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
-import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
-import {useNavigation} from '@react-navigation/native';
-import {useDispatch, useSelector} from 'react-redux';
-import {useBottomTabBarHeight} from '@react-navigation/bottom-tabs';
+} from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import LinearGradient from "react-native-linear-gradient";
+import ShimmerPlaceholder from "react-native-shimmer-placeholder";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { fetchFoodPagination } from "../../redux/slice/SearchFoodPaginationSlice";
+import { fetchSearchResults, setSearchQuery } from "../../redux/slice/searchSlice";
 
-import DashboardScreen from '../../components/DashboardScreen';
-import SectionDivider from '../../components/SectionDivider';
-import HomeHeader from '../../components/Homeheader';
+const { width } = Dimensions.get("window");
 
-import {fetchRestaurants} from '../../redux/slice/AllRestaurantSlice';
-import {fetchBanners} from '../../redux/slice/BannerSlice';
-import {fetchAllFoodCat} from '../../redux/slice/foodCategorySlice';
-import {fetchSubCategories} from '../../redux/slice/subCategoriSlice';
-
-const {width} = Dimensions.get('window');
-
-const HomeScreen = () => {
-  const navigation = useNavigation();
+const MenuScreen = () => {
   const dispatch = useDispatch();
-  const tabBarHeight = useBottomTabBarHeight();
+  const shimmerRef = useRef(null);
 
-  // Redux states
-  const isVeg = useSelector(state => state.foodFilter.isVeg);
-  const {bannerlist} = useSelector(state => state.banners);
-  const {data} = useSelector(state => state.subCategories);
+  const [isVeg, setIsVeg] = useState(true);
 
-  const subcategories = data?.subcategories || [];
-
-  // Local states
-  const [loading, setLoading] = useState(true);
-
-  const [selectedExperience, setSelectedExperience] = useState('Delivery');
-  const [visibleCount, setVisibleCount] = useState(8);
-  console.log(visibleCount,"-----------------visibleCount");
+  const { AllFoodsData, page, hasMore, loading: paginationLoading } = useSelector(
+    (state) => state.FoodPagination
+  );
+  console.log(AllFoodsData,"-------------------AllFoodsData");
   
-  const categoryScrollRef = useRef(null);
-  const scrollPosition = useRef(0);
-  const scrollDirection = useRef(1);
-  const [foods, setFoods] = useState([]);
-  console.log(foods,"-------------------foods");
-  
-  const [page, setPage] = useState(1);
-  console.log(page,"------------------page");
-  
-  const [hasMore, setHasMore] = useState(true);
-  console.log(hasMore);
-  
-  // ✅ Fetch initial data
-useEffect(() => {
-  const loadData = async () => {
-    try {
-      setLoading(true);
+  const { results, query, loading: searchLoading } = useSelector((state) => state.search);
+  console.log(query, "=================search results");
+ const resultnames = results.map(item => item.food?.name || item.name);
+ console.log(resultnames, "=================search result names");
 
-      // ✅ Fetch all essential data in parallel
-      await Promise.all([
-        dispatch(fetchRestaurants()),
-        dispatch(fetchBanners()),
-        dispatch(fetchAllFoodCat()),
-      ]);
+  // ✅ Initial data load
+  useEffect(() => {
+    dispatch(fetchFoodPagination({ page: 1, limit: 10, isVeg,name:query }));
+  }, [dispatch,]);
 
-      // ✅ Fetch first page of subcategories
-      const res = await dispatch(fetchSubCategories({ page: 1, limit: 10 })).unwrap();
-
-      if (res?.subcategories?.length > 0) {
-        setFoods(res.subcategories);
-        setPage(1);
-      }
-
-    } catch (error) {
-      console.error('❌ Initial Data Load Error:', error);
-    } finally {
-      setLoading(false);
+  // ✅ Infinite scroll
+  const handleLoadMore = () => {
+    if (!paginationLoading && hasMore && !query.trim()) {
+      dispatch(fetchFoodPagination({ page: page + 1, limit: 10, isVeg }));
     }
   };
 
-  loadData();
-}, [dispatch]);
-
-
-const loadMoreFoods = async () => {
-  if (!hasMore) return;
-  const nextPage = page + 1;
-  try {
-    const res = await dispatch(fetchSubCategories({ page: nextPage, limit: 10 })).unwrap();
-
-    if (res?.subcategories?.length > 0) {
-      setFoods(prev => [...prev, ...res.subcategories]);
-      setPage(nextPage);
-
-      // ✅ Correct logic for checking remaining data
-      if (res.subcategories.length < 10) {
-        setHasMore(false); // no more data
-      } else {
-        setHasMore(true); // keep showing "Explore More"
+  // ✅ Debounced search
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      if (query.trim().length > 0) {
+        dispatch(fetchSearchResults(query));
       }
-    } else {
-      setHasMore(false); // no data returned
-    }
-  } catch (err) {
-    console.error('Pagination error:', err);
-  }
-};
+    }, 500);
+    return () => clearTimeout(delay);
+  }, [query, dispatch]);
 
-
-// ✅ Explore More click
-const handleExploreMore = async () => {
-  await loadMoreFoods();
-};
-
-  // ✅ Initial load sync
-  useEffect(() => {
-    if (subcategories?.length > 0) {
-      setFoods(subcategories);
-    }
-  }, [subcategories]);
-
-  // ✅ Auto-scroll categories animation
-  useEffect(() => {
-    let interval;
-    if (!loading && categoryScrollRef.current) {
-      interval = setInterval(() => {
-        scrollPosition.current += 2 * scrollDirection.current;
-        categoryScrollRef.current.scrollTo({
-          x: scrollPosition.current,
-          animated: true,
+  // ✅ Choose data to show
+  const dataToRender =
+    query.trim().length > 0
+      ? results
+      : AllFoodsData.filter((item) => {
+          const type = item?.food?.type?.toLowerCase() || "";
+          return isVeg
+            ? type === "veg"
+            : type === "non-veg" || type === "nonveg" || type === "";
         });
-        if (scrollPosition.current > 250) scrollDirection.current = -1;
-        else if (scrollPosition.current < 0) scrollDirection.current = 1;
-      }, 100);
-    }
-    return () => clearInterval(interval);
-  }, [loading]);
 
-  // ✅ Categories
-  const categorieddata = [
-    {
-      id: 1,
-      name: 'Tandoori',
-      image: require('../../assets/images/category/tandoori.jpeg'),
-      type: 'tandoori',
-    },
-    {
-      id: 2,
-      name: 'Indian',
-      image: require('../../assets/images/category/indian.jpeg'),
-      type: 'indian',
-    },
-    {
-      id: 3,
-      name: 'Chinese',
-      image: require('../../assets/images/category/chinese.jpeg'),
-      type: 'chinese',
-    },
-  ];
+  // ✅ Shimmer Loader
+  const renderShimmerItem = () => (
+    <View style={styles.card}>
+      <ShimmerPlaceholder ref={shimmerRef} style={styles.image} LinearGradient={LinearGradient} />
+      <View style={{ padding: 8 }}>
+        <ShimmerPlaceholder style={styles.textShimmer} LinearGradient={LinearGradient} />
+        <ShimmerPlaceholder style={styles.textShimmerSmall} LinearGradient={LinearGradient} />
+      </View>
+    </View>
+  );
 
-  // // ✅ Filter logic for Veg / Non-Veg
-  const filteredFoods = foods.filter(item => {
-    const type = item?.type?.toLowerCase() || '';
-    return isVeg ? type === 'veg' : type === 'non-veg' || type === 'nonveg' || type === '';
-  });
-
-
-  // ✅ Filter logic
-// const filteredFoods = foods.filter(item => {
-//   const type = item?.type?.toLowerCase() || '';
-//   return isVeg === 'veg'
-//     ? type === 'veg'
-//     : isVeg === 'non-veg'
-//     ? type === 'non-veg' || type === 'nonveg'
-//     : true;
-// });
-  console.log(filteredFoods,"------------filteredFoods");
-  
-
-  // ✅ Experience Tabs
-  const experiences = [
-    {
-      id: 1,
-      title: 'Delivery',
-      img: require('../../assets/images/deliveryH.png'),
-    },
-    {
-      id: 2,
-      title: 'Takeaway',
-      img: require('../../assets/images/takeawayH.png'),
-    },
-  ];
-
-  // ✅ Header
-  const renderHeader = () => (
-    <>
-      {/* Experience Selector */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.experienceRow}>
-        {experiences.map(exp => (
-          <TouchableOpacity
-            key={exp.id}
-            style={[
-              styles.expButton,
-              selectedExperience === exp.title && styles.expActive,
-            ]}
-            onPress={() => setSelectedExperience(exp.title)}>
-            <Image source={exp.img} style={styles.expIcon} />
-            <Text
-              style={[
-                styles.expText,
-                selectedExperience === exp.title && {color: '#fff'},
-              ]}>
-              {exp.title}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Banners */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {loading
-          ? [1, 2, 3].map(i => (
-              <ShimmerPlaceholder key={i} style={styles.bannerShimmer} />
-            ))
-          : bannerlist?.map((banner, index) => (
-              <LinearGradient
-                key={index}
-                colors={['#fff', '#fff0f0']}
-                style={styles.bannerCard}>
-                <Image
-                  source={{uri: banner?.fullImageUrl}}
-                  style={styles.bannerImage}
-                  resizeMode="cover"
-                />
-              </LinearGradient>
-            ))}
-      </ScrollView>
-
-{/* 🍽 Categories Section */}
-<SectionDivider title="What would you like to have today?" />
-
-{loading ? (
-  <ScrollView
-    horizontal
-    showsHorizontalScrollIndicator={false}
-    contentContainerStyle={{ paddingHorizontal: 10 }}>
-    {[1, 2, 3].map(i => (
-      <ShimmerPlaceholder
-        key={i}
-        style={styles.categoryShimmer}
-        shimmerStyle={{ borderRadius: 50 }}
-      />
-    ))}
-  </ScrollView>
-) : (
-  <ScrollView
-    horizontal
-    ref={categoryScrollRef}
-    showsHorizontalScrollIndicator={false}
-    contentContainerStyle={{ paddingHorizontal: 15 }}>
-    {categorieddata && categorieddata.length > 0 ? (
-      categorieddata.map((item, index) => (
-        <TouchableOpacity
-          key={item.id || item._id || index}
-          style={styles.categoryCard}
-          onPress={() =>
-            navigation.navigate('CatItemScreen', {
-              categoryId: item.id || item._id,
-              categoryName: item.name,
-              categoryType: item.type,
-            })
-          }>
-          <LinearGradient
-            colors={['#ffffff', '#fff4f4']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.categoryCircle}>
-        <Image source={item.image} style={styles.categoryImage} />
-          </LinearGradient>
-          <Text style={styles.categoryName} numberOfLines={1}>
-            {item.name}
+  // ✅ Render Each Item
+  const renderItem = ({ item }) => {
+    const food = item.food || item;
+    return (
+      <TouchableOpacity style={styles.card}>
+        <Image
+          source={{ uri: food?.image || "https://via.placeholder.com/150" }}
+          style={styles.image}
+        />
+        <View style={styles.info}>
+          <Text style={styles.foodName}>{food?.name}</Text>
+          <Text style={styles.desc} numberOfLines={2}>
+            {food?.description || "Delicious food item"}
           </Text>
-        </TouchableOpacity>
-      ))
-    ) : (
-      <Text style={styles.noCategoryText}>No categories available</Text>
-    )}
-  </ScrollView>
-)}
+          <View style={styles.bottomRow}>
+            <Text style={styles.price}>₹{food?.priceInfo?.staticPrice || "—"}</Text>
+            <View style={styles.ratingBox}>
+              <Ionicons name="star" size={14} color="white" />
+              <Text style={styles.ratingText}>{food?.rating || "4.3"}</Text>
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
-
-      <SectionDivider
-        title={
-          isVeg === 'veg'
-            ? 'Top Veg Picks'
-            : isVeg === 'non-veg'
-            ? 'Top Non-Veg Picks'
-            : 'Top Picks For You'
-        }
-      />
-    </>
-  );
-
-  // ✅ Food Item Card
-  const renderItem = ({item}) => (
-    <TouchableOpacity
-      style={styles.foodCard}
-      activeOpacity={0.8}
-      onPress={() =>
-        navigation.navigate('CatItemScreen', {
-          categoryId: item?._id,
-          categoryName: item?.name,
-        })
-      }>
-      <Image source={{uri: item?.image}} style={styles.foodImage} />
-      <Text style={styles.foodTitle} numberOfLines={1}>
-        {item?.name}
-      </Text>
-      <Text
-        style={[
-          styles.foodType,
-          (item?.type || '').toLowerCase() === 'veg'
-            ? {color: 'green'}
-            : {color: 'red'},
-        ]}>
-        {item?.type || 'Mix'}
-      </Text>
-    </TouchableOpacity>
-  );
+  const renderFooter = () =>
+    !paginationLoading || query.trim().length > 0 ? null : (
+      <ActivityIndicator style={{ marginVertical: 16 }} size="small" color="#FF6B00" />
+    );
 
   return (
-    <DashboardScreen scrollable={false}>
-      <HomeHeader />
-    <FlatList
-  data={filteredFoods}
-  keyExtractor={(item, index) => item?._id || index.toString()}
-  numColumns={2}
-  ListHeaderComponent={renderHeader}
-  renderItem={renderItem}
-  showsVerticalScrollIndicator={false}
-  contentContainerStyle={{
-    paddingBottom: tabBarHeight + 200,
-    paddingHorizontal: 10,
-  }}
-  ListFooterComponent={
-    hasMore && (
-      <TouchableOpacity style={styles.exploreBtn} onPress={handleExploreMore}>
-        <LinearGradient colors={['#ff5f6d', '#ffc371']} style={styles.exploreGradient}>
-          <Text style={styles.exploreText}>Explore More</Text>
-        </LinearGradient>
-      </TouchableOpacity>
-    )
-  }
-  ListFooterComponentStyle={{
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingBottom: 40,
-  }}
-/>
+    <View style={styles.container}>
+      {/* 🔍 Search Bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#888" style={{ marginHorizontal: 8 }} />
+        <TextInput
+          placeholder="Search food..."
+          placeholderTextColor="#999"
+          value={query}
+          onChangeText={(text) => dispatch(setSearchQuery(text))}
+          style={styles.searchInput}
+        />
+        {query.length > 0 && (
+          <TouchableOpacity onPress={() => dispatch(setSearchQuery(""))}>
+            <Ionicons name="close" size={20} color="#666" style={{ marginHorizontal: 8 }} />
+          </TouchableOpacity>
+        )}
+      </View>
 
-    </DashboardScreen>
+   
+
+      {/* 🍴 Food List */}
+      {searchLoading && query.trim().length > 0 ? (
+        <FlatList
+          data={[1, 2, 3, 4, 5]}
+          keyExtractor={(item) => `shimmer-${item}`}
+          renderItem={renderShimmerItem}
+        />
+      ) : (
+        <FlatList
+          data={dataToRender}
+          keyExtractor={(item, index) => `food-${item?.food?._id || item?._id || index}`}
+          renderItem={renderItem}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={renderFooter}
+          contentContainerStyle={{ paddingBottom: 150 }}
+          ListEmptyComponent={
+            <Text style={styles.noResults}>
+              {query.trim().length > 0
+                ? "😔 No results found for your search."
+                : "🍽 No food items available right now."}
+            </Text>
+          }
+        />
+      )}
+    </View>
   );
 };
 
-export default HomeScreen;
+export default MenuScreen;
 
-// --------------------- STYLES ---------------------
 const styles = StyleSheet.create({
-  experienceRow: {alignSelf: 'center', marginBottom: 18, padding: 6},
-  expButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 25,
+  container: { flex: 1, backgroundColor: "#fff" },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    margin: 12,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 12,
+    backgroundColor: "#f7f7f7",
+  },
+  searchInput: { flex: 1, fontSize: 15, paddingVertical: 8, color: "#333" },
+  toggleContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 10,
+    marginBottom: 10,
+  },
+  toggleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 20,
     paddingVertical: 6,
-    paddingHorizontal: 15,
-    marginRight: 12,
+    paddingHorizontal: 14,
+    backgroundColor: "#fff",
+    elevation: 1,
+  },
+  activeToggle: { backgroundColor: "#FF6B00", borderColor: "#FF6B00" },
+  toggleText: { fontSize: 14, color: "#333", marginLeft: 6 },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    margin: 10,
+    overflow: "hidden",
     elevation: 3,
   },
-  expActive: {backgroundColor: '#ff5f6d'},
-  expIcon: {width: 22, height: 22},
-  expText: {marginLeft: 8, fontWeight: '600', color: '#333'},
-
-  bannerCard: {
-    width: width * 0.8,
-    height: 150,
-    borderRadius: 16,
-    marginHorizontal: 10,
-    overflow: 'hidden',
-    elevation: 5,
+  image: { width: "100%", height: width * 0.4 },
+  info: { padding: 10 },
+  foodName: { fontSize: 16, fontWeight: "600", color: "#222" },
+  desc: { fontSize: 13, color: "#666", marginVertical: 4 },
+  bottomRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  price: { fontSize: 15, fontWeight: "600", color: "#333" },
+  ratingBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#4CAF50",
+    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
   },
-  bannerImage: {width: '100%', height: '100%'},
-  bannerShimmer: {
-    width: width * 0.8,
-    height: 150,
-    borderRadius: 16,
-    marginHorizontal: 10,
-  },
-
-categoryCard: {
-  alignItems: 'center',
-  marginRight: 18,
-  width: 80,
-},
-
-categoryCircle: {
-  width: 70,
-  height: 70,
-  borderRadius: 35,
-  justifyContent: 'center',
-  alignItems: 'center',
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 1 },
-  shadowOpacity: 0.15,
-  shadowRadius: 2,
-  elevation: 3,
-},
-
-categoryImage: {
-  width: 60,
-  height: 60,
-  borderRadius: 30,
-},
-
-categoryName: {
-  fontSize: 12,
-  color: '#333',
-  textAlign: 'center',
-  marginTop: 5,
-  width: 70,
-  fontWeight: '500',
-},
-
-categoryShimmer: {
-  width: 70,
-  height: 70,
-  borderRadius: 35,
-  marginRight: 18,
-  backgroundColor: '#eee',
-},
-
-noCategoryText: {
-  fontSize: 14,
-  color: '#999',
-  alignSelf: 'center',
-  marginVertical: 10,
-},
-
-
-  foodCard: {
-    flex: 1,
-    margin: 10,
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    elevation: 5,
-    alignItems: 'center',
-    padding: 10,
-  },
-  foodImage: {width: '100%', height: 120, borderRadius: 14},
-  foodTitle: {marginTop: 8, fontWeight: '600', color: '#333', fontSize: 13},
-  foodType: {fontSize: 12, fontWeight: '500', marginTop: 3},
-
-  exploreBtn: {alignItems: 'center', marginTop: 20},
-  exploreGradient: {
-    borderRadius: 25,
-    paddingHorizontal: 40,
-    paddingVertical: 12,
-  },
-  exploreText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
+  ratingText: { fontSize: 12, color: "white", marginLeft: 3 },
+  textShimmer: { height: 15, width: "80%", borderRadius: 8, marginVertical: 4 },
+  textShimmerSmall: { height: 12, width: "50%", borderRadius: 8, marginVertical: 4 },
+  noResults: { textAlign: "center", marginTop: 80, fontSize: 15, color: "#999" },
 });
