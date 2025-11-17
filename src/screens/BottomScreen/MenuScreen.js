@@ -10,14 +10,14 @@ import {
   Modal,
   Animated,
   Easing,
-    ActivityIndicator,
+  ActivityIndicator,
   RefreshControl,
+  LogBox,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useDispatch, useSelector} from 'react-redux';
 import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
 import LinearGradient from 'react-native-linear-gradient';
-
 
 // import {fetchCategoryFoods, clearCategoryFoods} from '../redux/slice/catItemSlice';
 // import {addToCart} from '../redux/slice/cartSlice';
@@ -25,12 +25,10 @@ import LinearGradient from 'react-native-linear-gradient';
 import DashboardScreen from '../../components/DashboardScreen';
 import CustomHeader from '../../components/CustomHeader';
 import Theme from '../../assets/theme';
-import { fetchCategoryFoods } from '../../redux/slice/catItemSlice';
-import { addToCart } from '../../redux/slice/cartSlice';
+import {fetchCategoryFoods} from '../../redux/slice/catItemSlice';
+import {addToCart} from '../../redux/slice/cartSlice';
 
 const {width} = Dimensions.get('window');
-
-
 
 const CatItemScreen = () => {
   const navigation = useNavigation();
@@ -41,14 +39,23 @@ const CatItemScreen = () => {
   // const { categoryName, restaurantId, categoryIngredients, cuisineType} =
   //   route.params;
   //   console.log(cuisineType,"------------------------cuisineType");
-    
 
-  const {data: categoryFoods, loading, error, page, hasMore} = useSelector(
-    state => state.catItems,
-  );
+  const {
+    data: categoryFoods,
+    loading,
+    error,
+    page,
+    hasMore,
+  } = useSelector(state => state.catItems);
+
   const cartItems = useSelector(state => state.cart.items);
 
   const [selectedFood, setSelectedFood] = useState(null);
+  console.log(
+    selectedFood,
+    '---------------------------------selectedFood111111666',
+  );
+
   const [quantity, setQuantity] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
   const [bottomBoxVisible, setBottomBoxVisible] = useState(false);
@@ -68,7 +75,7 @@ const CatItemScreen = () => {
         // restaurantId,
         // cuisineType,
         page: 1,
-        limit : 10,
+        limit: 10,
       }),
     );
 
@@ -89,7 +96,7 @@ const CatItemScreen = () => {
           // restaurantId,
           // cuisineType,
           page: page + 1,
-          limit : 10,
+          limit: 10,
         }),
       );
     }
@@ -101,12 +108,11 @@ const CatItemScreen = () => {
     // await dispatch(clearCategoryFoods());
     await dispatch(
       fetchCategoryFoods({
-       
         // categoryIngredients,
         // restaurantId,
         // cuisineType,
         page: 1,
-        limit : 10,
+        limit: 10,
       }),
     );
     setRefreshing(false);
@@ -117,8 +123,7 @@ const CatItemScreen = () => {
     const food = item.food;
     const cuisineType = food?.cuisineType?.toLowerCase() || '';
     const selectedCuisine = cuisineType?.toLowerCase() || '';
-    console.log(filteredFoods,"------------------------------filteredFoods");
-    
+    console.log(filteredFoods, '------------------------------filteredFoods');
 
     // Filter by cuisine
     if (selectedCuisine && cuisineType !== selectedCuisine) return false;
@@ -158,24 +163,39 @@ const CatItemScreen = () => {
     }).start(() => setModalVisible(false));
   };
 
-//  const totalItemCount = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
-const totalItemCount = cartItems.length;
- console.log(totalItemCount,"---------------------------------totalItemCount");
- 
+  //  const totalItemCount = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+  const totalItemCount = cartItems.length;
+  console.log(
+    totalItemCount,
+    '---------------------------------totalItemCount',
+  );
 
-const totalPrice = selectedFood?.price ? selectedFood.price * quantity : 0;
+  const totalPrice = selectedFood?.price ? selectedFood.price * quantity : 0;
 
   const renderSkeleton = () => (
     <View style={styles.card}>
-      <ShimmerPlaceHolder LinearGradient={LinearGradient} style={styles.image} />
+      <ShimmerPlaceHolder
+        LinearGradient={LinearGradient}
+        style={styles.image}
+      />
       <View style={{flex: 1, marginLeft: 10}}>
         <ShimmerPlaceHolder
           LinearGradient={LinearGradient}
-          style={{width: width * 0.4, height: 14, marginBottom: 6, borderRadius: 4}}
+          style={{
+            width: width * 0.4,
+            height: 14,
+            marginBottom: 6,
+            borderRadius: 4,
+          }}
         />
         <ShimmerPlaceHolder
           LinearGradient={LinearGradient}
-          style={{width: width * 0.25, height: 14, marginBottom: 6, borderRadius: 4}}
+          style={{
+            width: width * 0.25,
+            height: 14,
+            marginBottom: 6,
+            borderRadius: 4,
+          }}
         />
         <ShimmerPlaceHolder
           LinearGradient={LinearGradient}
@@ -186,9 +206,11 @@ const totalPrice = selectedFood?.price ? selectedFood.price * quantity : 0;
   );
 
   const renderItem = ({item}) => {
-    console.log(item,"--------------------item:-----77777");
-    
     const food = item.food;
+    const priceInfo = food?.priceInfo;
+    console.log(priceInfo, '-----------------------priceInfo');
+
+    // 1️⃣ SAFE TYPE CHECK
     const typeArray = food?.type;
     const type = Array.isArray(typeArray)
       ? String(typeArray[0] || '').toLowerCase()
@@ -197,22 +219,24 @@ const totalPrice = selectedFood?.price ? selectedFood.price * quantity : 0;
     return (
       <View style={styles.card}>
         <Image source={{uri: food.image}} style={styles.image} />
+
         <View style={styles.details}>
+          {/* Cuisine */}
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            {/* <Image
-              source={require('../assets/images/dineBlack.png')}
-              style={{width: 12, height: 12, tintColor: '#555'}}
-            /> */}
             <Text style={styles.cuisine}>{food?.cuisineType}</Text>
           </View>
 
-          <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 4}}>
+          {/* Name + Veg/NonVeg */}
+          <View
+            style={{flexDirection: 'row', alignItems: 'center', marginTop: 4}}>
             <View
               style={[
                 styles.typeIndicator,
                 {
                   borderColor:
-                    type.includes('veg') && !type.includes('non') ? 'green' : 'red',
+                    type.includes('veg') && !type.includes('non')
+                      ? 'green'
+                      : 'red',
                 },
               ]}>
               <View
@@ -227,18 +251,36 @@ const totalPrice = selectedFood?.price ? selectedFood.price * quantity : 0;
                 ]}
               />
             </View>
+
             <Text style={styles.name} numberOfLines={1}>
               {food.name}
             </Text>
           </View>
 
-          <Text style={styles.price}>₹{food.price}</Text>
+          {/* ⭐ PRICE SHOW HERE */}
+          {priceInfo?.hasVariation ? (
+            <View>
+              <Text style={{color: '#000', fontSize: 14}}>
+                Half: ₹{priceInfo?.halfPrice}
+              </Text>
 
+              <Text style={{color: '#000', fontSize: 14}}>
+                Full: ₹{priceInfo?.fullPrice}
+              </Text>
+            </View>
+          ) : (
+            <Text style={{color: '#000', fontSize: 14}}>
+              Price: ₹{priceInfo?.staticPrice}
+            </Text>
+          )}
+
+          {/* Rating */}
           <View style={styles.ratingWrapper}>
             <Text style={styles.ratingText}>★ {food.rating || '4.2'}</Text>
           </View>
         </View>
 
+        {/* Add Button */}
         <TouchableOpacity style={styles.addBtn} onPress={() => openModal(food)}>
           <Text style={styles.addText}>Add</Text>
         </TouchableOpacity>
@@ -271,16 +313,18 @@ const totalPrice = selectedFood?.price ? selectedFood.price * quantity : 0;
 
   return (
     <DashboardScreen scrollable={false}>
-    <CustomHeader
-  title={"All Menu"}
-  // gradientColors={["#FF4B2B", "#FF9068"]} // custom gradient (optional)
-  // textColor="#fff"
-/>
+      <CustomHeader
+        title={'All Menu'}
+        // gradientColors={["#FF4B2B", "#FF9068"]} // custom gradient (optional)
+        // textColor="#fff"
+      />
       <View style={styles.container}>
         {/* <Text style={styles.header}>{categoryName} Items</Text> */}
 
         {loading && categoryFoods.length === 0 ? (
-          Array.from({length: 5}).map((_, i) => <View key={i}>{renderSkeleton()}</View>)
+          Array.from({length: 5}).map((_, i) => (
+            <View key={i}>{renderSkeleton()}</View>
+          ))
         ) : error ? (
           <Text style={styles.error}>{error}</Text>
         ) : filteredFoods.length > 0 ? (
@@ -295,7 +339,11 @@ const totalPrice = selectedFood?.price ? selectedFood.price * quantity : 0;
               onEndReachedThreshold={0.5}
               ListFooterComponent={
                 loading && hasMore ? (
-                  <ActivityIndicator size="large" color="#FF4D4D" style={{margin: 10}} />
+                  <ActivityIndicator
+                    size="large"
+                    color="#FF4D4D"
+                    style={{margin: 10}}
+                  />
                 ) : null
               }
               refreshControl={
@@ -304,13 +352,19 @@ const totalPrice = selectedFood?.price ? selectedFood.price * quantity : 0;
             />
           </Animated.View>
         ) : (
-          <Text style={styles.noData}>   Please wait, your items are loading. Items found in</Text>
+          <Text style={styles.noData}>
+            {' '}
+            Please wait, your items are loading. Items found in
+          </Text>
         )}
       </View>
 
       {/* Quantity Modal */}
       <Modal transparent visible={modalVisible} animationType="none">
-        <TouchableOpacity activeOpacity={1} onPress={closeModal} style={styles.modalOverlay}>
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={closeModal}
+          style={styles.modalOverlay}>
           <Animated.View
             style={[
               styles.modalContent,
@@ -329,57 +383,41 @@ const totalPrice = selectedFood?.price ? selectedFood.price * quantity : 0;
             {selectedFood && (
               <>
                 <View style={styles.modalFoodRow}>
-                  <Image source={{uri: selectedFood.image}} style={styles.modalImage} />
+                  <Image
+                    source={{uri: selectedFood.image}}
+                    style={styles.modalImage}
+                  />
                   <View style={{flex: 1, marginLeft: 10}}>
-                    <Text style={styles.modalFoodName}>{selectedFood.name}</Text>
-               
-          {/* ✅ Half / Full Selection
-          {selectedFood.hasVariation && (
-            <View style={styles.selectionRow}>
-              <TouchableOpacity
-                style={[
-                  styles.selectionOption,
-                  selectedSize === 'half' && styles.selectionActive,
-                ]}
-                onPress={() => {
-                  setSelectedSize('half');
-                  setSelectedPrice(selectedFood.halfPrice);
-                }}>
-                <Text
-                  style={[
-                    styles.selectionText,
-                    selectedSize === 'half' && styles.selectionTextActive,
-                  ]}>
-                  Half ₹67
-                </Text>
-              </TouchableOpacity>
+                    <Text style={styles.modalFoodName}>
+                      {selectedFood.name}
+                    </Text>
 
-              <TouchableOpacity
-                style={[
-                  styles.selectionOption,
-                  selectedSize === 'full' && styles.selectionActive,
-                ]}
-                onPress={() => {
-                  setSelectedSize('full');
-                  setSelectedPrice(selectedFood.fullPrice);
-                }}>
-                <Text
-                  style={[
-                    styles.selectionText,
-                    selectedSize === 'full' && styles.selectionTextActive,
-                  ]}>
-                  Full ₹77
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )} */}
+                    <Text style={{color: 'red'}}>
+                      {selectedFood?.cuisineType}
+                    </Text>
+                    {selectedFood?.priceInfo?.hasVariation ? (
+                      <View>
+                        <Text style={{color: '#000'}}>
+                          Half: ₹{selectedFood.priceInfo.halfPrice}
+                        </Text>
+                        <Text style={{color: '#000'}}>
+                          Full: ₹{selectedFood.priceInfo.fullPrice}
+                        </Text>
+                      </View> 
+                    ) : (
+                      <Text style={{color: '#000'}}>
+                        Price: ₹{selectedFood.priceInfo.staticPrice}
+                      </Text>
+                    )}
                   </View>
                 </View>
 
                 <View style={styles.quantityBox}>
                   <TouchableOpacity
                     style={styles.qtyBtn}
-                    onPress={() => setQuantity(quantity > 1 ? quantity - 1 : 1)}>
+                    onPress={() =>
+                      setQuantity(quantity > 1 ? quantity - 1 : 1)
+                    }>
                     <Text style={styles.qtyText}>-</Text>
                   </TouchableOpacity>
                   <Text style={styles.qtyValue}>{quantity}</Text>
@@ -392,7 +430,9 @@ const totalPrice = selectedFood?.price ? selectedFood.price * quantity : 0;
 
                 <View style={styles.modalFooter}>
                   <Text style={styles.totalText}>Total: ₹{totalPrice}</Text>
-                  <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirmAdd}>
+                  <TouchableOpacity
+                    style={styles.confirmBtn}
+                    onPress={handleConfirmAdd}>
                     <Text style={styles.confirmBtnText}>Confirm Add</Text>
                   </TouchableOpacity>
                 </View>
@@ -428,7 +468,9 @@ const totalPrice = selectedFood?.price ? selectedFood.price * quantity : 0;
                 ✅ Item added successfully ({totalItemCount} item
                 {totalItemCount > 1 ? 's' : ''} in cart)
               </Text>
-              <TouchableOpacity style={styles.bottomButton} onPress={handleGoToCart}>
+              <TouchableOpacity
+                style={styles.bottomButton}
+                onPress={handleGoToCart}>
                 <Text style={styles.bottomButtonText}>Go to Cart</Text>
               </TouchableOpacity>
             </View>
@@ -440,7 +482,6 @@ const totalPrice = selectedFood?.price ? selectedFood.price * quantity : 0;
 };
 
 export default CatItemScreen;
-
 
 const styles = StyleSheet.create({
   container: {flex: 1, marginTop: 20},
@@ -550,7 +591,12 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   qtyText: {fontSize: 18, fontWeight: 'bold', color: '#FF4D4D'},
-  qtyValue: {fontSize: 16, fontWeight: 'bold', color: '#000', marginHorizontal: 15},
+  qtyValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
+    marginHorizontal: 15,
+  },
   modalFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -573,7 +619,11 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
-  gradientBackground: {borderRadius: 20, paddingVertical: 15, paddingHorizontal: 20},
+  gradientBackground: {
+    borderRadius: 20,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+  },
   bottomBoxContent: {flexDirection: 'column', alignItems: 'center'},
   bottomText: {
     fontSize: 15,

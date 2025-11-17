@@ -39,8 +39,12 @@ const CartScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const {items: cartItems} = useSelector(state => state.cart);
+  console.log(cartItems, '------------cartItems33333');
+
   const [loading, setLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  console.log(selectedItem,"-------------------------selectedItem");
+  
   const [noteText, setNoteText] = useState('');
   const insets = useSafeAreaInsets();
 
@@ -50,7 +54,9 @@ const CartScreen = () => {
     dispatch(updateQuantity({id, quantity: currentQty + 1}));
   };
   const decrementQty = (id, currentQty) => {
-    dispatch(updateQuantity({id, quantity: currentQty > 1 ? currentQty - 1 : 1}));
+    dispatch(
+      updateQuantity({id, quantity: currentQty > 1 ? currentQty - 1 : 1}),
+    );
   };
   const deleteItem = id => {
     dispatch(removeFromCart(id));
@@ -114,12 +120,16 @@ const CartScreen = () => {
         </View>
 
         <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.customizeBtn} onPress={() => openModal(item)}>
+          <TouchableOpacity
+            style={styles.customizeBtn}
+            onPress={() => openModal(item)}>
             <Icon name="pencil" size={16} color={Theme.colors.red} />
             <Text style={styles.customizeText}>Customize</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteItem(item._id)}>
+          <TouchableOpacity
+            style={styles.deleteBtn}
+            onPress={() => deleteItem(item._id)}>
             <Ionicons name="trash-outline" size={18} color="red" />
             <Text style={styles.deleteText}>Remove</Text>
           </TouchableOpacity>
@@ -180,13 +190,18 @@ const CartScreen = () => {
                   source={{
                     uri: 'https://cdn-icons-png.flaticon.com/512/2038/2038854.png',
                   }}
-                  style={{width: width * 0.35, height: width * 0.35, marginBottom: 10}}
+                  style={{
+                    width: width * 0.35,
+                    height: width * 0.35,
+                    marginBottom: 10,
+                  }}
                 />
                 <Text style={styles.emptyText}>Your cart is empty</Text>
-<TouchableOpacity
-  style={styles.homeButton}
-  onPress={() => navigation.navigate('bottom', { screen: 'HomeScreen' })}
->
+                <TouchableOpacity
+                  style={styles.homeButton}
+                  onPress={() =>
+                    navigation.navigate('bottom', {screen: 'HomeScreen'})
+                  }>
                   <Text style={styles.browseText}>Browse Menu</Text>
                 </TouchableOpacity>
               </View>
@@ -201,10 +216,25 @@ const CartScreen = () => {
                 />
 
                 {/* ✅ Fixed Responsive Bottom Bar */}
-                <View style={[styles.bottomBar, {paddingBottom: insets.bottom || 16}]}>
-                  <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-                    <Text style={{fontSize: width * 0.035, color: '#555', textAlign: 'center'}}>
-                      🛒 Oops! Your cart is lonely. Tap "Continue" to see all the goodies!
+                <View
+                  style={[
+                    styles.bottomBar,
+                    {paddingBottom: insets.bottom || 16},
+                  ]}>
+                  <View
+                    style={{
+                      flex: 1,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}>
+                    <Text
+                      style={{
+                        fontSize: width * 0.035,
+                        color: '#555',
+                        textAlign: 'center',
+                      }}>
+                      🛒 Oops! Your cart is lonely. Tap "Continue" to see all
+                      the goodies!
                     </Text>
                   </View>
 
@@ -223,10 +253,16 @@ const CartScreen = () => {
       </SafeAreaView>
 
       {/* Note Modal */}
-      <Modal visible={!!selectedItem} animationType="slide" transparent onRequestClose={closeModal}>
+      <Modal
+        visible={!!selectedItem}
+        animationType="slide"
+        transparent
+        onRequestClose={closeModal}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Edit Item: {selectedItem?.name}</Text>
+            <Text style={styles.modalTitle}>
+              Edit Item: {selectedItem?.name}
+            </Text>
             <TextInput
               style={styles.modalInput}
               placeholder="Enter special note..."
@@ -240,7 +276,9 @@ const CartScreen = () => {
               <TouchableOpacity
                 style={[styles.modalBtn, {backgroundColor: '#ccc'}]}
                 onPress={closeModal}>
-                <Text style={[styles.modalBtnText, {color: '#333'}]}>Cancel</Text>
+                <Text style={[styles.modalBtnText, {color: '#333'}]}>
+                  Cancel
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalBtn, {backgroundColor: Theme.colors.red}]}
@@ -296,7 +334,12 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   typeDot: {width: 8, height: 8, borderRadius: 4},
-  itemName: {fontSize: width * 0.04, fontWeight: '700', color: '#333', flexShrink: 1},
+  itemName: {
+    fontSize: width * 0.04,
+    fontWeight: '700',
+    color: '#333',
+    flexShrink: 1,
+  },
   itemPrice: {fontSize: width * 0.037, color: '#777', marginTop: 2},
   ratingWrapper: {
     backgroundColor: 'green',
@@ -327,7 +370,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 10,
   },
-  customizeText: {fontSize: width * 0.032, color: Theme.colors.red, fontWeight: '600', marginLeft: 5},
+  customizeText: {
+    fontSize: width * 0.032,
+    color: Theme.colors.red,
+    fontWeight: '600',
+    marginLeft: 5,
+  },
   deleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -336,7 +384,12 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 20,
   },
-  deleteText: {fontSize: width * 0.032, color: 'red', fontWeight: '600', marginLeft: 5},
+  deleteText: {
+    fontSize: width * 0.032,
+    color: 'red',
+    fontWeight: '600',
+    marginLeft: 5,
+  },
   quantityBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -355,11 +408,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 2,
   },
-  qtyText: {fontSize: width * 0.05, fontWeight: 'bold', color: Theme.colors.red},
-  qtyValue: {fontSize: width * 0.035, fontWeight: '600', marginHorizontal: 8, color: '#000'},
+  qtyText: {
+    fontSize: width * 0.05,
+    fontWeight: 'bold',
+    color: Theme.colors.red,
+  },
+  qtyValue: {
+    fontSize: width * 0.035,
+    fontWeight: '600',
+    marginHorizontal: 8,
+    color: '#000',
+  },
   bottomBar: {
     position: 'absolute',
-    bottom: "10%",
+    bottom: '10%',
     left: 0,
     right: 0,
     flexDirection: 'row',
@@ -392,7 +454,12 @@ const styles = StyleSheet.create({
     padding: 20,
     elevation: 6,
   },
-  modalTitle: {fontSize: width * 0.045, fontWeight: '700', marginBottom: 12, color: '#000'},
+  modalTitle: {
+    fontSize: width * 0.045,
+    fontWeight: '700',
+    marginBottom: 12,
+    color: '#000',
+  },
   modalInput: {
     backgroundColor: '#f8f8f8',
     borderRadius: 8,
@@ -402,7 +469,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#000',
   },
-  modalActions: {flexDirection: 'row', justifyContent: 'flex-end', marginTop: 15},
-  modalBtn: {paddingHorizontal: 16, paddingVertical: 10, borderRadius: 6, marginLeft: 10},
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 15,
+  },
+  modalBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 6,
+    marginLeft: 10,
+  },
   modalBtnText: {color: '#fff', fontWeight: '600'},
 });

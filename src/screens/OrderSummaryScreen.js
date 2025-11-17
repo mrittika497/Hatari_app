@@ -181,6 +181,21 @@ const OrderSummaryScreen = () => {
     }
   };
 
+  // put near top of file (below imports)
+const formatCurrency = (value) => {
+  try {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 2,
+    }).format(value);
+  } catch (e) {
+    // fallback if Intl not available
+    const n = Number(value) || 0;
+    return `₹${n.toFixed(2)}`;
+  }
+};
+
   return (
     <DashboardScreen scrollable={false}>
       <CustomHeader title="Order Summary" />
@@ -269,10 +284,22 @@ const OrderSummaryScreen = () => {
                      </View>
                    ) : null}
               </View>
-              <Text style={styles.itemTotal}>
+              {/* <Text style={styles.itemTotal}>
                 ₹{item.price * item.quantity}
-              </Text>
-            
+              </Text> */}
+<Text style={styles.itemPrice}>
+  {formatCurrency(
+    (!item?.priceInfo?.hasVariation 
+      ? item?.priceInfo?.staticPrice
+      : item?.selectedSize === "half"
+        ? item?.priceInfo?.halfPrice
+        : item?.priceInfo?.fullPrice
+    ) * item.quantity
+  )}
+</Text>
+
+
+
             </View>
           ))}
         </View>

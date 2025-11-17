@@ -161,7 +161,21 @@ const totalItemCount = cartItems.length;
             <Text style={styles.cuisine}>{food.cuisineType}</Text>
           </View>
           <Text style={styles.cuisine}>{food.name}</Text>
-          <Text style={styles.price}>₹{food.priceInfo?.staticPrice}</Text>
+             {food?.priceInfo?.hasVariation ? (
+                        <View>
+                          <Text style={{color: '#000', fontSize: 14}}>
+                            Half: ₹{food?.priceInfo?.halfPrice}
+                          </Text>
+            
+                          <Text style={{color: '#000', fontSize: 14}}>
+                            Full: ₹{food?.priceInfo?.fullPrice}
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text style={{color: '#000', fontSize: 14}}>
+                          Price: ₹{food?.priceInfo?.staticPrice}
+                        </Text>
+                      )}
         </View>
         <TouchableOpacity style={styles.addBtn} onPress={() => openModal(food)}>
           <Text style={styles.addText}>Add</Text>

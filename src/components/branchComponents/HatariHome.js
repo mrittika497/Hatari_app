@@ -48,6 +48,8 @@ const HatariHome = ({route}) => {
   const bannerlist = useSelector(state => state.banners);
   const bannerlistBanner = bannerlist?.bannerlist || [];
   const AllFoodsData = useSelector(state => state.allFoods);
+  console.log(AllFoodsData,"----------------AllFoodsData");
+  
   const topPicks = AllFoodsData?.AllFoodsData?.data;
   const {categories, error} = useSelector(state => state.foodCategory);
   const homeCategories = categories?.foods;

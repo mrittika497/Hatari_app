@@ -188,7 +188,7 @@ const SearchScreen = () => {
             </View>
             <Text style={styles.name}>{food?.name}</Text>
           </View>
-          <Text style={styles.price}>₹{food?.price}</Text>
+       
           <View style={styles.ratingWrapper}>
             <Ionicons name="star" color="#fff" size={10} />
             <Text style={styles.ratingText}>{food?.rating || 4.5}</Text>

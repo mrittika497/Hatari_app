@@ -40,6 +40,8 @@ const OderCartScreen = () => {
   
   const [noteText, setNoteText] = useState('');
   console.log(noteText,"------------------------------noteText");
+
+  
   
   const insets = useSafeAreaInsets();
 
@@ -133,9 +135,31 @@ const handleSaveNote = async () => {
   }
 };
 
-  const renderItem = ({item}) => (
+ const renderItem = ({item}) => {
+
+  const priceInfo = item?.priceInfo;
+
+  // Determine unit price
+  let unitPrice = 0;
+
+  if (priceInfo?.hasVariation) {
+    // Use selected size price (half / full)
+    unitPrice =
+      item?.selectedSize === "half"
+        ? priceInfo?.halfPrice
+        : priceInfo?.fullPrice;
+  } else {
+    // Use static price
+    unitPrice = priceInfo?.staticPrice;
+  }
+
+  // Total price
+  const totalPrice = unitPrice * item.quantity;
+
+  return (
     <View style={styles.itemCard}>
       <Image source={{uri: item.image}} style={styles.itemImage} />
+
       <View style={styles.detailsContainer}>
         <View style={styles.itemHeader}>
           <View
@@ -150,14 +174,17 @@ const handleSaveNote = async () => {
               ]}
             />
           </View>
+
           <Text style={styles.itemName} numberOfLines={1}>
             {item.name}
           </Text>
         </View>
 
+        {/* PRICE DISPLAY */}
         <Text style={styles.itemPrice}>
-          {formatCurrency(item.price * item.quantity)}
+          {formatCurrency(totalPrice)}
         </Text>
+
         <View style={styles.ratingWrapper}>
           <Text style={styles.ratingText}>★ {item?.rating}</Text>
         </View>
@@ -181,13 +208,16 @@ const handleSaveNote = async () => {
         ) : null}
       </View>
 
+      {/* Quantity Control */}
       <View style={styles.quantityBox}>
         <TouchableOpacity
           style={styles.qtyBtn}
           onPress={() => decrementQty(item.id, item.quantity)}>
           <Text style={styles.qtyText}>-</Text>
         </TouchableOpacity>
+
         <Text style={styles.qtyValue}>{item.quantity}</Text>
+
         <TouchableOpacity
           style={styles.qtyBtn}
           onPress={() => incrementQty(item.id, item.quantity)}>
@@ -196,6 +226,8 @@ const handleSaveNote = async () => {
       </View>
     </View>
   );
+};
+
 
   return (
     <DashboardScreen scrollable={false}>
