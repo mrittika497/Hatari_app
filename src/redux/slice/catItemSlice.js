@@ -5,7 +5,7 @@ import {API} from '../../global_Url/GlobalUrl';
 export const fetchCategoryFoods = createAsyncThunk(
   'catItems/fetch',
   async (
-    {categoryId, categoryIngredients, restaurantId, cuisineType, page = 1, limit = 100},
+    {categoryId, categoryIngredients, restaurantId, cuisineType, page = 1, limit = 100,search},
     {rejectWithValue},
   ) => {
     try {
@@ -15,7 +15,7 @@ export const fetchCategoryFoods = createAsyncThunk(
       if (categoryIngredients) params.append('ingredients', categoryIngredients);
       if (restaurantId) params.append('restaurantId', restaurantId);
       if (cuisineType) params.append('cuisineType', cuisineType); // 👈 use correct key
-
+      if(search) params.append('search',search)  ;
       params.append('page', page);
       params.append('limit', limit);
 

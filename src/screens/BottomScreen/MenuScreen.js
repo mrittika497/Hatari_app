@@ -12,20 +12,20 @@ import {
   Easing,
   ActivityIndicator,
   RefreshControl,
-  LogBox,
+  TextInput,
 } from 'react-native';
-import {useNavigation, useRoute} from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 import {useDispatch, useSelector} from 'react-redux';
 import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
 import LinearGradient from 'react-native-linear-gradient';
 
-// import {fetchCategoryFoods, clearCategoryFoods} from '../redux/slice/catItemSlice';
-// import {addToCart} from '../redux/slice/cartSlice';
-
 import DashboardScreen from '../../components/DashboardScreen';
 import CustomHeader from '../../components/CustomHeader';
 import Theme from '../../assets/theme';
-import {fetchCategoryFoods} from '../../redux/slice/catItemSlice';
+import {
+  fetchFoodPagination,
+  clearFoods,
+} from '../../redux/slice/SearchFoodPaginationSlice';
 import {addToCart} from '../../redux/slice/cartSlice';
 
 const {width} = Dimensions.get('window');
@@ -33,116 +33,106 @@ const {width} = Dimensions.get('window');
 const CatItemScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const route = useRoute();
 
-  const isVeg = useSelector(state => state.foodFilter.isVeg);
-  // const { categoryName, restaurantId, categoryIngredients, cuisineType} =
-  //   route.params;
-  //   console.log(cuisineType,"------------------------cuisineType");
-
-  const {
-    data: categoryFoods,
-    loading,
-    error,
-    page,
-    hasMore,
-  } = useSelector(state => state.catItems);
-
-  const cartItems = useSelector(state => state.cart.items);
-
-  const [selectedFood, setSelectedFood] = useState(null);
-  console.log(
-    selectedFood,
-    '---------------------------------selectedFood111111666',
+  const isVeg = useSelector(state => state.foodFilter.isVeg); // true/false/null
+  const {AllFoodsData, loading, page, hasMore, error} = useSelector(
+    state => state.FoodPagination,
   );
-
+  const cartItems = useSelector(state => state.cart.items);
+  const [totalPrice, setTotalPrice] = useState(0);
+  console.log(totalPrice,"--------------totalPrice");
+  
+  const [selectedFood, setSelectedFood] = useState(null);
+  const [selectedOption, setSelectedOption] = useState('half');
   const [quantity, setQuantity] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
   const [bottomBoxVisible, setBottomBoxVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchText, setSearchText] = useState('');
 
   const slideAnim = useRef(new Animated.Value(0)).current;
   const boxAnim = useRef(new Animated.Value(150)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // 🧠 Fetch category foods on mount or when filters change
-  useEffect(() => {
-    // dispatch(clearCategoryFoods());
+  // API type
+  const type = isVeg === null ? '' : isVeg ? 'veg' : 'non-veg';
+
+  const loadFirstPage = () => {
+    dispatch(clearFoods());
     dispatch(
-      fetchCategoryFoods({
-        // categoryId,
-        // categoryIngredients,
-        // restaurantId,
-        // cuisineType,
+      fetchFoodPagination({
         page: 1,
         limit: 10,
+        type,
+        search: searchText,
       }),
     );
+  };
 
+  useEffect(() => {
+    loadFirstPage();
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 400,
       useNativeDriver: true,
     }).start();
-  }, [dispatch]);
+  }, [type, searchText]);
 
-  // 🧭 Pagination handler
   const handleLoadMore = () => {
     if (!loading && hasMore) {
       dispatch(
-        fetchCategoryFoods({
-          // categoryId,
-          // categoryIngredients,
-          // restaurantId,
-          // cuisineType,
+        fetchFoodPagination({
           page: page + 1,
           limit: 10,
+          type,
+          search: searchText,
         }),
       );
     }
   };
 
-  // 🔁 Pull to refresh
+  const updateTotal = qty => {
+    if (selectedFood.priceInfo.hasVariation) {
+      if (selectedOption === 'half') {
+        setTotalPrice(selectedFood.priceInfo.halfPrice * qty);
+      } else if (selectedOption === 'full') {
+        setTotalPrice(selectedFood.priceInfo.fullPrice * qty);
+      }
+    } else {
+      setTotalPrice(selectedFood.priceInfo.staticPrice * qty);
+    }
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
-    // await dispatch(clearCategoryFoods());
-    await dispatch(
-      fetchCategoryFoods({
-        // categoryIngredients,
-        // restaurantId,
-        // cuisineType,
-        page: 1,
-        limit: 10,
-      }),
-    );
+    await loadFirstPage();
     setRefreshing(false);
   };
 
-  // 🥦 Filter logic based on Veg/Non-Veg and Cuisine Type
-  const filteredFoods = categoryFoods.filter(item => {
-    const food = item.food;
-    const cuisineType = food?.cuisineType?.toLowerCase() || '';
-    const selectedCuisine = cuisineType?.toLowerCase() || '';
-    console.log(filteredFoods, '------------------------------filteredFoods');
+  // Veg/Non-Veg + Search filter
+  const filteredFoods = AllFoodsData?.filter(item => {
+    if (!item.type) return true;
 
-    // Filter by cuisine
-    if (selectedCuisine && cuisineType !== selectedCuisine) return false;
+    let typeStr = Array.isArray(item.type)
+      ? item.type[0]?.toLowerCase()
+      : String(item.type).toLowerCase();
+    if (typeStr === 'nonveg') typeStr = 'non-veg';
+    if (typeStr === 'vegetarian') typeStr = 'veg';
 
-    // Veg/Non-Veg filter
-    const typeArray = food?.type;
-    const type = Array.isArray(typeArray)
-      ? String(typeArray[0] || '').toLowerCase()
-      : String(typeArray || '').toLowerCase();
+    if (isVeg === true && typeStr !== 'veg') return false;
+    if (isVeg === false && typeStr !== 'non-veg') return false;
 
-    if (isVeg === true) {
-      return type.includes('veg') && !type.includes('non');
-    } else if (isVeg === false) {
-      return type.includes('non');
-    }
+    // Search filter
+    if (
+      searchText &&
+      !item.name?.toLowerCase().includes(searchText.toLowerCase())
+    )
+      return false;
+
     return true;
   });
+  console.log(filteredFoods, '---------------------------filteredFoods');
 
-  // 🧊 Modal animations
   const openModal = food => {
     setSelectedFood(food);
     setQuantity(1);
@@ -163,14 +153,8 @@ const CatItemScreen = () => {
     }).start(() => setModalVisible(false));
   };
 
-  //  const totalItemCount = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
   const totalItemCount = cartItems.length;
-  console.log(
-    totalItemCount,
-    '---------------------------------totalItemCount',
-  );
-
-  const totalPrice = selectedFood?.price ? selectedFood.price * quantity : 0;
+  // const totalPrice = selectedFood?.priceInfo?.staticPrice ? selectedFood.priceInfo.staticPrice * quantity : 0;
 
   const renderSkeleton = () => (
     <View style={styles.card}>
@@ -206,81 +190,57 @@ const CatItemScreen = () => {
   );
 
   const renderItem = ({item}) => {
-    const food = item.food;
-    const priceInfo = food?.priceInfo;
-    console.log(priceInfo, '-----------------------priceInfo');
+    const food = item?.food;
 
-    // 1️⃣ SAFE TYPE CHECK
-    const typeArray = food?.type;
-    const type = Array.isArray(typeArray)
-      ? String(typeArray[0] || '').toLowerCase()
-      : String(typeArray || '').toLowerCase();
+    const typeStr = String(food?.type || '').toLowerCase();
 
     return (
       <View style={styles.card}>
         <Image source={{uri: food.image}} style={styles.image} />
 
         <View style={styles.details}>
-          {/* Cuisine */}
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            <Text style={styles.cuisine}>{food?.cuisineType}</Text>
-          </View>
+          <Text style={styles.cuisine}>{food?.cuisineType}</Text>
 
-          {/* Name + Veg/NonVeg */}
           <View
             style={{flexDirection: 'row', alignItems: 'center', marginTop: 4}}>
             <View
               style={[
                 styles.typeIndicator,
-                {
-                  borderColor:
-                    type.includes('veg') && !type.includes('non')
-                      ? 'green'
-                      : 'red',
-                },
+                {borderColor: typeStr === 'veg' ? 'green' : 'red'},
               ]}>
               <View
                 style={[
                   styles.typeDot,
-                  {
-                    backgroundColor:
-                      type.includes('veg') && !type.includes('non')
-                        ? 'green'
-                        : 'red',
-                  },
+                  {backgroundColor: typeStr === 'veg' ? 'green' : 'red'},
                 ]}
               />
             </View>
 
             <Text style={styles.name} numberOfLines={1}>
-              {food.name}
+              {food?.name}
             </Text>
           </View>
 
-          {/* ⭐ PRICE SHOW HERE */}
-          {priceInfo?.hasVariation ? (
+          {food.priceInfo?.hasVariation ? (
             <View>
               <Text style={{color: '#000', fontSize: 14}}>
-                Half: ₹{priceInfo?.halfPrice}
+                Half: ₹{food.priceInfo.halfPrice}
               </Text>
-
               <Text style={{color: '#000', fontSize: 14}}>
-                Full: ₹{priceInfo?.fullPrice}
+                Full: ₹{food.priceInfo.fullPrice}
               </Text>
             </View>
           ) : (
             <Text style={{color: '#000', fontSize: 14}}>
-              Price: ₹{priceInfo?.staticPrice}
+              Price: ₹{food.priceInfo?.staticPrice ?? 'N/A'}
             </Text>
           )}
 
-          {/* Rating */}
           <View style={styles.ratingWrapper}>
             <Text style={styles.ratingText}>★ {food.rating || '4.2'}</Text>
           </View>
         </View>
 
-        {/* Add Button */}
         <TouchableOpacity style={styles.addBtn} onPress={() => openModal(food)}>
           <Text style={styles.addText}>Add</Text>
         </TouchableOpacity>
@@ -291,7 +251,6 @@ const CatItemScreen = () => {
   const handleConfirmAdd = () => {
     dispatch(addToCart({...selectedFood, quantity}));
     closeModal();
-
     setBottomBoxVisible(true);
     Animated.timing(boxAnim, {
       toValue: 0,
@@ -307,21 +266,26 @@ const CatItemScreen = () => {
       duration: 300,
       useNativeDriver: true,
     }).start(() => setBottomBoxVisible(false));
-
     navigation.navigate('OderCartScreen');
   };
 
   return (
     <DashboardScreen scrollable={false}>
-      <CustomHeader
-        title={'All Menu'}
-        // gradientColors={["#FF4B2B", "#FF9068"]} // custom gradient (optional)
-        // textColor="#fff"
-      />
-      <View style={styles.container}>
-        {/* <Text style={styles.header}>{categoryName} Items</Text> */}
+      <CustomHeader title={'All Menu'} />
 
-        {loading && categoryFoods.length === 0 ? (
+      {/* Search Box */}
+      <View style={styles.searchBox}>
+        <TextInput
+          placeholder="Search food..."
+          value={searchText}
+          onChangeText={setSearchText}
+          style={styles.searchInput}
+          placeholderTextColor={'black'}
+        />
+      </View>
+
+      <View style={styles.container}>
+        {loading && AllFoodsData.length === 0 ? (
           Array.from({length: 5}).map((_, i) => (
             <View key={i}>{renderSkeleton()}</View>
           ))
@@ -332,7 +296,7 @@ const CatItemScreen = () => {
             <FlatList
               showsVerticalScrollIndicator={false}
               data={filteredFoods}
-              keyExtractor={item => item.food._id}
+              keyExtractor={item => item.id}
               renderItem={renderItem}
               contentContainerStyle={{paddingBottom: 120}}
               onEndReached={handleLoadMore}
@@ -352,10 +316,7 @@ const CatItemScreen = () => {
             />
           </Animated.View>
         ) : (
-          <Text style={styles.noData}>
-            {' '}
-            Please wait, your items are loading. Items found in
-          </Text>
+          <Text style={styles.noData}>No items found</Text>
         )}
       </View>
 
@@ -380,8 +341,10 @@ const CatItemScreen = () => {
               },
             ]}>
             <View style={styles.modalHandle} />
+
             {selectedFood && (
               <>
+                {/* Food Header */}
                 <View style={styles.modalFoodRow}>
                   <Image
                     source={{uri: selectedFood.image}}
@@ -392,18 +355,57 @@ const CatItemScreen = () => {
                       {selectedFood.name}
                     </Text>
 
-                    <Text style={{color: 'red'}}>
+                    <Text style={styles.modalFoodName}>
                       {selectedFood?.cuisineType}
                     </Text>
+
+                    {/* Variation Selection */}
                     {selectedFood?.priceInfo?.hasVariation ? (
-                      <View>
-                        <Text style={{color: '#000'}}>
-                          Half: ₹{selectedFood.priceInfo.halfPrice}
-                        </Text>
-                        <Text style={{color: '#000'}}>
-                          Full: ₹{selectedFood.priceInfo.fullPrice}
-                        </Text>
-                      </View> 
+                      <View style={{flexDirection: 'row', marginTop: 5}}>
+                        {/* Half Button */}
+                        <TouchableOpacity
+                          style={[
+                            styles.optionBtn,
+                            selectedOption === 'half' && styles.selectedOption,
+                          ]}
+                          onPress={() => {
+                            setSelectedOption('half');
+                            setTotalPrice(
+                              selectedFood.priceInfo.halfPrice * quantity,
+                            );
+                          }}>
+                          <Text
+                            style={[
+                              styles.optionText,
+                              selectedOption === 'half' &&
+                                styles.optionTextSelected,
+                            ]}>
+                            Half – ₹{selectedFood.priceInfo.halfPrice}
+                          </Text>
+                        </TouchableOpacity>
+
+                        {/* Full Button */}
+                        <TouchableOpacity
+                          style={[
+                            styles.optionBtn,
+                            selectedOption === 'full' && styles.selectedOption,
+                          ]}
+                          onPress={() => {
+                            setSelectedOption('full');
+                            setTotalPrice(
+                              selectedFood.priceInfo.fullPrice * quantity,
+                            );
+                          }}>
+                          <Text
+                            style={[
+                              styles.optionText,
+                              selectedOption === 'full' &&
+                                styles.optionTextSelected,
+                            ]}>
+                            Full – ₹{selectedFood.priceInfo.fullPrice}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
                     ) : (
                       <Text style={{color: '#000'}}>
                         Price: ₹{selectedFood.priceInfo.staticPrice}
@@ -412,24 +414,37 @@ const CatItemScreen = () => {
                   </View>
                 </View>
 
+                {/* Quantity Box */}
                 <View style={styles.quantityBox}>
                   <TouchableOpacity
                     style={styles.qtyBtn}
-                    onPress={() =>
-                      setQuantity(quantity > 1 ? quantity - 1 : 1)
-                    }>
+                    onPress={() => {
+                      if (quantity > 1) {
+                        const newQty = quantity - 1;
+                        setQuantity(newQty);
+                        updateTotal(newQty);
+                      }
+                    }}>
                     <Text style={styles.qtyText}>-</Text>
                   </TouchableOpacity>
+
                   <Text style={styles.qtyValue}>{quantity}</Text>
+
                   <TouchableOpacity
                     style={styles.qtyBtn}
-                    onPress={() => setQuantity(quantity + 1)}>
+                    onPress={() => {
+                      const newQty = quantity + 1;
+                      setQuantity(newQty);
+                      updateTotal(newQty);
+                    }}>
                     <Text style={styles.qtyText}>+</Text>
                   </TouchableOpacity>
                 </View>
 
+                {/* Footer */}
                 <View style={styles.modalFooter}>
                   <Text style={styles.totalText}>Total: ₹{totalPrice}</Text>
+
                   <TouchableOpacity
                     style={styles.confirmBtn}
                     onPress={handleConfirmAdd}>
@@ -483,13 +498,16 @@ const CatItemScreen = () => {
 
 export default CatItemScreen;
 
+// Styles
 const styles = StyleSheet.create({
-  container: {flex: 1, marginTop: 20},
-  header: {
-    fontSize: Theme.fontSizes.smedium,
-    fontWeight: '600',
-    marginVertical: 10,
-    color: '#000',
+  container: {flex: 1, marginTop: 10},
+  searchBox: {marginVertical: 15},
+  searchInput: {
+    backgroundColor: '#f9ccccff',
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    height: 40,
+    color: 'black',
   },
   error: {textAlign: 'center', marginTop: 20, color: 'red'},
   noData: {textAlign: 'center', marginTop: 20, color: 'gray'},
@@ -501,6 +519,26 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     alignItems: 'center',
     elevation: 3,
+  },
+  optionBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 15,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  selectedOption: {
+    backgroundColor: '#e82b2bff',
+    borderColor: '#ff6600',
+  },
+  optionText: {
+    color: '#000',
+    fontSize: 14,
+  },
+  optionTextSelected: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   image: {width: 80, height: 80, borderRadius: 10},
   details: {flex: 1, marginLeft: 10},
@@ -515,12 +553,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 5,
     color: '#000',
-  },
-  price: {
-    fontSize: Theme.fontSizes.small,
-    color: '#000',
-    marginVertical: 4,
-    fontWeight: '500',
   },
   typeIndicator: {
     width: 14,
@@ -547,7 +579,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   addText: {color: '#fff', fontWeight: '600', fontSize: 13},
-
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -570,7 +601,6 @@ const styles = StyleSheet.create({
   modalFoodRow: {flexDirection: 'row', alignItems: 'center', marginBottom: 15},
   modalImage: {width: 70, height: 70, borderRadius: 10},
   modalFoodName: {fontSize: 16, fontWeight: 'bold', color: '#000'},
-  modalFoodPrice: {fontSize: 14, color: '#777', marginTop: 4},
   quantityBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -613,7 +643,7 @@ const styles = StyleSheet.create({
   confirmBtnText: {color: '#fff', fontSize: 15, fontWeight: 'bold'},
   bottomBox: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 60,
     width: '100%',
     backgroundColor: '#fff',
     borderTopLeftRadius: 20,

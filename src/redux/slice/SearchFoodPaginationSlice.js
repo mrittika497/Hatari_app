@@ -1,32 +1,28 @@
+// src/redux/slice/SearchFoodPaginationSlice.js
+
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axiosInstance from "../../global_Url/axiosInstance";
 import { API } from "../../global_Url/GlobalUrl";
 
-// ✅ Async thunk
 export const fetchFoodPagination = createAsyncThunk(
   "foods/fetchFoodPagination",
-  async ({ page = 1, limit = 10, isVeg,name }, { rejectWithValue }) => {
+  async ({ page = 1, limit = 10, type = "", search = "" }, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get(
-        `${API.getfoodpagination}?page=${page}&limit=${limit}&isVeg=${isVeg}&name=${name}`
+        `${API.getfoodpagination}?page=${page}&limit=${limit}&type=${type}&search=${search}`
       );
-
-      console.log(response, "------------------------------responsepagenation");
+console.log(type,"-------------------------apitype");
 
       return {
-        foods: response.data.data || [],
-        page: response.data.page || page,
-        hasMore:
-          response.data.page * response.data.limit < response.data.total,
+        foods: response?.data?.data || [],
+        page: response?.data?.page || page,
+        hasMore: response.data.page * response.data.limit < response.data.total,
       };
     } catch (error) {
-      console.log("error---------------------------",error);
-      
       return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
-
 
 const SearchFoodPaginationSlice = createSlice({
   name: "FoodPagination",
@@ -55,14 +51,10 @@ const SearchFoodPaginationSlice = createSlice({
         state.page = action.payload.page;
         state.hasMore = action.payload.hasMore;
 
-        // ✅ Append safely
         if (state.page === 1) {
           state.AllFoodsData = action.payload.foods;
         } else {
-          state.AllFoodsData = [
-            ...state.AllFoodsData,
-            ...action.payload.foods,
-          ];
+          state.AllFoodsData = [...state.AllFoodsData, ...action.payload.foods];
         }
       })
       .addCase(fetchFoodPagination.rejected, (state, action) => {

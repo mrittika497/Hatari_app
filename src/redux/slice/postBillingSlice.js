@@ -10,7 +10,7 @@ export const postBilling = createAsyncThunk(
     
     try {
       const response = await axiosInstance.post(API.billing, billingData);
-      console.log(response,"----------------------responsebiling");
+      console.log(response,"----------------------responsebiling55558888");
       
       return response.data;
     } catch (error) {

@@ -9,6 +9,8 @@ export const fetchCoupons = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get(API.coupon); // Replace with your API
+      console.log(response,"----------------------response");
+      
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);

@@ -16,7 +16,7 @@ export const API = {
   addAddressPost:`${BASE_URL}users/addAddress`,
   deliverySettings :`${BASE_URL}setting/deliverySettings`,
   tableBooking :`${BASE_URL}booking`,
-  coupon :`${BASE_URL}coupon`,
+  coupon :`${BASE_URL}coupon/active`,
   billing:`${BASE_URL}billing/create`,
   getfoodOrder :`${BASE_URL}billing`,
   saveaddress: `${BASE_URL}users/getUserAddress`,

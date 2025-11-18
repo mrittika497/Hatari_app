@@ -24,19 +24,15 @@ import DashboardScreen from '../components/DashboardScreen';
 // Dummy experiences
 const experiences = [
   { id: 1, title: 'Delivery', icon: require('../assets/images/delivery.png'), redirection: "HomeScreen" },
+  // { id: 2, title: 'Dine in', icon: require('../assets/images/dinein.png'), redirection: "DinneScreen" },
   { id: 2, title: 'Takeaway', icon: require('../assets/images/takeaway.png'), redirection: "HomeScreen" },
 ];
 
 const ExperienceScreen = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
-
   const { experienceId, selectedRestaurant } = useSelector((state) => state.experience);
-  console.log(selectedRestaurant,"--------------selectedRestaurant11111111");
-  
-
   const [location, setLocation] = useState(null);
-
   const { data: nearestRestaurants, loading, error } = useSelector(
     (state) => state.nearestRestaurants
   );
@@ -45,7 +41,7 @@ const ExperienceScreen = () => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const pressAnim = useRef(new Animated.Value(1)).current;
 
-  // Animate "Continue" button when selection done
+  // Animate when restaurant and experience are selected
   useEffect(() => {
     if (experienceId && selectedRestaurant) {
       Animated.spring(scaleAnim, {
@@ -54,22 +50,30 @@ const ExperienceScreen = () => {
         friction: 5,
         tension: 100,
       }).start(() => {
+        // subtle continuous pulse
         Animated.loop(
           Animated.sequence([
-            Animated.timing(scaleAnim, { toValue: 1.05, duration: 800, useNativeDriver: true }),
-            Animated.timing(scaleAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+            Animated.timing(scaleAnim, {
+              toValue: 1.05,
+              duration: 800,
+              useNativeDriver: true,
+            }),
+            Animated.timing(scaleAnim, {
+              toValue: 1,
+              duration: 800,
+              useNativeDriver: true,
+            }),
           ])
         ).start();
       });
     }
   }, [experienceId, selectedRestaurant]);
 
-  // Request location permission
+  // Location permission
   useEffect(() => {
     requestLocationPermission();
   }, []);
 
-  // When location received → fetch nearest restaurants
   useEffect(() => {
     if (location) {
       dispatch(
@@ -80,14 +84,6 @@ const ExperienceScreen = () => {
       );
     }
   }, [location]);
-
-  // ⭐ AUTO-SELECT NEAREST RESTAURANT ⭐
-  useEffect(() => {
-    if (nearestRestaurants && nearestRestaurants.length > 0) {
-      dispatch(setRestaurant(nearestRestaurants[0])); // auto select nearest
-      dispatch(setExperience({ id: null, type: null })); // reset experience
-    }
-  }, [nearestRestaurants]);
 
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
@@ -158,13 +154,17 @@ const ExperienceScreen = () => {
   };
 
   return (
-    <DashboardScreen contentStyle={{ alignItems: "center", justifyContent: "center" }}>
+    <DashboardScreen
+      contentStyle={{ alignItems: "center", justifyContent: "center" }}
+    >
       <LinearGradient
-        colors={["#ff3d3d", "#ff5c5c", "#fff"]}
+     colors={["#ff3d3d", "#ff5c5c", "#fff"]}
         style={styles.gradientContainer}
       >
         <SafeAreaView style={{ flex: 1, width: '100%', alignItems: 'center' }}>
-          <Text style={styles.title}>Welcome to Hatari</Text>
+          <Text style={styles.title}>
+            Welcome to Hatari</Text>
+        
           <Text style={styles.subtitle}>Elevate Your Experience</Text>
 
           <Text style={styles.sectionHeading}>Nearest Restaurants</Text>
@@ -188,7 +188,7 @@ const ExperienceScreen = () => {
                 <Text style={styles.restaurantName}>{res.name}</Text>
                 <Text style={styles.restaurantDetails}>{res.address}</Text>
                 <Text style={styles.restaurantDetails}>
-                  Distance: {(res.distance / 1000).toFixed(2)} km
+                  Distance: {(res.distance / 1000).toFixed(2)} km 
                 </Text>
               </View>
             </TouchableOpacity>
@@ -219,22 +219,31 @@ const ExperienceScreen = () => {
             })}
           </View>
 
+          {/* Animated Continue Button */}
           {experienceId && selectedRestaurant && (
-            <TouchableOpacity
-              onPress={handleContinue}
-              onPressIn={handlePressIn}
-              onPressOut={handlePressOut}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={['#ff3b30', '#ff6666']}
-                style={styles.continueButton}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+            // <Animated.View
+            //   style={{
+            //     transform: [
+            //       { scale: Animated.multiply(scaleAnim, pressAnim) },
+            //     ],
+            //   }}
+            // >
+              <TouchableOpacity
+                onPress={handleContinue}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                activeOpacity={0.8}
               >
-                <Text style={styles.continueText}>Continue</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+                <LinearGradient
+                  colors={['#ff3b30', '#ff6666']}
+                  style={styles.continueButton}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Text style={styles.continueText}>Continue</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            // </Animated.View>
           )}
         </SafeAreaView>
       </LinearGradient>
@@ -258,6 +267,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: 'center',
   },
+  brand: { color: '#e53935', fontWeight: '700' },
   subtitle: {
     fontSize: 14,
     color: '#080808ff',
@@ -265,7 +275,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
   },
-  sectionHeading: {
+  sectionHeading: { 
     fontSize: 16,
     color: '#000',
     fontWeight: '500',

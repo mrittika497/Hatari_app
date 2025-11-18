@@ -1,4 +1,4 @@
-// import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -6,29 +6,28 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
-  Alert,
   Modal,
   ToastAndroid,
-  SafeAreaView,
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useDispatch, useSelector} from 'react-redux';
 import LinearGradient from 'react-native-linear-gradient';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
+import DashboardScreen from '../components/DashboardScreen';
+import CustomHeader from '../components/CustomHeader';
+import Theme from '../assets/theme';
 import {clearCart} from '../redux/slice/cartSlice';
 import {fetchDeliverySettings} from '../redux/slice/deliverySettingsSlice';
 import {fetchCoupons} from '../redux/slice/couponSlice';
 import {postBilling} from '../redux/slice/postBillingSlice';
 import {fetchUserAddresses} from '../redux/slice/saveaddressSlice';
-import Theme from '../assets/theme';
-import DashboardScreen from '../components/DashboardScreen';
-import CustomHeader from '../components/CustomHeader';
-import {useEffect, useState} from 'react';
-const {width, height} = Dimensions.get('window');
+
+const {width} = Dimensions.get('window');
+
 const OrderSummaryScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -36,38 +35,62 @@ const OrderSummaryScreen = () => {
   const {selectedRestaurant, experienceType} = useSelector(
     state => state.experience,
   );
+  console.log(
+    selectedRestaurant?._id,
+    experienceType,
+    '-------------------selectedRestaurant',
+  );
+
   const {addresses, loading} = useSelector(state => state.address);
   const {items: cartItems} = useSelector(state => state.cart);
-  console.log(cartItems,"----------------------------cartItems");
+  console.log(cartItems,"------------------------------cartItems");
+  
+const allNotes = cartItems.map(item => item.note || '');
+console.log(allNotes,"------------------notedata");
+
   
   const {token} = useSelector(state => state.auth);
   const {data} = useSelector(state => state.deliverySettings);
   const couponState = useSelector(state => state.coupons);
-  const couponList = couponState?.list || [];
+  const couponList = couponState?.list?.data || [];
+  console.log(couponList, '--------------------couponList');
 
   const [savedAddress, setSavedAddress] = useState(null);
-  const [userid, setUserId] = useState(null);
-  console.log(userid,"--------------------------------userid");
+  console.log(savedAddress?._id,"---------------------address");
   
+  const [userid, setUserId] = useState(null);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
   const [codModalVisible, setCodModalVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Fetch addresses and delivery data
+  // Format currency
+  const formatCurrency = value => {
+    try {
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 2,
+      }).format(value);
+    } catch (e) {
+      const n = Number(value) || 0;
+      return `₹${n.toFixed(2)}`;
+    }
+  };
+
+  // Fetch addresses, coupons, and delivery settings
   useEffect(() => {
     dispatch(fetchDeliverySettings());
     dispatch(fetchCoupons());
     dispatch(fetchUserAddresses(token));
   }, [dispatch, token]);
 
-  // Load address from AsyncStorage or Redux
+  // Load saved address
   useEffect(() => {
     const loadAddress = async () => {
       try {
         const saved = await AsyncStorage.getItem('savedAddress');
         if (saved) {
-          const parsed = JSON.parse(saved);
-          setSavedAddress(parsed);
+          setSavedAddress(JSON.parse(saved));
         } else if (addresses?.length > 0) {
           const first = addresses[0];
           setSavedAddress(first);
@@ -89,10 +112,15 @@ const OrderSummaryScreen = () => {
   }, []);
 
   // Calculate totals
-  const itemTotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
-  );
+  const itemTotal = cartItems.reduce((sum, item) => {
+    const price = !item?.priceInfo?.hasVariation
+      ? item?.priceInfo?.staticPrice
+      : item?.selectedSize === 'half'
+      ? item?.priceInfo?.halfPrice
+      : item?.priceInfo?.fullPrice;
+    return sum + price * item.quantity;
+  }, 0);
+
   const packingFee = cartItems.reduce(
     (sum, item) => sum + (item.packagingCharges || 0),
     0,
@@ -147,54 +175,99 @@ const OrderSummaryScreen = () => {
     setCodModalVisible(true);
   };
 
-  const handleConfirmCOD = async () => {
-    try {
-      const billingData = {
-        userId: userid,
-        restaurantId: selectedRestaurant._id,
-        address: savedAddress._id,
-        billingName: savedAddress?.name,
-        billingMobile: savedAddress?.contact,
-        type: experienceType?.toLowerCase(),
-        deliveryCharges: Number(data?.delivery_charges_value) || 0,
-        foodDetails: cartItems.map(item => ({
-          foodId: item._id,
-          quantity: Number(item.quantity) || 1,
-          price: Number(item.price) || 0,
-        })),
-        totalAmount: Number(itemTotal),
-        grossAmount: Number(grandTotal),
-        packingCharge: Number(packingFee),
-        CGST: Number(cgstAmt),
-        SGST: Number(sgstAmt),
-        couponCode: selectedCoupon?.code || null,
-        paymentStatus: 'Pending',
-      };
+  // const handleConfirmCOD = async () => {
+  //   try {
+  //     const billingData = {
+  //       userId: userid,
+  //       restaurantId: selectedRestaurant._id,
+  //       address: savedAddress._id,
+  //       billingName: savedAddress?.name,
+  //       billingMobile: savedAddress?.contact,
+  //       type: experienceType?.toLowerCase(),
+  //       deliveryCharges: Number(data?.delivery_charges_value) || 0,
+  //       foodDetails: cartItems.map(item => ({
+  //         foodId: item._id,
+  //         quantity: Number(item.quantity) || 1,
+  //         price: !item?.priceInfo?.hasVariation
+  //           ? item?.priceInfo?.staticPrice
+  //           : item?.selectedSize === 'half'
+  //           ? item?.priceInfo?.halfPrice
+  //           : item?.priceInfo?.fullPrice,
+  //       })),
+  //       totalAmount: Number(itemTotal),
+  //       grossAmount: Number(grandTotal),
+  //       packingCharge: Number(packingFee),
+  //       CGST: Number(cgstAmt),
+  //       SGST: Number(sgstAmt),
+  //       couponCode: selectedCoupon?.code || null,
+  //       paymentStatus: 'Pending',
+  //     };
 
-      await dispatch(postBilling(billingData)).unwrap();
-      dispatch(clearCart());
-      setCodModalVisible(false);
-      ToastAndroid.show('Order placed successfully!', ToastAndroid.LONG);
-      navigation.navigate('OrderSuccessScreen');
-    } catch (error) {
-      ToastAndroid.show('Order failed. Try again.', ToastAndroid.SHORT);
-    }
+  //     await dispatch(postBilling(billingData)).unwrap();
+  //     dispatch(clearCart());
+  //     setCodModalVisible(false);
+  //     ToastAndroid.show('Order placed successfully!', ToastAndroid.LONG);
+  //     navigation.navigate('OrderSuccessScreen');
+  //   } catch (error) {
+  //     ToastAndroid.show('Order failed. Try again.', ToastAndroid.SHORT);
+  //   }
+  // };
+
+const handleConfirmCOD = async () => {
+  if (!savedAddress?._id) {
+    ToastAndroid.show('Please select a delivery address', ToastAndroid.SHORT);
+    return;
+  }
+
+  if (!selectedRestaurant?._id) {
+    ToastAndroid.show('Restaurant info missing', ToastAndroid.SHORT);
+    return;
+  }
+
+  try {
+  const billingData = {
+    userId: userid,
+    restaurantId: selectedRestaurant?._id || "1234567890", // fallback static _id
+    address: savedAddress?._id || "0987654321", // fallback static _id
+    billingName: savedAddress?.name || "John Doe",
+    billingMobile: savedAddress?.contact || "9999999999",
+    type: experienceType?.toLowerCase() || "dinein",
+    deliveryCharges: Number(data?.delivery_charges_value) || 50, // static fallback
+
+    foodDetails: cartItems.map(item => ({
+      foodId: item.id || item.foodId || "abc123", // static fallback
+      quantity: Number(item.quantity) || 1,
+      price: 667, // number, not string
+      note: item?.note || "hello",
+      variant: item?.selectedSize || "full",
+      fullPrice: 667,
+      halfPrice: 334,
+    })),
+
+    totalAmount: Number(itemTotal) || 667, // static fallback
+    grossAmount: Number(grandTotal) || 700, // static fallback
+    packingCharge: Number(packingFee) || 20,
+    CGST: Number(cgstAmt) || 33,
+    SGST: Number(sgstAmt) || 33,
+    couponCode: selectedCoupon?.code || null,
+    paymentStatus: "Pending",
   };
 
-  // put near top of file (below imports)
-const formatCurrency = (value) => {
-  try {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 2,
-    }).format(value);
-  } catch (e) {
-    // fallback if Intl not available
-    const n = Number(value) || 0;
-    return `₹${n.toFixed(2)}`;
+
+    await dispatch(postBilling(billingData)).unwrap();
+
+    dispatch(clearCart());
+    setCodModalVisible(false);
+
+    ToastAndroid.show('Order placed successfully!', ToastAndroid.LONG);
+    navigation.navigate('OrderSuccessScreen');
+  } catch (error) {
+    console.log('Billing error:', error);
+    ToastAndroid.show('Order failed. Try again.', ToastAndroid.SHORT);
   }
 };
+
+
 
   return (
     <DashboardScreen scrollable={false}>
@@ -231,40 +304,39 @@ const formatCurrency = (value) => {
         </View>
 
         {/* Coupon Section */}
-        {savedAddress && couponList.length > 0 && (
-          <View style={styles.sectionBox}>
-            <Text style={styles.sectionTitle}>Available Coupons</Text>
-            {couponList.map(coupon => (
-              <LinearGradient
-                key={coupon._id}
-                colors={
-                  selectedCoupon?._id === coupon._id
-                    ? ['#f50606e6', '#c16280ff']
-                    : ['#e47369ff', '#db2b2bff']
-                }
-                style={styles.couponCard}>
-                <View style={{flex: 1}}>
-                  <Text style={styles.couponDesc}>{coupon.description}</Text>
-                  <Text style={styles.couponDetails}>
-                    Min ₹{coupon.minOrderAmount} | {coupon.discountDisplay}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={[
-                    styles.applyBtn,
-                    selectedCoupon?._id === coupon._id && {
-                      backgroundColor: '#ccc',
-                    },
-                  ]}
-                  onPress={() => applyCoupon(coupon)}>
-                  <Text style={styles.applyText}>
-                    {selectedCoupon?._id === coupon._id ? 'APPLIED' : 'APPLY'}
-                  </Text>
-                </TouchableOpacity>
-              </LinearGradient>
-            ))}
-          </View>
-        )}
+
+        <View style={styles.sectionBox}>
+          <Text style={styles.sectionTitle}>Available Coupons</Text>
+          {couponList?.map(coupon => (
+            <LinearGradient
+              key={coupon._id}
+              colors={
+                selectedCoupon?._id === coupon._id
+                  ? ['#f50606e6', '#c16280ff']
+                  : ['#e47369ff', '#db2b2bff']
+              }
+              style={styles.couponCard}>
+              <View style={{flex: 1}}>
+                <Text style={styles.couponDesc}>{coupon.description}</Text>
+                <Text style={styles.couponDetails}>
+                  Min ₹{coupon.minOrderAmount} | {coupon.discountDisplay}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={[
+                  styles.applyBtn,
+                  selectedCoupon?._id === coupon._id && {
+                    backgroundColor: '#ccc',
+                  },
+                ]}
+                onPress={() => applyCoupon(coupon)}>
+                <Text style={styles.applyText}>
+                  {selectedCoupon?._id === coupon._id ? 'APPLIED' : 'APPLY'}
+                </Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          ))}
+        </View>
 
         {/* Cart Items */}
         <View style={styles.sectionBox}>
@@ -274,32 +346,21 @@ const formatCurrency = (value) => {
               <Image source={{uri: item.image}} style={styles.itemImage} />
               <View style={{flex: 1, marginLeft: 10}}>
                 <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemPrice}>
-                  ₹{item.price} × {item.quantity}
-                </Text>
-                {}
-                 {item.note ? (
-                     <View style={styles.noteTag}>
-                       <Text style={styles.noteText}>📝 {item?.note}</Text>
-                     </View>
-                   ) : null}
+                {item.note ? (
+                  <View style={styles.noteTag}>
+                    <Text style={styles.noteText}>📝 {item?.note}</Text>
+                  </View>
+                ) : null}
               </View>
-              {/* <Text style={styles.itemTotal}>
-                ₹{item.price * item.quantity}
-              </Text> */}
-<Text style={styles.itemPrice}>
-  {formatCurrency(
-    (!item?.priceInfo?.hasVariation 
-      ? item?.priceInfo?.staticPrice
-      : item?.selectedSize === "half"
-        ? item?.priceInfo?.halfPrice
-        : item?.priceInfo?.fullPrice
-    ) * item.quantity
-  )}
-</Text>
-
-
-
+              <Text style={styles.itemPrice}>
+                {formatCurrency(
+                  (!item?.priceInfo?.hasVariation
+                    ? item?.priceInfo?.staticPrice
+                    : item?.selectedSize === 'half'
+                    ? item?.priceInfo?.halfPrice
+                    : item?.priceInfo?.fullPrice) * item.quantity,
+                )}
+              </Text>
             </View>
           ))}
         </View>
@@ -309,42 +370,40 @@ const formatCurrency = (value) => {
           <Text style={styles.sectionTitle}>Bill Details</Text>
           <View style={styles.billRow}>
             <Text style={styles.billLabel}>Item Total</Text>
-            <Text style={styles.billLabel}>₹{itemTotal.toFixed(2)}</Text>
+            <Text style={styles.billLabel}>{formatCurrency(itemTotal)}</Text>
           </View>
           <View style={styles.billRow}>
             <Text style={styles.billLabel}>Delivery Fee</Text>
             <Text style={styles.billLabel}>
-              ₹{(data?.delivery_charges_value || 0).toFixed(2)}
+              {formatCurrency(data?.delivery_charges_value || 0)}
             </Text>
           </View>
           <View style={styles.billRow}>
             <Text style={styles.billLabel}>Packing Fee</Text>
-            <Text style={styles.billLabel}>₹{packingFee.toFixed(2)}</Text>
+            <Text style={styles.billLabel}>{formatCurrency(packingFee)}</Text>
           </View>
-
           {data?.Cgst && (
             <View style={styles.billRow}>
-              <Text style={styles.billLabel}>CGST ({data?.Cgst})</Text>
-              <Text style={styles.billValue}>{cgstAmt?.toFixed(2)}</Text>
+              <Text style={styles.billLabel}>CGST ({data?.Cgst}%)</Text>
+              <Text style={styles.billValue}>{formatCurrency(cgstAmt)}</Text>
             </View>
           )}
           {data?.Sgst && (
             <View style={styles.billRow}>
-              <Text style={styles.billLabel}>SGST ({data?.Sgst})</Text>
-              <Text style={styles.billValue}>{sgstAmt?.toFixed(2)}</Text>
+              <Text style={styles.billLabel}>SGST ({data?.Sgst}%)</Text>
+              <Text style={styles.billValue}>{formatCurrency(sgstAmt)}</Text>
             </View>
           )}
-
           {selectedCoupon && (
             <View style={styles.billRow}>
               <Text style={styles.billLabel}>Coupon Discount</Text>
-              <Text style={styles.billLabel}>-₹{discount.toFixed(2)}</Text>
+              <Text style={styles.billLabel}>-{formatCurrency(discount)}</Text>
             </View>
           )}
           <View style={styles.divider} />
           <View style={styles.billRow}>
             <Text style={styles.totalLabel}>Grand Total</Text>
-            <Text style={styles.totalValue}>₹{grandTotal.toFixed(2)}</Text>
+            <Text style={styles.totalValue}>{formatCurrency(grandTotal)}</Text>
           </View>
         </View>
       </ScrollView>
@@ -352,7 +411,7 @@ const formatCurrency = (value) => {
       {/* Bottom Proceed Bar */}
       {cartItems.length > 0 && (
         <View style={styles.bottomBar}>
-          <Text style={styles.bottomTotal}>₹{grandTotal.toFixed(2)}</Text>
+          <Text style={styles.bottomTotal}>{formatCurrency(grandTotal)}</Text>
           <TouchableOpacity onPress={handleProceed} style={styles.continueBtn}>
             <Text style={styles.continueText}>Proceed to Pay</Text>
           </TouchableOpacity>
@@ -377,7 +436,7 @@ const formatCurrency = (value) => {
             style={styles.locationContainer}
             onPress={() => navigation.navigate('MapScreen')}>
             <Text style={styles.locationText}>
-              Selected your current location +
+              Select your current location +
             </Text>
           </TouchableOpacity>
           {loading ? (
@@ -431,7 +490,7 @@ const formatCurrency = (value) => {
             <Ionicons name="cash-outline" size={50} color="red" />
             <Text style={styles.modalTitle}>Cash on Delivery</Text>
             <Text style={styles.modalText}>
-              You’ll pay ₹{grandTotal.toFixed(2)} on delivery.
+              You’ll pay {formatCurrency(grandTotal)} on delivery.
             </Text>
             <TouchableOpacity
               onPress={handleConfirmCOD}
@@ -455,6 +514,7 @@ const formatCurrency = (value) => {
 
 export default OrderSummaryScreen;
 
+// ---------- STYLES ----------
 const styles = StyleSheet.create({
   addressCard: {
     flexDirection: 'row',
@@ -517,8 +577,7 @@ const styles = StyleSheet.create({
   itemImage: {width: 55, height: 55, borderRadius: 8},
   itemName: {fontSize: 14, fontWeight: '600', color: '#000'},
   itemPrice: {fontSize: 13, color: '#444'},
-  itemTotal: {fontSize: 13, fontWeight: '700', color: '#000'},
-    noteTag: {
+  noteTag: {
     marginTop: 6,
     backgroundColor: '#FFF6E5',
     borderLeftWidth: 3,
@@ -534,168 +593,83 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   billLabel: {fontSize: 13, color: '#555'},
-  billValue: {fontSize: 13, color: '#000', fontWeight: '500'},
-  divider: {height: 1, backgroundColor: '#eee', marginVertical: 8},
-  totalLabel: {fontWeight: '700', fontSize: 14,color:"#000"},
-  totalValue: {fontWeight: '700', fontSize: 14, color: 'red'},
+  billValue: {fontSize: 13, color: '#555'},
+  divider: {
+    borderBottomWidth: 0.7,
+    borderBottomColor: '#ccc',
+    marginVertical: 6,
+  },
+  totalLabel: {fontSize: 15, fontWeight: '700', color: '#000'},
+  totalValue: {fontSize: 15, fontWeight: '700', color: 'red'},
   bottomBar: {
+    position: 'absolute',
+    bottom: 100,
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
     padding: 14,
-    borderTopWidth: 1,
-    borderColor: '#eee',
     backgroundColor: '#fff',
-    position: 'absolute',
-    bottom: '13%',
     width: '100%',
+    elevation: 5,
   },
-  bottomTotal: {fontSize: 17, fontWeight: '700', color: 'red'},
+  bottomTotal: {fontSize: 16, fontWeight: '700', color: '#000'},
   continueBtn: {
     backgroundColor: 'red',
+    paddingVertical: 12,
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 25,
+    borderRadius: 10,
   },
   continueText: {color: '#fff', fontWeight: '700'},
   savemodalView: {
-    height: 400,
-    width: '100%',
     backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    position: 'absolute',
-    bottom: 0,
+    marginTop: 120,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    flex: 1,
+    padding: 12,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 12,
   },
-  modalTitle: {fontSize: 17, fontWeight: '700', color: 'red'},
-  addressItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    paddingVertical: 12,
-  },
+  modalTitle: {fontSize: 16, fontWeight: '700', color: '#000'},
   locationContainer: {
-    backgroundColor: '#fff',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-    marginVertical: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  locationText: {
-    color: '#FF4C4C', // red tone
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-
-  addressType: {
-    fontWeight: 'bold',
-    color: '#f11b1b',
-    marginBottom: 5,
-  },
-  addressText: {
-    color: '#333',
-  },
-  nameText: {
-    color: '#555',
-    marginTop: 4,
-  },
-  modalText: {
-    fontSize: 14,
-    color: '#555',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  modalBtn: {
-    backgroundColor: Theme.colors.red,
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 25,
-  },
-  modalBtnText: {color: '#fff', fontWeight: '700', fontSize: 14},
-  card: {
-    flexDirection: 'row',
-    padding: 15,
-    borderRadius: 15,
-    width: '100%',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    elevation: 3,
-  },
-  leftSection: {flex: 2},
-  rightSection: {flex: 1, alignItems: 'flex-end'},
-  title: {color: '#fff', fontSize: 14, fontWeight: 'bold', marginBottom: 10},
-  expiry: {color: '#fff', marginTop: 5, fontSize: 12},
-  code: {color: '#fff', fontWeight: 'bold', fontSize: 10, marginBottom: 8},
-  applyBtn: {
-    backgroundColor: '#fff',
-    paddingVertical: 5,
-    paddingHorizontal: 12,
+    backgroundColor: '#ffe6e6',
+    padding: 12,
     borderRadius: 8,
+    marginBottom: 12,
   },
-  applyText: {color: '#FF8C00', fontWeight: 'bold', fontSize: 12},
-
-  modalContentAddress: {
-    backgroundColor: '#fff',
-    width: '100%',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    elevation: 10,
+  locationText: {color: 'red', fontWeight: '600'},
+  addressItem: {
+    flexDirection: 'row',
+    padding: 12,
+    borderBottomWidth: 0.6,
+    borderBottomColor: '#ccc',
   },
-  detailText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '500',
-    letterSpacing: 0.5,
-    lineHeight: 22,
-    textAlign: 'left',
-  },
-  savemodalView: {
-    height: 400,
-    width: '100%',
-    backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    position: 'absolute',
-    bottom: 0,
-    elevation: 10,
-  },
-    modalOverlay: {
+  addressType: {fontWeight: '700', color: '#000', marginBottom: 4},
+  addressText: {fontSize: 13, color: '#555'},
+  nameText: {fontSize: 13, color: '#555'},
+  modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#00000099',
   },
-    modalContent: {
-    width: '80%',
+  modalContent: {
     backgroundColor: '#fff',
-    borderRadius: 12,
+    width: '80%',
     padding: 20,
+    borderRadius: 12,
     alignItems: 'center',
   },
-  modalTitle: {fontSize: 18, fontWeight: '700', marginVertical: 10,color:"red"},
-  addressItem: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  paddingVertical: 12,
-  borderBottomWidth: 1,
-  borderBottomColor: '#eee',
-},
+  modalText: {textAlign: 'center', marginVertical: 12, color: '#444'},
+  modalBtn: {
+    backgroundColor: 'red',
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  modalBtnText: {color: '#fff', fontWeight: '700', fontSize: 15},
 });
