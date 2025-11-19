@@ -43,7 +43,7 @@ const OrderSummaryScreen = () => {
 
   const {addresses, loading} = useSelector(state => state.address);
   const {items: cartItems} = useSelector(state => state.cart);
-  console.log(cartItems,"------------------------------cartItems");
+  console.log(cartItems,"------------------------------cartItemsodersection");
   
 const allNotes = cartItems.map(item => item.note || '');
 console.log(allNotes,"------------------notedata");
@@ -234,15 +234,36 @@ const handleConfirmCOD = async () => {
     type: experienceType?.toLowerCase() || "dinein",
     deliveryCharges: Number(data?.delivery_charges_value) || 50, // static fallback
 
-    foodDetails: cartItems.map(item => ({
-      foodId: item.id || item.foodId || "abc123", // static fallback
-      quantity: Number(item.quantity) || 1,
-      price: 667, // number, not string
-      note: item?.note || "hello",
-      variant: item?.selectedSize || "full",
-      fullPrice: 667,
-      halfPrice: 334,
-    })),
+foodDetails: cartItems.map(item => {
+  const priceInfo = item?.priceInfo || {};
+
+  let data = {
+    foodId: item.id || item.foodId,
+    quantity: Number(item.quantity) || 1,
+    note: item.note || "",
+  };
+
+  // CASE 1: No variations → use staticPrice
+  if (!priceInfo.hasVariation) {
+    data.price = Number(priceInfo.staticPrice) || 0;
+    return data;
+  }
+
+  // CASE 2: Has variations → pick based on selectedSize
+  if (priceInfo.hasVariation) {
+    if (item.selectedSize === "full") {
+      data.variant = "full";
+      data.fullPrice = Number(priceInfo?.fullPrice) || 0;
+    } else {
+      data.variant = "half";
+      data.halfPrice = Number(priceInfo?.halfPrice) || 0;
+    }
+    return data;
+  }
+
+  return data;
+}),
+
 
     totalAmount: Number(itemTotal) || 667, // static fallback
     grossAmount: Number(grandTotal) || 700, // static fallback

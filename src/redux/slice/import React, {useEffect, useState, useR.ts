@@ -12,45 +12,50 @@ import {
   Easing,
   ActivityIndicator,
   RefreshControl,
+  LogBox,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useDispatch, useSelector} from 'react-redux';
 import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
 import LinearGradient from 'react-native-linear-gradient';
-import DashboardScreen from '../components/DashboardScreen';
-import CustomHeader from '../components/CustomHeader';
-import {fetchCategoryFoodsBySubcat} from '../redux/slice/TopPickerSlice';
-import {addToCart} from '../redux/slice/cartSlice';
-import Theme from '../assets/theme';
+
+// import {fetchCategoryFoods, clearCategoryFoods} from '../redux/slice/catItemSlice';
+// import {addToCart} from '../redux/slice/cartSlice';
+
+import DashboardScreen from '../../components/DashboardScreen';
+import CustomHeader from '../../components/CustomHeader';
+import Theme from '../../assets/theme';
+import {fetchCategoryFoods} from '../../redux/slice/catItemSlice';
+import {addToCart} from '../../redux/slice/cartSlice';
 
 const {width} = Dimensions.get('window');
 
-const TopPicksScreen = () => {
+const CatItemScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const route = useRoute();
 
   const isVeg = useSelector(state => state.foodFilter.isVeg);
-  const {
-    categoryId,
-    categoryName,
-    restaurantId,
-    categoryIngredients,
-    cuisineType,
-  } = route.params;
+  // const { categoryName, restaurantId, categoryIngredients, cuisineType} =
+  //   route.params;
+  //   console.log(cuisineType,"------------------------cuisineType");
 
   const {
     data: categoryFoods,
     loading,
+    error,
     page,
     hasMore,
-  } = useSelector(state => state.catItemsbySubcat);
+  } = useSelector(state => state.catItems);
 
   const cartItems = useSelector(state => state.cart.items);
-  console.log(cartItems,"----------------------cartItems");
-  
 
   const [selectedFood, setSelectedFood] = useState(null);
+  console.log(
+    selectedFood,
+    '---------------------------------selectedFood111111666',
+  );
+
   const [quantity, setQuantity] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
   const [bottomBoxVisible, setBottomBoxVisible] = useState(false);
@@ -58,59 +63,86 @@ const TopPicksScreen = () => {
 
   const slideAnim = useRef(new Animated.Value(0)).current;
   const boxAnim = useRef(new Animated.Value(150)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Fetch foods on mount
+  // 🧠 Fetch category foods on mount or when filters change
   useEffect(() => {
+    // dispatch(clearCategoryFoods());
     dispatch(
-      fetchCategoryFoodsBySubcat({
-        subCategoryId: categoryId,
-        categoryIngredients,
-        restaurantId,
-        cuisineType,
+      fetchCategoryFoods({
+        // categoryId,
+        // categoryIngredients,
+        // restaurantId,
+        // cuisineType,
         page: 1,
+        limit: 10,
       }),
     );
-  }, [dispatch, categoryId, cuisineType, restaurantId]);
 
-  // Pagination
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
+  }, [dispatch]);
+
+  // 🧭 Pagination handler
   const handleLoadMore = () => {
     if (!loading && hasMore) {
       dispatch(
-        fetchCategoryFoodsBySubcat({
-          subCategoryId: categoryId,
-          categoryIngredients,
-          restaurantId,
-          cuisineType,
+        fetchCategoryFoods({
+          // categoryId,
+          // categoryIngredients,
+          // restaurantId,
+          // cuisineType,
           page: page + 1,
+          limit: 10,
         }),
       );
     }
   };
 
-  // Pull-to-refresh
+  // 🔁 Pull to refresh
   const onRefresh = async () => {
     setRefreshing(true);
+    // await dispatch(clearCategoryFoods());
     await dispatch(
-      fetchCategoryFoodsBySubcat({
-        subCategoryId: categoryId,
-        categoryIngredients,
-        restaurantId,
-        cuisineType,
+      fetchCategoryFoods({
+        // categoryIngredients,
+        // restaurantId,
+        // cuisineType,
         page: 1,
+        limit: 10,
       }),
     );
     setRefreshing(false);
   };
 
-  // Filter based on Veg/Non-Veg
-  const filteredFoods = categoryFoods.filter(food => {
-    const type = String(food.type || '').toLowerCase();
-    if (isVeg === true) return type.includes('veg') && !type.includes('non');
-    if (isVeg === false) return type.includes('non');
+  // 🥦 Filter logic based on Veg/Non-Veg and Cuisine Type
+  const filteredFoods = categoryFoods.filter(item => {
+    const food = item.food;
+    const cuisineType = food?.cuisineType?.toLowerCase() || '';
+    const selectedCuisine = cuisineType?.toLowerCase() || '';
+    console.log(filteredFoods, '------------------------------filteredFoods');
+
+    // Filter by cuisine
+    if (selectedCuisine && cuisineType !== selectedCuisine) return false;
+
+    // Veg/Non-Veg filter
+    const typeArray = food?.type;
+    const type = Array.isArray(typeArray)
+      ? String(typeArray[0] || '').toLowerCase()
+      : String(typeArray || '').toLowerCase();
+
+    if (isVeg === true) {
+      return type.includes('veg') && !type.includes('non');
+    } else if (isVeg === false) {
+      return type.includes('non');
+    }
     return true;
   });
 
-  // Modal animations
+  // 🧊 Modal animations
   const openModal = food => {
     setSelectedFood(food);
     setQuantity(1);
@@ -131,13 +163,15 @@ const TopPicksScreen = () => {
     }).start(() => setModalVisible(false));
   };
 
-  // const totalItemCount = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+  //  const totalItemCount = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
   const totalItemCount = cartItems.length;
-  const totalPrice = selectedFood?.priceInfo?.staticPrice
-    ? selectedFood.priceInfo.staticPrice * quantity
-    : 0;
+  console.log(
+    totalItemCount,
+    '---------------------------------totalItemCount',
+  );
 
-  // Render Shimmer Loader
+  const totalPrice = selectedFood?.price ? selectedFood.price * quantity : 0;
+
   const renderSkeleton = () => (
     <View style={styles.card}>
       <ShimmerPlaceHolder
@@ -172,11 +206,9 @@ const TopPicksScreen = () => {
   );
 
   const renderItem = ({item}) => {
-    // Accept both API formats safely
-    const food = item.food ? item.food : item;
-    console.log(food, '------------------food');
-
-    if (!food) return null;
+    const food = item.food;
+    const priceInfo = food?.priceInfo;
+    console.log(priceInfo, '-----------------------priceInfo');
 
     // 1️⃣ SAFE TYPE CHECK
     const typeArray = food?.type;
@@ -184,26 +216,17 @@ const TopPicksScreen = () => {
       ? String(typeArray[0] || '').toLowerCase()
       : String(typeArray || '').toLowerCase();
 
-    // 2️⃣ SAFE PRICE CHECK
-    const priceInfo = food?.priceInfo || {};
-
     return (
       <View style={styles.card}>
-        {/* IMAGE --------------------------------------------------- */}
         <Image source={{uri: food.image}} style={styles.image} />
 
-        {/* DETAILS ------------------------------------------------- */}
         <View style={styles.details}>
-          {/* Cuisine ------------------------------------------------ */}
+          {/* Cuisine */}
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            <Image
-              source={require('../assets/images/dineBlack.png')}
-              style={{width: 12, height: 12, tintColor: '#555'}}
-            />
-            <Text style={styles.cuisine}>{food.cuisineType}</Text>
+            <Text style={styles.cuisine}>{food?.cuisineType}</Text>
           </View>
 
-          {/* Name + Veg/NonVeg -------------------------------------- */}
+          {/* Name + Veg/NonVeg */}
           <View
             style={{flexDirection: 'row', alignItems: 'center', marginTop: 4}}>
             <View
@@ -234,12 +257,13 @@ const TopPicksScreen = () => {
             </Text>
           </View>
 
-          {/* PRICE --------------------------------------------------- */}
+          {/* ⭐ PRICE SHOW HERE */}
           {priceInfo?.hasVariation ? (
             <View>
               <Text style={{color: '#000', fontSize: 14}}>
                 Half: ₹{priceInfo?.halfPrice}
               </Text>
+
               <Text style={{color: '#000', fontSize: 14}}>
                 Full: ₹{priceInfo?.fullPrice}
               </Text>
@@ -252,11 +276,11 @@ const TopPicksScreen = () => {
 
           {/* Rating */}
           <View style={styles.ratingWrapper}>
-            <Text style={styles.ratingText}>★ {food.rating || '4'}</Text>
+            <Text style={styles.ratingText}>★ {food.rating || '4.2'}</Text>
           </View>
         </View>
 
-        {/* Add Button ---------------------------------------------- */}
+        {/* Add Button */}
         <TouchableOpacity style={styles.addBtn} onPress={() => openModal(food)}>
           <Text style={styles.addText}>Add</Text>
         </TouchableOpacity>
@@ -289,49 +313,49 @@ const TopPicksScreen = () => {
 
   return (
     <DashboardScreen scrollable={false}>
-      <CustomHeader title={categoryName} />
+      <CustomHeader
+        title={'All Menu'}
+        // gradientColors={["#FF4B2B", "#FF9068"]} // custom gradient (optional)
+        // textColor="#fff"
+      />
       <View style={styles.container}>
-        {loading && page === 1 ? (
-          Array.from({length: 6}).map((_, index) => (
-            <View key={index}>{renderSkeleton()}</View>
+        {/* <Text style={styles.header}>{categoryName} Items</Text> */}
+
+        {loading && categoryFoods.length === 0 ? (
+          Array.from({length: 5}).map((_, i) => (
+            <View key={i}>{renderSkeleton()}</View>
           ))
-        ) : filteredFoods.length === 0 ? (
-          <Text style={styles.noData}>No items available</Text>
-        ) : (
-          <FlatList
-            showsVerticalScrollIndicator={false}
-            data={filteredFoods}
-            keyExtractor={item => item.id}
-            renderItem={renderItem}
-            contentContainerStyle={{paddingBottom: 120}}
-            onEndReached={handleLoadMore}
-            onEndReachedThreshold={0.3}
-            ListFooterComponent={
-              loading ? (
-                page === 1 ? (
-                  // Show multiple skeletons for first page
-                  Array.from({length: 6}).map((_, index) => (
-                    <View key={index}>{renderSkeleton()}</View>
-                  ))
-                ) : (
-                  // Show ActivityIndicator for pagination
+        ) : error ? (
+          <Text style={styles.error}>{error}</Text>
+        ) : filteredFoods.length > 0 ? (
+          <Animated.View style={{opacity: fadeAnim, flex: 1}}>
+            <FlatList
+              showsVerticalScrollIndicator={false}
+              data={filteredFoods}
+              keyExtractor={item => item.food._id}
+              renderItem={renderItem}
+              contentContainerStyle={{paddingBottom: 120}}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.5}
+              ListFooterComponent={
+                loading && hasMore ? (
                   <ActivityIndicator
                     size="large"
                     color="#FF4D4D"
                     style={{margin: 10}}
                   />
-                )
-              ) : null
-            }
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-            ListEmptyComponent={
-              !loading ? (
-                <Text style={styles.noData}>No items available</Text>
-              ) : null
-            }
-          />
+                ) : null
+              }
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
+            />
+          </Animated.View>
+        ) : (
+          <Text style={styles.noData}>
+            {' '}
+            Please wait, your items are loading. Items found in
+          </Text>
         )}
       </View>
 
@@ -367,12 +391,26 @@ const TopPicksScreen = () => {
                     <Text style={styles.modalFoodName}>
                       {selectedFood.name}
                     </Text>
-                    <Text style={styles.modalFoodPrice}>
-                      ₹{selectedFood.priceInfo?.staticPrice}
+
+                    <Text style={{color: 'red'}}>
+                      {selectedFood?.cuisineType}
                     </Text>
+                    {selectedFood?.priceInfo?.hasVariation ? (
+                      <View>
+                        <Text style={{color: '#000'}}>
+                          Half: ₹{selectedFood.priceInfo.halfPrice}
+                        </Text>
+                        <Text style={{color: '#000'}}>
+                          Full: ₹{selectedFood.priceInfo.fullPrice}
+                        </Text>
+                      </View> 
+                    ) : (
+                      <Text style={{color: '#000'}}>
+                        Price: ₹{selectedFood.priceInfo.staticPrice}
+                      </Text>
+                    )}
                   </View>
                 </View>
-                <Text style={{color:"red"}}>{selectedFood?.description}</Text>
 
                 <View style={styles.quantityBox}>
                   <TouchableOpacity
@@ -443,10 +481,17 @@ const TopPicksScreen = () => {
   );
 };
 
-export default TopPicksScreen;
+export default CatItemScreen;
 
 const styles = StyleSheet.create({
   container: {flex: 1, marginTop: 20},
+  header: {
+    fontSize: Theme.fontSizes.smedium,
+    fontWeight: '600',
+    marginVertical: 10,
+    color: '#000',
+  },
+  error: {textAlign: 'center', marginTop: 20, color: 'red'},
   noData: {textAlign: 'center', marginTop: 20, color: 'gray'},
   card: {
     flexDirection: 'row',
@@ -465,7 +510,18 @@ const styles = StyleSheet.create({
     fontSize: Theme.fontSizes.small,
     fontWeight: '500',
   },
-
+  name: {
+    fontSize: Theme.fontSizes.small,
+    fontWeight: '600',
+    marginLeft: 5,
+    color: '#000',
+  },
+  price: {
+    fontSize: Theme.fontSizes.small,
+    color: '#000',
+    marginVertical: 4,
+    fontWeight: '500',
+  },
   typeIndicator: {
     width: 14,
     height: 14,
@@ -483,19 +539,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginTop: 4,
   },
-  name: {
-    fontSize: Theme.fontSizes.small,
-    fontWeight: '600',
-    marginLeft: 5,
-    color: '#000',
-  },
   ratingText: {color: '#fff', fontSize: 10, fontWeight: '600'},
-  price: {
-    fontSize: Theme.fontSizes.small,
-    color: '#000',
-    marginVertical: 4,
-    fontWeight: '500',
-  },
   addBtn: {
     backgroundColor: '#FF4D4D',
     paddingHorizontal: 16,

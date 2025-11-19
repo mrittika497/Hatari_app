@@ -97,6 +97,8 @@ const HomeScreen = () => {
     const type = item?.type?.toLowerCase() || '';
     return isVeg ? type === 'veg' : type === 'non-veg' || type === 'nonveg' || type === '';
   });
+  console.log(filteredFoods,"-------------------------filteredFoods");
+  
 
   const categorieddata = [
     {id: 1, name: 'Tandoori', image: require('../../assets/images/category/tandoori.jpeg'), cuisineType:'tandoori'},
@@ -214,9 +216,9 @@ const HomeScreen = () => {
 
       <SectionDivider
         title={
-          isVeg === 'veg'
+          isVeg === 'Veg'
             ? 'Top Veg Picks'
-            : isVeg === 'non-veg'
+            : isVeg === 'Non-Veg'
             ? 'Top Non-Veg Picks'
             : 'Top Picks For You'
         }
