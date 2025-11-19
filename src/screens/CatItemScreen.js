@@ -53,11 +53,14 @@ const CatItemScreen = () => {
   const cartItems = useSelector(state => state.cart.items);
 
   const [selectedFood, setSelectedFood] = useState(null);
-  console.log(selectedFood,"--------------------------------------selectedFood ");
-  const [selectedOption, setSelectedOption] = useState("half");
+  console.log(
+    selectedFood,
+    '--------------------------------------selectedFood ',
+  );
+  const [selectedOption, setSelectedOption] = useState('half');
   // const [quantity, setQuantity] = useState(1);
   const [totalPrice, setTotalPrice] = useState(0);
-  
+
   const [quantity, setQuantity] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
   const [bottomBoxVisible, setBottomBoxVisible] = useState(false);
@@ -143,17 +146,27 @@ const CatItemScreen = () => {
   });
 
   // 🧊 Modal animations
-  const openModal = food => {
-    setSelectedFood(food);
-    setQuantity(1);
-    setModalVisible(true);
-    Animated.timing(slideAnim, {
-      toValue: 1,
-      duration: 300,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
-    }).start();
-  };
+const openModal = (food) => {
+  setSelectedFood(food);
+  setQuantity(1);
+  setSelectedOption('half'); // default selected option
+
+  // SET INITIAL PRICE HERE
+  if (food.priceInfo.hasVariation) {
+    setTotalPrice(food.priceInfo.halfPrice); // default = half
+  } else {
+    setTotalPrice(food.priceInfo.staticPrice);
+  }
+
+  setModalVisible(true);
+
+  Animated.timing(slideAnim, {
+    toValue: 1,
+    duration: 300,
+    easing: Easing.out(Easing.ease),
+    useNativeDriver: true,
+  }).start();
+};
 
   const closeModal = () => {
     Animated.timing(slideAnim, {
@@ -170,16 +183,19 @@ const CatItemScreen = () => {
     '---------------------------------totalItemCount',
   );
 
+const updateTotal = (qty = quantity, option = selectedOption) => {
+  if (!selectedFood || !selectedFood.priceInfo) return;
 
-    const updateTotal = (qty) => {
-  if (selectedFood.priceInfo.hasVariation) {
-    if (selectedOption === "half") {
-      setTotalPrice(selectedFood.priceInfo.halfPrice * qty);
-    } else if (selectedOption === "full") {
-      setTotalPrice(selectedFood.priceInfo.fullPrice * qty);
+  const priceInfo = selectedFood.priceInfo;
+
+  if (priceInfo.hasVariation) {
+    if (option === "half") {
+      setTotalPrice(priceInfo.halfPrice * qty);
+    } else if (option === "full") {
+      setTotalPrice(priceInfo.fullPrice * qty);
     }
   } else {
-    setTotalPrice(selectedFood.priceInfo.staticPrice * qty);
+    setTotalPrice(priceInfo.staticPrice * qty);
   }
 };
 
@@ -369,138 +385,144 @@ const CatItemScreen = () => {
       </View>
 
       {/* Quantity Modal */}
-  <Modal transparent visible={modalVisible} animationType="none">
-    <TouchableOpacity
-      activeOpacity={1}
-      onPress={closeModal}
-      style={styles.modalOverlay}
-    >
-      <Animated.View
-        style={[
-          styles.modalContent,
-          {
-            transform: [
+      <Modal transparent visible={modalVisible} animationType="none">
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={closeModal}
+          style={styles.modalOverlay}>
+          <Animated.View
+            style={[
+              styles.modalContent,
               {
-                translateY: slideAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [300, 0],
-                }),
+                transform: [
+                  {
+                    translateY: slideAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [300, 0],
+                    }),
+                  },
+                ],
               },
-            ],
-          },
-        ]}
-      >
-        <View style={styles.modalHandle} />
-  
-        {selectedFood && (
-          <>
-            {/* Food Header */}
-            <View style={styles.modalFoodRow}>
-              <Image
-                source={{ uri: selectedFood.image }}
-                style={styles.modalImage}
-              />
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.modalFoodName}>{selectedFood.name}</Text>
-  
-                <Text style={styles.modalFoodName}>{selectedFood?.cuisineType}</Text>
-  
-                {/* Variation Selection */}
-                {selectedFood?.priceInfo?.hasVariation ? (
-                  <View style={{ flexDirection: "row", marginTop: 5 }}>
-                    {/* Half Button */}
-                    <TouchableOpacity
-                      style={[
-                        styles.optionBtn,
-                        selectedOption === "half" && styles.selectedOption,
-                      ]}
-                      onPress={() => {
-                        setSelectedOption("half");
-                        setTotalPrice(selectedFood.priceInfo.halfPrice * quantity);
-                      }}
-                    >
-                      <Text
-                        style={[
-                          styles.optionText,
-                          selectedOption === "half" && styles.optionTextSelected,
-                        ]}
-                      >
-                        Half – ₹{selectedFood.priceInfo.halfPrice}
+            ]}>
+            <View style={styles.modalHandle} />
+
+            {selectedFood && (
+              <>
+                {/* Food Header */}
+                <View style={styles.modalFoodRow}>
+                  <Image
+                    source={{uri: selectedFood.image}}
+                    style={styles.modalImage}
+                  />
+                  <View style={{flex: 1, marginLeft: 10}}>
+                    <Text style={styles.modalFoodName}>
+                      {selectedFood.name}
+                    </Text>
+
+                    <Text style={styles.modalFoodName}>
+                      {selectedFood?.cuisineType}
+                    </Text>
+
+                    {/* Variation Selection */}
+                    {selectedFood?.priceInfo?.hasVariation ? (
+                      <View style={{flexDirection: 'row', marginTop: 5}}>
+                        {/* Half Button */}
+                        <TouchableOpacity
+                          style={[
+                            styles.optionBtn,
+                            selectedOption === 'half' && styles.selectedOption,
+                          ]}
+                          onPress={() => {
+                            setSelectedOption('half');
+                          setTotalPrice(
+                              selectedFood.priceInfo.fullPrice * quantity,
+                            );
+                          }}>
+                          <Text
+                            style={[
+                              styles.optionText,
+                              selectedOption === 'half' &&
+                                styles.optionTextSelected,
+                            ]}>
+                            Half – ₹{selectedFood.priceInfo.halfPrice}
+                          </Text>
+                        </TouchableOpacity>
+
+                        {/* Full Button */}
+                        <TouchableOpacity
+                          style={[
+                            styles.optionBtn,
+                            selectedOption === 'full' && styles.selectedOption,
+                          ]}
+                          onPress={() => {
+                            setSelectedOption('full');
+                            setTotalPrice(
+                              selectedFood.priceInfo.fullPrice * quantity,
+                            );
+                          }}>
+                          <Text
+                            style={[
+                              styles.optionText,
+                              selectedOption === 'full' &&
+                                styles.optionTextSelected,
+                            ]}>
+                            Full – ₹{selectedFood.priceInfo.fullPrice}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <Text style={{color: '#000'}}>
+                        Price: ₹{selectedFood.priceInfo.staticPrice}
                       </Text>
-                    </TouchableOpacity>
-  
-                    {/* Full Button */}
-                    <TouchableOpacity
-                      style={[
-                        styles.optionBtn,
-                        selectedOption === "full" && styles.selectedOption,
-                      ]}
-                      onPress={() => {
-                        setSelectedOption("full");
-                        setTotalPrice(selectedFood.priceInfo.fullPrice * quantity);
-                      }}
-                    >
-                      <Text
-                        style={[
-                          styles.optionText,
-                          selectedOption === "full" && styles.optionTextSelected,
-                        ]}
-                      >
-                        Full – ₹{selectedFood.priceInfo.fullPrice}
-                      </Text>
-                    </TouchableOpacity>
+                    )}
                   </View>
-                ) : (
-                  <Text style={{ color: "#000" }}>
-                    Price: ₹{selectedFood.priceInfo.staticPrice}
-                  </Text>
-                )}
-              </View>
-            </View>
-  
-            {/* Quantity Box */}
-            <View style={styles.quantityBox}>
-              <TouchableOpacity
-                style={styles.qtyBtn}
-                onPress={() => {
-                  if (quantity > 1) {
-                    const newQty = quantity - 1;
-                    setQuantity(newQty);
-                    updateTotal(newQty);
-                  }
-                }}
-              >
-                <Text style={styles.qtyText}>-</Text>
-              </TouchableOpacity>
-  
-              <Text style={styles.qtyValue}>{quantity}</Text>
-  
-              <TouchableOpacity
-                style={styles.qtyBtn}
-                onPress={() => {
-                  const newQty = quantity + 1;
-                  setQuantity(newQty);
-                  updateTotal(newQty);
-                }}
-              >
-                <Text style={styles.qtyText}>+</Text>
-              </TouchableOpacity>
-            </View>
-  
-            {/* Footer */}
-            <View style={styles.modalFooter}>
-              <Text style={styles.totalText}>Total: ₹{totalPrice}</Text>
-  
-              <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirmAdd}>
-                <Text style={styles.confirmBtnText}>Confirm Add</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
-      </Animated.View>
-    </TouchableOpacity>
-  </Modal>
-  
+                </View>
+                <Text style={styles.modalFoodName}>
+                  {selectedFood?.description}
+                </Text>
+
+                {/* Quantity Box */}
+                <View style={styles.quantityBox}>
+                  <TouchableOpacity
+                    style={styles.qtyBtn}
+                    onPress={() => {
+                      if (quantity > 1) {
+                        const newQty = quantity - 1;
+                        setQuantity(newQty);
+                        updateTotal(newQty);
+                      }
+                    }}>
+                    <Text style={styles.qtyText}>-</Text>
+                  </TouchableOpacity>
+
+                  <Text style={styles.qtyValue}>{quantity}</Text>
+
+                  <TouchableOpacity
+                    style={styles.qtyBtn}
+                    onPress={() => {
+                      const newQty = quantity + 1;
+                      setQuantity(newQty);
+                      updateTotal(newQty);
+                    }}>
+                    <Text style={styles.qtyText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Footer */}
+                <View style={styles.modalFooter}>
+                  <Text style={styles.totalText}>Total: ₹{totalPrice}</Text>
+
+                  <TouchableOpacity
+                    style={styles.confirmBtn}
+                    onPress={handleConfirmAdd}>
+                    <Text style={styles.confirmBtnText}>Confirm Add</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </Animated.View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Bottom success box */}
       {bottomBoxVisible && (
@@ -698,24 +720,24 @@ const styles = StyleSheet.create({
     borderRadius: 25,
   },
   bottomButtonText: {color: '#fff', fontWeight: 'bold', fontSize: 15},
-    optionBtn: {
-  paddingVertical: 6,
-  paddingHorizontal: 15,
-  borderWidth: 1,
-  borderColor: "#ccc",
-  borderRadius: 8,
-  marginRight: 10,
-},
-selectedOption: {
-  backgroundColor: "#e82b2bff",
-  borderColor: "#ff6600",
-},
-optionText: {
-  color: "#000",
-  fontSize: 14,
-},
-optionTextSelected: {
-  color: "#fff",
-  fontWeight: "bold",
-},
+  optionBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 15,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  selectedOption: {
+    backgroundColor: '#e82b2bff',
+    borderColor: '#ff6600',
+  },
+  optionText: {
+    color: '#000',
+    fontSize: 14,
+  },
+  optionTextSelected: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
 });

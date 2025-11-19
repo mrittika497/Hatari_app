@@ -91,17 +91,21 @@ const CatItemScreen = () => {
     }
   };
 
-  const updateTotal = qty => {
-    if (selectedFood.priceInfo.hasVariation) {
-      if (selectedOption === 'half') {
-        setTotalPrice(selectedFood.priceInfo.halfPrice * qty);
-      } else if (selectedOption === 'full') {
-        setTotalPrice(selectedFood.priceInfo.fullPrice * qty);
-      }
-    } else {
-      setTotalPrice(selectedFood.priceInfo.staticPrice * qty);
+const updateTotal = (qty = quantity, option = selectedOption) => {
+  if (!selectedFood || !selectedFood.priceInfo) return;
+
+  const priceInfo = selectedFood.priceInfo;
+
+  if (priceInfo.hasVariation) {
+    if (option === "half") {
+      setTotalPrice(priceInfo.halfPrice * qty);
+    } else if (option === "full") {
+      setTotalPrice(priceInfo.fullPrice * qty);
     }
-  };
+  } else {
+    setTotalPrice(priceInfo.staticPrice * qty);
+  }
+};
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -133,17 +137,28 @@ const CatItemScreen = () => {
   });
   console.log(filteredFoods, '---------------------------filteredFoods');
 
-  const openModal = food => {
-    setSelectedFood(food);
-    setQuantity(1);
-    setModalVisible(true);
-    Animated.timing(slideAnim, {
-      toValue: 1,
-      duration: 300,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
-    }).start();
-  };
+const openModal = (food) => {
+  setSelectedFood(food);
+  setQuantity(1);
+  setSelectedOption('half'); // default selected option
+
+  // SET INITIAL PRICE HERE
+  if (food.priceInfo.hasVariation) {
+    setTotalPrice(food.priceInfo.halfPrice); // default = half
+  } else {
+    setTotalPrice(food.priceInfo.staticPrice);
+  }
+
+  setModalVisible(true);
+
+  Animated.timing(slideAnim, {
+    toValue: 1,
+    duration: 300,
+    easing: Easing.out(Easing.ease),
+    useNativeDriver: true,
+  }).start();
+};
+
 
   const closeModal = () => {
     Animated.timing(slideAnim, {
@@ -359,6 +374,8 @@ const CatItemScreen = () => {
                       {selectedFood?.cuisineType}
                     </Text>
 
+                    
+
                     {/* Variation Selection */}
                     {selectedFood?.priceInfo?.hasVariation ? (
                       <View style={{flexDirection: 'row', marginTop: 5}}>
@@ -413,6 +430,9 @@ const CatItemScreen = () => {
                     )}
                   </View>
                 </View>
+                   <Text style={styles.modalFoodName}>
+                      {selectedFood?.description}
+                    </Text>
 
                 {/* Quantity Box */}
                 <View style={styles.quantityBox}>
