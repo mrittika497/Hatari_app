@@ -30,13 +30,17 @@ const HomeScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const tabBarHeight = useBottomTabBarHeight();
-
+  const {selectedRestaurant, experienceType} = useSelector(
+    state => state.experience,
+  );
+  console.log(experienceType,"----------------------experienceTypej");
+  
   const isVeg = useSelector(state => state.foodFilter.isVeg);
   const {bannerlist} = useSelector(state => state.banners);
   const {data} = useSelector(state => state.subCategories);
 
   const [loading, setLoading] = useState(true);
-  const [selectedExperience, setSelectedExperience] = useState('Delivery');
+  const [selectedExperience, setSelectedExperience] = useState(experienceType);
   const [foods, setFoods] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -44,19 +48,21 @@ const HomeScreen = () => {
   const bannerScrollRef = useRef();
 
   // ✅ Auto-scroll banners every 3 seconds
-  useEffect(() => {
-    let index = 0;
-    const interval = setInterval(() => {
-      if (bannerlist?.length > 0) {
-        index = (index + 1) % bannerlist.length;
-        bannerScrollRef.current?.scrollTo({
-          x: index * width * 0.85,
-          animated: true,
-        });
-      }
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [bannerlist]);
+useEffect(() => {
+  let index = 0;
+  const interval = setInterval(() => {
+    if (bannerlist?.length > 0) {
+      index = (index + 1) % bannerlist.length;
+      bannerScrollRef.current?.scrollTo({
+        x: index * width,
+        animated: true,
+      });
+    }
+  }, 3000);
+
+  return () => clearInterval(interval);
+}, [bannerlist]);
+
 
   // ✅ Fetch data
   useEffect(() => {
@@ -148,43 +154,95 @@ const HomeScreen = () => {
           </TouchableOpacity>
         ))}
       </View>
+      {/* <View style={styles.expContainer}>
+  {experiences.map(exp => (
+    <TouchableOpacity
+      key={exp.id}
+      activeOpacity={0.8}
+      >
+
+      <LinearGradient
+        colors={
+          experienceType === exp.title
+            ? ["#FF512F", "#DD2476"]
+            : ["#ffffff", "#f3f3f3"]
+        }
+        style={[
+          styles.expButton,
+          experienceType === exp.title && styles.expButtonActive,
+        ]}>
+        
+        <Image
+          source={exp.img}
+          style={[
+            styles.expIcon,
+            experienceType === exp.title && { tintColor: "#fff" },
+          ]}
+        />
+
+        <Text
+          style={[
+            styles.expText,
+            experienceType === exp.title && { color: "#fff" },
+          ]}>
+          {exp.title}
+        </Text>
+
+      </LinearGradient>
+    </TouchableOpacity>
+  ))}
+</View> */}
+
 
       {/* 🖼 Banners with auto-scroll */}
-      <Animated.ScrollView
-        ref={bannerScrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={Animated.event(
-          [{nativeEvent: {contentOffset: {x: scrollX}}}],
-          {useNativeDriver: false},
-        )}
-        scrollEventThrottle={16}
-        style={{marginVertical: 10}}>
-        {loading
-          ? [1, 2, 3].map(i => <ShimmerPlaceholder key={i} style={styles.bannerShimmer} />)
-          : bannerlist?.map((banner, index) => (
-              <LinearGradient
-                key={index}
-                colors={['#fff', '#fff0f0']}
-                style={styles.bannerCard}>
-                <Image
-                  source={{uri: banner?.fullImageUrl}}
-                  style={styles.bannerImage}
-                  resizeMode="cover"
-                />
-              </LinearGradient>
-            ))}
-      </Animated.ScrollView>
+    {/* 🖼 Banners with auto-scroll */}
+<Animated.ScrollView
+
+  style={{ marginVertical: 10 }}
+  contentContainerStyle={{ paddingHorizontal: 0 }}   // 👈 ADD THIS
+
+  ref={bannerScrollRef}
+  horizontal
+  pagingEnabled
+  showsHorizontalScrollIndicator={false}
+  onScroll={Animated.event(
+    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+    { useNativeDriver: false }
+  )}
+  scrollEventThrottle={16}
+
+>
+  {loading
+    ? [1, 2, 3].map(i => (
+        <ShimmerPlaceholder key={i} style={styles.bannerShimmer} />
+      ))
+    : bannerlist?.map((banner, index) => (
+        <LinearGradient
+          key={index}
+          colors={["#fff", "#fff0f0"]}
+          style={styles.bannerCard}
+        >
+          <Image
+            source={{ uri: banner?.fullImageUrl }}
+            style={styles.bannerImage}
+       resizeMode="stretch"
+
+
+          />
+        </LinearGradient>
+      ))}
+</Animated.ScrollView>
+
 
       {/* 🟢 Dots indicator */}
       <View style={styles.dotsContainer}>
         {bannerlist?.map((_, i) => {
-          const opacity = scrollX.interpolate({
-            inputRange: [(i - 1) * width * 0.85, i * width * 0.85, (i + 1) * width * 0.85],
-            outputRange: [0.3, 1, 0.3],
-            extrapolate: 'clamp',
-          });
+    const opacity = scrollX.interpolate({
+  inputRange: [(i - 1) * width, i * width, (i + 1) * width],
+  outputRange: [0.3, 1, 0.3],
+  extrapolate: 'clamp',
+});
+
           return <Animated.View key={i} style={[styles.dot, {opacity}]} />;
         })}
       </View>
@@ -306,21 +364,24 @@ const styles = StyleSheet.create({
   expIcon: {width: 24, height: 24, marginRight: 8, tintColor: '#333'},
   expText: {fontWeight: '700', fontSize: 15, color: '#333'},
 
-  bannerCard: {
-    width: width * 0.85,
-    height: 160,
-    borderRadius: 18,
-    marginHorizontal: 10,
-    overflow: 'hidden',
-    elevation: 5,
-  },
-  bannerImage: {width: '100%', height: '100%'},
-  bannerShimmer: {
-    width: width * 0.85,
-    height: 160,
-    borderRadius: 18,
-    marginHorizontal: 10,
-  },
+bannerCard: {
+  width: width,
+  height: 180,
+  overflow: 'hidden',
+  margin: 0,            // 👈 MUST ADD
+  padding: 0,           // 👈 MUST ADD
+},
+
+bannerImage: {
+  width: '90%',
+  height: '100%',
+
+},
+bannerShimmer: {
+  width: width,     // 👈 FULL WIDTH
+  height: 180,
+
+},
   dotsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',

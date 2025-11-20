@@ -1,3 +1,4 @@
+// ✅ FULL WORKING ORDER SUMMARY SCREEN (UPDATED)
 import React, {useEffect, useState} from 'react';
 import {
   View,
@@ -10,21 +11,26 @@ import {
   ToastAndroid,
   ActivityIndicator,
   Dimensions,
+  Alert,
+  LogBox,
 } from 'react-native';
+
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import {useDispatch, useSelector} from 'react-redux';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
+
+import {useDispatch, useSelector} from 'react-redux';
 import DashboardScreen from '../components/DashboardScreen';
 import CustomHeader from '../components/CustomHeader';
-import Theme from '../assets/theme';
+
 import {clearCart} from '../redux/slice/cartSlice';
 import {fetchDeliverySettings} from '../redux/slice/deliverySettingsSlice';
 import {fetchCoupons} from '../redux/slice/couponSlice';
 import {postBilling} from '../redux/slice/postBillingSlice';
-import {fetchUserAddresses} from '../redux/slice/saveaddressSlice';
+import {fetchUserAddresses, deleteAddress} from '../redux/slice/saveaddressSlice';
+import { deleteUserAddress } from '../redux/slice/AddressDeleteSlice';
 
 const {width} = Dimensions.get('window');
 
@@ -35,35 +41,23 @@ const OrderSummaryScreen = () => {
   const {selectedRestaurant, experienceType} = useSelector(
     state => state.experience,
   );
-  console.log(
-    selectedRestaurant?._id,
-    experienceType,
-    '-------------------selectedRestaurant',
-  );
+console.log(selectedRestaurant,"--------------------why not show");
 
   const {addresses, loading} = useSelector(state => state.address);
   const {items: cartItems} = useSelector(state => state.cart);
-  console.log(cartItems,"------------------------------cartItemsodersection");
-  
-const allNotes = cartItems.map(item => item.note || '');
-console.log(allNotes,"------------------notedata");
-
-  
   const {token} = useSelector(state => state.auth);
   const {data} = useSelector(state => state.deliverySettings);
   const couponState = useSelector(state => state.coupons);
+
   const couponList = couponState?.list?.data || [];
-  console.log(couponList, '--------------------couponList');
 
   const [savedAddress, setSavedAddress] = useState(null);
-  console.log(savedAddress?._id,"---------------------address");
-  
   const [userid, setUserId] = useState(null);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
   const [codModalVisible, setCodModalVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Format currency
+  // Currency formatter
   const formatCurrency = value => {
     try {
       return new Intl.NumberFormat('en-IN', {
@@ -71,39 +65,34 @@ console.log(allNotes,"------------------notedata");
         currency: 'INR',
         maximumFractionDigits: 2,
       }).format(value);
-    } catch (e) {
+    } catch {
       const n = Number(value) || 0;
       return `₹${n.toFixed(2)}`;
     }
   };
 
-  // Fetch addresses, coupons, and delivery settings
+  // Fetch data
   useEffect(() => {
     dispatch(fetchDeliverySettings());
     dispatch(fetchCoupons());
     dispatch(fetchUserAddresses(token));
-  }, [dispatch, token]);
+  }, []);
 
-  // Load saved address
+  // Load address
   useEffect(() => {
-    const loadAddress = async () => {
-      try {
-        const saved = await AsyncStorage.getItem('savedAddress');
-        if (saved) {
-          setSavedAddress(JSON.parse(saved));
-        } else if (addresses?.length > 0) {
-          const first = addresses[0];
-          setSavedAddress(first);
-          await AsyncStorage.setItem('savedAddress', JSON.stringify(first));
-        }
-      } catch (err) {
-        console.log('❌ Error loading address:', err);
+    const load = async () => {
+      const saved = await AsyncStorage.getItem('savedAddress');
+      if (saved) setSavedAddress(JSON.parse(saved));
+      else if (addresses?.length > 0) {
+        const first = addresses[0];
+        setSavedAddress(first);
+        await AsyncStorage.setItem('savedAddress', JSON.stringify(first));
       }
     };
-    loadAddress();
+    load();
   }, [addresses]);
 
-  // Get user ID
+  // User ID
   useEffect(() => {
     (async () => {
       const id = await AsyncStorage.getItem('userId');
@@ -111,13 +100,14 @@ console.log(allNotes,"------------------notedata");
     })();
   }, []);
 
-  // Calculate totals
+  // Total calculations
   const itemTotal = cartItems.reduce((sum, item) => {
     const price = !item?.priceInfo?.hasVariation
       ? item?.priceInfo?.staticPrice
-      : item?.selectedSize === 'half'
+      : item.selectedSize === 'half'
       ? item?.priceInfo?.halfPrice
       : item?.priceInfo?.fullPrice;
+
     return sum + price * item.quantity;
   }, 0);
 
@@ -127,11 +117,13 @@ console.log(allNotes,"------------------notedata");
   );
 
   let discount = 0;
+
   if (selectedCoupon) {
     discount =
       selectedCoupon.discountType === 'percentage'
         ? (itemTotal * selectedCoupon.discountValue) / 100
         : selectedCoupon.discountValue;
+
     if (itemTotal < selectedCoupon.minOrderAmount) discount = 0;
   }
 
@@ -142,7 +134,7 @@ console.log(allNotes,"------------------notedata");
   if (data?.convenience_charges_type === 'percentage') {
     convenienceAmt = (itemTotal * data.convenience_charges_value) / 100;
   } else if (data?.convenience_charges_type === 'flat') {
-    convenienceAmt = data?.convenience_charges_value || 0;
+    convenienceAmt = data.convenience_charges_value || 0;
   }
 
   const grandTotal =
@@ -158,143 +150,111 @@ console.log(allNotes,"------------------notedata");
   const applyCoupon = coupon => {
     if (itemTotal < coupon.minOrderAmount) {
       ToastAndroid.show(
-        `Minimum order ₹${coupon.minOrderAmount} required`,
+        `Min order ₹${coupon.minOrderAmount} required`,
         ToastAndroid.SHORT,
       );
       return;
     }
+
     setSelectedCoupon(coupon);
-    ToastAndroid.show(`${coupon.code} applied!`, ToastAndroid.SHORT);
+    ToastAndroid.show(`${coupon.code} applied`, ToastAndroid.SHORT);
   };
 
+  // Proceed button (MINIMUM ORDER VALIDATION ADDED)
   const handleProceed = () => {
-    if (!savedAddress) {
-      ToastAndroid.show('Please add a delivery address.', ToastAndroid.SHORT);
+    if (itemTotal < 500) {
+      ToastAndroid.show(
+        'Minimum order amount is ₹500',
+        ToastAndroid.SHORT,
+      );
       return;
     }
+
+    if (!savedAddress) {
+      ToastAndroid.show('Add a delivery address.', ToastAndroid.SHORT);
+      return;
+    }
+
     setCodModalVisible(true);
   };
 
-  // const handleConfirmCOD = async () => {
-  //   try {
-  //     const billingData = {
-  //       userId: userid,
-  //       restaurantId: selectedRestaurant._id,
-  //       address: savedAddress._id,
-  //       billingName: savedAddress?.name,
-  //       billingMobile: savedAddress?.contact,
-  //       type: experienceType?.toLowerCase(),
-  //       deliveryCharges: Number(data?.delivery_charges_value) || 0,
-  //       foodDetails: cartItems.map(item => ({
-  //         foodId: item._id,
-  //         quantity: Number(item.quantity) || 1,
-  //         price: !item?.priceInfo?.hasVariation
-  //           ? item?.priceInfo?.staticPrice
-  //           : item?.selectedSize === 'half'
-  //           ? item?.priceInfo?.halfPrice
-  //           : item?.priceInfo?.fullPrice,
-  //       })),
-  //       totalAmount: Number(itemTotal),
-  //       grossAmount: Number(grandTotal),
-  //       packingCharge: Number(packingFee),
-  //       CGST: Number(cgstAmt),
-  //       SGST: Number(sgstAmt),
-  //       couponCode: selectedCoupon?.code || null,
-  //       paymentStatus: 'Pending',
-  //     };
+  // COD confirm
+  const handleConfirmCOD = async () => {
+    console.log(userid,selectedRestaurant?._id,savedAddress?._id,"------------------why error");
+    
+    try {
+      const billingData = {
+        userId: userid,
+        restaurantId: selectedRestaurant?._id || '12345',
+        address: savedAddress?._id || '54321',
+        billingName: savedAddress?.name,
+        billingMobile: savedAddress?.contact,
+        type: experienceType?.toLowerCase() || 'delivery',
 
-  //     await dispatch(postBilling(billingData)).unwrap();
-  //     dispatch(clearCart());
-  //     setCodModalVisible(false);
-  //     ToastAndroid.show('Order placed successfully!', ToastAndroid.LONG);
-  //     navigation.navigate('OrderSuccessScreen');
-  //   } catch (error) {
-  //     ToastAndroid.show('Order failed. Try again.', ToastAndroid.SHORT);
-  //   }
-  // };
+        deliveryCharges: Number(data?.delivery_charges_value) || 0,
 
-const handleConfirmCOD = async () => {
-  if (!savedAddress?._id) {
-    ToastAndroid.show('Please select a delivery address', ToastAndroid.SHORT);
-    return;
-  }
+        foodDetails: cartItems.map(item => {
+          const priceInfo = item?.priceInfo || {};
+          let obj = {
+            foodId: item.id || item.foodId,
+            quantity: Number(item.quantity),
+            note: item.note || '',
+          };
 
-  if (!selectedRestaurant?._id) {
-    ToastAndroid.show('Restaurant info missing', ToastAndroid.SHORT);
-    return;
-  }
+          if (!priceInfo.hasVariation) {
+            obj.price = Number(priceInfo.staticPrice) || 0;
+          } else {
+            if (item.selectedSize === 'full') {
+              obj.variant = 'full';
+              obj.fullPrice = priceInfo.fullPrice;
+            } else {
+              obj.variant = 'half';
+              obj.halfPrice = priceInfo.halfPrice;
+            }
+          }
+          return obj;
+        }),
 
-  try {
-  const billingData = {
-    userId: userid,
-    restaurantId: selectedRestaurant?._id || "1234567890", // fallback static _id
-    address: savedAddress?._id || "0987654321", // fallback static _id
-    billingName: savedAddress?.name || "John Doe",
-    billingMobile: savedAddress?.contact || "9999999999",
-    type: experienceType?.toLowerCase() || "dinein",
-    deliveryCharges: Number(data?.delivery_charges_value) || 50, // static fallback
+        totalAmount: itemTotal,
+        grossAmount: grandTotal,
+        packingCharge: packingFee,
+        CGST: cgstAmt,
+        SGST: sgstAmt,
+        couponCode: selectedCoupon?.code || null,
+        paymentStatus: 'Pending',
+      };
 
-foodDetails: cartItems.map(item => {
-  const priceInfo = item?.priceInfo || {};
+      await dispatch(postBilling(billingData)).unwrap();
+      dispatch(clearCart());
+      setCodModalVisible(false);
 
-  let data = {
-    foodId: item.id || item.foodId,
-    quantity: Number(item.quantity) || 1,
-    note: item.note || "",
-  };
+      ToastAndroid.show('Order placed successfully!', ToastAndroid.LONG);
 
-  // CASE 1: No variations → use staticPrice
-  if (!priceInfo.hasVariation) {
-    data.price = Number(priceInfo.staticPrice) || 0;
-    return data;
-  }
-
-  // CASE 2: Has variations → pick based on selectedSize
-  if (priceInfo.hasVariation) {
-    if (item.selectedSize === "full") {
-      data.variant = "full";
-      data.fullPrice = Number(priceInfo?.fullPrice) || 0;
-    } else {
-      data.variant = "half";
-      data.halfPrice = Number(priceInfo?.halfPrice) || 0;
+      navigation.navigate('OrderSuccessScreen');
+    } catch (e) {
+      ToastAndroid.show('Order failed. Try again.', ToastAndroid.SHORT);
     }
-    return data;
-  }
-
-  return data;
-}),
-
-
-    totalAmount: Number(itemTotal) || 667, // static fallback
-    grossAmount: Number(grandTotal) || 700, // static fallback
-    packingCharge: Number(packingFee) || 20,
-    CGST: Number(cgstAmt) || 33,
-    SGST: Number(sgstAmt) || 33,
-    couponCode: selectedCoupon?.code || null,
-    paymentStatus: "Pending",
   };
 
+const handleDeleteAddress = (id) => {
 
-    await dispatch(postBilling(billingData)).unwrap();
 
-    dispatch(clearCart());
-    setCodModalVisible(false);
-
-    ToastAndroid.show('Order placed successfully!', ToastAndroid.LONG);
-    navigation.navigate('OrderSuccessScreen');
-  } catch (error) {
-    console.log('Billing error:', error);
-    ToastAndroid.show('Order failed. Try again.', ToastAndroid.SHORT);
-  }
+  Alert.alert('Delete Address', 'Are you sure?', [
+    { text: 'Cancel', style: 'cancel' },
+    {
+      text: 'Delete',
+      style: 'destructive',
+      onPress: () => dispatch(deleteUserAddress(id)), // ✅ Correct thunk
+    },
+  ]);
 };
-
-
 
   return (
     <DashboardScreen scrollable={false}>
       <CustomHeader title="Order Summary" />
-      <ScrollView contentContainerStyle={{paddingBottom: 200}}>
-        {/* Address Section */}
+
+      <ScrollView contentContainerStyle={{paddingBottom: 200}} showsVerticalScrollIndicator={false}>
+        {/* ADDRESS CARD */}
         <View style={styles.addressCard}>
           {savedAddress ? (
             <>
@@ -308,6 +268,7 @@ foodDetails: cartItems.map(item => {
                 </Text>
                 <Text style={styles.addrPhone}>{savedAddress.contact}</Text>
               </View>
+
               <TouchableOpacity
                 onPress={() => setModalVisible(true)}
                 style={styles.changeBtn}>
@@ -324,11 +285,11 @@ foodDetails: cartItems.map(item => {
           )}
         </View>
 
-        {/* Coupon Section */}
-
+        {/* COUPONS */}
         <View style={styles.sectionBox}>
           <Text style={styles.sectionTitle}>Available Coupons</Text>
-          {couponList?.map(coupon => (
+
+          {couponList.map(coupon => (
             <LinearGradient
               key={coupon._id}
               colors={
@@ -343,14 +304,13 @@ foodDetails: cartItems.map(item => {
                   Min ₹{coupon.minOrderAmount} | {coupon.discountDisplay}
                 </Text>
               </View>
+
               <TouchableOpacity
+                onPress={() => applyCoupon(coupon)}
                 style={[
                   styles.applyBtn,
-                  selectedCoupon?._id === coupon._id && {
-                    backgroundColor: '#ccc',
-                  },
-                ]}
-                onPress={() => applyCoupon(coupon)}>
+                  selectedCoupon?._id === coupon._id && {backgroundColor: '#ccc'},
+                ]}>
                 <Text style={styles.applyText}>
                   {selectedCoupon?._id === coupon._id ? 'APPLIED' : 'APPLY'}
                 </Text>
@@ -359,25 +319,29 @@ foodDetails: cartItems.map(item => {
           ))}
         </View>
 
-        {/* Cart Items */}
+        {/* CART ITEMS */}
         <View style={styles.sectionBox}>
           <Text style={styles.sectionTitle}>Your Items</Text>
+
           {cartItems.map(item => (
             <View key={item._id} style={styles.itemRow}>
               <Image source={{uri: item.image}} style={styles.itemImage} />
+
               <View style={{flex: 1, marginLeft: 10}}>
-                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemName}>{item?.name}</Text>
+      <Text style={styles.foodQtyPrice}>Qty: {item?.quantity}</Text>
                 {item.note ? (
                   <View style={styles.noteTag}>
-                    <Text style={styles.noteText}>📝 {item?.note}</Text>
+                    <Text style={styles.noteText}>📝 {item.note}</Text>
                   </View>
                 ) : null}
               </View>
+
               <Text style={styles.itemPrice}>
                 {formatCurrency(
                   (!item?.priceInfo?.hasVariation
                     ? item?.priceInfo?.staticPrice
-                    : item?.selectedSize === 'half'
+                    : item.selectedSize === 'half'
                     ? item?.priceInfo?.halfPrice
                     : item?.priceInfo?.fullPrice) * item.quantity,
                 )}
@@ -386,42 +350,52 @@ foodDetails: cartItems.map(item => {
           ))}
         </View>
 
-        {/* Bill Section */}
+        {/* BILL DETAILS */}
         <View style={styles.sectionBox}>
           <Text style={styles.sectionTitle}>Bill Details</Text>
+
           <View style={styles.billRow}>
             <Text style={styles.billLabel}>Item Total</Text>
             <Text style={styles.billLabel}>{formatCurrency(itemTotal)}</Text>
           </View>
+
           <View style={styles.billRow}>
             <Text style={styles.billLabel}>Delivery Fee</Text>
             <Text style={styles.billLabel}>
               {formatCurrency(data?.delivery_charges_value || 0)}
             </Text>
           </View>
+
           <View style={styles.billRow}>
             <Text style={styles.billLabel}>Packing Fee</Text>
             <Text style={styles.billLabel}>{formatCurrency(packingFee)}</Text>
           </View>
+
           {data?.Cgst && (
             <View style={styles.billRow}>
-              <Text style={styles.billLabel}>CGST ({data?.Cgst}%)</Text>
+              <Text style={styles.billLabel}>CGST ({data.Cgst}%)</Text>
               <Text style={styles.billValue}>{formatCurrency(cgstAmt)}</Text>
             </View>
           )}
+
           {data?.Sgst && (
             <View style={styles.billRow}>
-              <Text style={styles.billLabel}>SGST ({data?.Sgst}%)</Text>
+              <Text style={styles.billLabel}>SGST ({data.Sgst}%)</Text>
               <Text style={styles.billValue}>{formatCurrency(sgstAmt)}</Text>
             </View>
           )}
+
           {selectedCoupon && (
             <View style={styles.billRow}>
               <Text style={styles.billLabel}>Coupon Discount</Text>
-              <Text style={styles.billLabel}>-{formatCurrency(discount)}</Text>
+              <Text style={styles.billLabel}>
+                - {formatCurrency(discount)}
+              </Text>
             </View>
           )}
+
           <View style={styles.divider} />
+
           <View style={styles.billRow}>
             <Text style={styles.totalLabel}>Grand Total</Text>
             <Text style={styles.totalValue}>{formatCurrency(grandTotal)}</Text>
@@ -429,17 +403,18 @@ foodDetails: cartItems.map(item => {
         </View>
       </ScrollView>
 
-      {/* Bottom Proceed Bar */}
+      {/* BOTTOM BAR */}
       {cartItems.length > 0 && (
         <View style={styles.bottomBar}>
           <Text style={styles.bottomTotal}>{formatCurrency(grandTotal)}</Text>
+
           <TouchableOpacity onPress={handleProceed} style={styles.continueBtn}>
             <Text style={styles.continueText}>Proceed to Pay</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {/* Address Modal */}
+      {/* ADDRESS MODAL */}
       <Modal
         visible={modalVisible}
         transparent
@@ -460,24 +435,25 @@ foodDetails: cartItems.map(item => {
               Select your current location +
             </Text>
           </TouchableOpacity>
+
+          {/* Scrollable Address List */}
           {loading ? (
             <ActivityIndicator color="red" />
           ) : (
-            <ScrollView>
+            <ScrollView style={{maxHeight: 450}}>
               {addresses.map(item => (
-                <TouchableOpacity
-                  key={item._id}
-                  style={styles.addressItem}
-                  onPress={async () => {
-                    setSavedAddress(item);
-                    await AsyncStorage.setItem(
-                      'savedAddress',
-                      JSON.stringify(item),
-                    );
-                    setModalVisible(false);
-                    ToastAndroid.show('Address selected!', ToastAndroid.SHORT);
-                  }}>
-                  <View style={{flex: 1}}>
+                <View key={item._id} style={styles.addressItem}>
+                  <TouchableOpacity
+                    style={{flex: 1}}
+                    onPress={async () => {
+                      setSavedAddress(item);
+                      await AsyncStorage.setItem(
+                        'savedAddress',
+                        JSON.stringify(item),
+                      );
+                      setModalVisible(false);
+                      ToastAndroid.show('Address selected!', ToastAndroid.SHORT);
+                    }}>
                     <Text style={styles.addressType}>{item.addressType}</Text>
                     <Text style={styles.addressText}>
                       {item.flat}, {item.address}
@@ -485,7 +461,10 @@ foodDetails: cartItems.map(item => {
                     <Text style={styles.nameText}>
                       {item.name} - {item.contact}
                     </Text>
-                  </View>
+                    
+                  </TouchableOpacity>
+
+                  {/* CHECKMARK */}
                   {savedAddress?._id === item._id && (
                     <Ionicons
                       name="checkmark-circle"
@@ -493,14 +472,30 @@ foodDetails: cartItems.map(item => {
                       color="#f11b1b"
                     />
                   )}
-                </TouchableOpacity>
+
+                  {/* EDIT BUTTON */}
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate('MapScreen', {editData: item})
+                    }
+                    style={{marginLeft: 10}}>
+                    <Ionicons name="create-outline" size={22} color="blue" />
+                  </TouchableOpacity>
+
+                  {/* DELETE BUTTON */}
+                  <TouchableOpacity
+                    onPress={() => handleDeleteAddress(item._id)}
+                    style={{marginLeft: 10}}>
+                    <Ionicons name="trash-outline" size={22} color="red" />
+                  </TouchableOpacity>
+                </View>
               ))}
             </ScrollView>
           )}
         </View>
       </Modal>
 
-      {/* COD Modal */}
+      {/* COD MODAL */}
       <Modal
         visible={codModalVisible}
         transparent
@@ -513,17 +508,16 @@ foodDetails: cartItems.map(item => {
             <Text style={styles.modalText}>
               You’ll pay {formatCurrency(grandTotal)} on delivery.
             </Text>
+
             <TouchableOpacity
               onPress={handleConfirmCOD}
               style={styles.modalBtn}>
               <Text style={styles.modalBtnText}>Confirm Order</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               onPress={() => setCodModalVisible(false)}
-              style={[
-                styles.modalBtn,
-                {backgroundColor: '#ccc', marginTop: 8},
-              ]}>
+              style={[styles.modalBtn, {backgroundColor: '#ccc', marginTop: 8}]}>
               <Text style={styles.modalBtnText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -535,7 +529,7 @@ foodDetails: cartItems.map(item => {
 
 export default OrderSummaryScreen;
 
-// ---------- STYLES ----------
+/* ------------------ STYLES ------------------ */
 const styles = StyleSheet.create({
   addressCard: {
     flexDirection: 'row',
@@ -571,12 +565,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     elevation: 2,
   },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginBottom: 8,
-    color: '#000',
-  },
+  sectionTitle: {fontSize: 15, fontWeight: '700', marginBottom: 8,color:"black"},
   couponCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -594,10 +583,13 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   applyText: {color: 'red', fontWeight: '700'},
-  itemRow: {flexDirection: 'row', alignItems: 'center', marginBottom: 12},
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   itemImage: {width: 55, height: 55, borderRadius: 8},
   itemName: {fontSize: 14, fontWeight: '600', color: '#000'},
-  itemPrice: {fontSize: 13, color: '#444'},
   noteTag: {
     marginTop: 6,
     backgroundColor: '#FFF6E5',
@@ -608,6 +600,7 @@ const styles = StyleSheet.create({
     width: width * 0.55,
   },
   noteText: {fontSize: width * 0.035, color: '#444'},
+  itemPrice: {fontSize: 13, color: '#444',marginTop:-10},
   billRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -620,11 +613,11 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ccc',
     marginVertical: 6,
   },
-  totalLabel: {fontSize: 15, fontWeight: '700', color: '#000'},
+  totalLabel: {fontSize: 15, fontWeight: '700'},
   totalValue: {fontSize: 15, fontWeight: '700', color: 'red'},
   bottomBar: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 134,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -633,64 +626,76 @@ const styles = StyleSheet.create({
     width: '100%',
     elevation: 5,
   },
-  bottomTotal: {fontSize: 16, fontWeight: '700', color: '#000'},
+  bottomTotal: {fontSize: 16, fontWeight: '700',color:"black"},
   continueBtn: {
     backgroundColor: 'red',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 10,
   },
-  continueText: {color: '#fff', fontWeight: '700'},
-  savemodalView: {
-    backgroundColor: '#fff',
-    marginTop: 120,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    flex: 1,
-    padding: 12,
-  },
+  continueText: {color: '#fff', fontWeight: '700', fontSize: 14},
+
+savemodalView: {
+  position: 'absolute',       // Make it absolute to position relative to screen
+  bottom: 0,                  // Stick to bottom
+  left: 0,
+  right: 0,
+  backgroundColor: '#fff',
+  borderTopLeftRadius: 12,
+  borderTopRightRadius: 12,
+  padding: 15,
+  elevation: 6,
+  maxHeight: '80%',
+},
+
+
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    alignItems: 'center',
   },
   modalTitle: {fontSize: 16, fontWeight: '700', color: '#000'},
   locationContainer: {
-    backgroundColor: '#ffe6e6',
     padding: 12,
+    backgroundColor: '#FFECEC',
     borderRadius: 8,
-    marginBottom: 12,
+    marginVertical: 12,
   },
-  locationText: {color: 'red', fontWeight: '600'},
+  locationText: {color: 'red', fontWeight: '600', fontSize: 14},
+
   addressItem: {
     flexDirection: 'row',
+    alignItems: 'center',
     padding: 12,
-    borderBottomWidth: 0.6,
-    borderBottomColor: '#ccc',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    marginBottom: 10,
+    elevation: 1,
   },
-  addressType: {fontWeight: '700', color: '#000', marginBottom: 4},
-  addressText: {fontSize: 13, color: '#555'},
-  nameText: {fontSize: 13, color: '#555'},
+  addressType: {fontWeight: '700', color: '#000'},
+  addressText: {color: '#555'},
+  nameText: {color: '#000', marginTop: 4},
+
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#00000099',
+    backgroundColor: '#00000066',
   },
   modalContent: {
+    width: '85%',
     backgroundColor: '#fff',
-    width: '80%',
     padding: 20,
     borderRadius: 12,
     alignItems: 'center',
   },
-  modalText: {textAlign: 'center', marginVertical: 12, color: '#444'},
+  modalText: {fontSize: 14, color: '#555', marginVertical: 10},
   modalBtn: {
     backgroundColor: 'red',
-    paddingVertical: 12,
-    paddingHorizontal: 28,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 10,
     marginTop: 10,
   },
-  modalBtnText: {color: '#fff', fontWeight: '700', fontSize: 15},
+  modalBtnText: {color: '#fff', fontSize: 14, fontWeight: '600'},
 });

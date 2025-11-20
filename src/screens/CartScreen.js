@@ -178,7 +178,7 @@ const CartScreen = () => {
 
   return (
     <DashboardScreen scrollable={false}>
-      <CustomHeader title="My Orders" />
+      <CustomHeader title="My Cart" />
       <View style={styles.container}>
         <TouchableOpacity
           style={styles.addMore}

@@ -23,6 +23,7 @@ export const API = {
   getAllSubCategory:`${BASE_URL}catfood/getAllSubCategory`,
   searchFood:`${BASE_URL}food/filter`,
   Categoryitem :`${BASE_URL}food/by`,
-  profile:`${BASE_URL}profile/getMyProfile`
+  profile:`${BASE_URL}profile/getMyProfile`,
+  AddressDelete : `${BASE_URL}users/address/delete`
 
 };

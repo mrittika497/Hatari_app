@@ -12,6 +12,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Theme from '../assets/theme';
 import DashboardScreen from '../components/DashboardScreen';
 import CustomHeader from '../components/CustomHeader';
+import { useSelector } from 'react-redux';
 
 const {width} = Dimensions.get('window');
 
@@ -23,7 +24,11 @@ const OrderDetailsScreen = ({route}) => {
     0,
   );
   console.log(foodprices, '----------------------foodprices');
-
+  const {selectedRestaurant, experienceType} = useSelector(
+    state => state.experience,
+  );
+  console.log(experienceType,"----------------------experienceTypej");
+  
   const restaurant = order?.restaurant || {};
   const foodDetails = order?.foodDetails || [];
   const address = order?.address || {};
@@ -40,7 +45,7 @@ const OrderDetailsScreen = ({route}) => {
 
   return (
     <DashboardScreen scrollable={false}>
-      <CustomHeader />
+      <CustomHeader title='Order Detalis'/>
       <ScrollView
         style={styles.container}
         contentContainerStyle={{paddingBottom: 30}}
@@ -115,12 +120,13 @@ const OrderDetailsScreen = ({route}) => {
               ₹{(foodprices || 0).toFixed(2)}
             </Text>
           </View>
-          <View style={styles.chargeRow}>
-            <Text style={styles.chargeText}>Delivery</Text>
-            <Text style={styles.chargeText}>
-              ₹{order?.deliveryCharges || 0}
-            </Text>
-          </View>
+   {experienceType === "Delivery" && (
+  <View style={styles.chargeRow}>
+    <Text style={styles.chargeText}>Delivery</Text>
+    <Text style={styles.chargeText}>₹{order?.deliveryCharges || 0}</Text>
+  </View>
+)}
+
           <View style={styles.chargeRow}>
             <Text style={styles.chargeText}>Convenience</Text>
             <Text style={styles.chargeText}>
@@ -218,8 +224,21 @@ const styles = StyleSheet.create({
     color: Theme.colors.black,
   },
 
-  infoRow: {flexDirection: 'row', alignItems: 'flex-start', marginTop: 4},
-  infoText: {fontSize: 13, color: '#0a0909ff', marginTop: 2},
+infoRow: {
+  flexDirection: 'row',
+  alignItems: 'center',     // FIX 1: Perfect vertical alignment
+  marginTop: 6,
+  flexWrap: 'wrap',         // FIX 2: Prevents text from going outside the box
+  width: '100%',            // FIX 3: Makes wrapping work properly
+},
+
+infoText: {
+  fontSize: 14,
+  color: '#0A0909',
+  marginLeft: 6,            // Space between icon & text
+  flexShrink: 1,            // FIX 4: Prevents overflow
+  flexWrap: 'wrap',         // Ensures long text wraps properly
+},
 
   chargeRow: {
     flexDirection: 'row',

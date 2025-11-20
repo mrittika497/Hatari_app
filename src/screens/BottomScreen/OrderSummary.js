@@ -196,7 +196,7 @@ const OrderSummary = () => {
 export default OrderSummary;
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#f9f9f9', padding: 10},
+  container: {flex: 1, padding: 10},
   center: {flex: 1, justifyContent: 'center', alignItems: 'center'},
 
   orderCard: {

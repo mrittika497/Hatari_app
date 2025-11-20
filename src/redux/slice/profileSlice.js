@@ -7,8 +7,8 @@ export const fetchUserProfile = createAsyncThunk(
   "profile/fetchUserProfile",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.get(API.profile);
-      console.log("PROFILE API RESPONSE:", response.data);
+      const response = await axiosInstance.delete(API.profile);
+      console.log("----------------------", response);
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response?.data || "Profile Fetch Failed");
@@ -35,10 +35,12 @@ const profileSlice = createSlice({
       .addCase(fetchUserProfile.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchUserProfile.fulfilled, (state, action) => {
-        state.loading = false;
-        state.userData = action.payload?.data || action.payload;
-      })
+   .addCase(fetchUserProfile.fulfilled, (state, action) => {
+  state.loading = false;
+  // Store the profile object directly
+  state.userData = action.payload?.profile || action.payload;
+})
+
       .addCase(fetchUserProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;

@@ -20,6 +20,7 @@ import OrderDetailsScreen from '../screens/OrderDetailsScreen';
 import OderCartScreen from '../screens/OderCartScreen';
 import CouponesScreen from '../screens/CouponesScreen';
 import TopPicksScreen from '../screens/TopPicksScreen';
+import SaveAddressModal from '../components/SaveAddressModal';
 
 
 const Stack = createNativeStackNavigator();
@@ -54,8 +55,8 @@ const StackNav = () => {
         headerTitleStyle: {fontWeight: 'bold', fontSize: 20},
         headerTintColor: '#000000',
       }}>
-      {!userToken && (
-        <>
+  
+       
           <Stack.Screen
             name="LoginScreen"
             component={LoginScreen}
@@ -66,8 +67,8 @@ const StackNav = () => {
             component={OtpScreen}
             options={{headerShown: false}}
           />
-        </>
-      )}
+      
+    
       <Stack.Screen
         name="Splash"
         component={Splash}
@@ -147,7 +148,12 @@ const StackNav = () => {
       component={TopPicksScreen}
       options={{headerShown:false}}
       />
-  
+                     <Stack.Screen 
+      name='SaveAddressModal'
+      component={SaveAddressModal}
+      options={{headerShown:false}}
+      />
+
       <Stack.Screen
         name="Bottom"
         component={Bottom}
