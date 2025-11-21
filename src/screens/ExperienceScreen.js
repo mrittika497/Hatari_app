@@ -158,12 +158,12 @@ const ExperienceScreen = () => {
   };
 
   return (
-    <DashboardScreen contentStyle={{ alignItems: "center", justifyContent: "center" }}>
+    // <DashboardScreen contentStyle={{ alignItems: "center", justifyContent: "center" }}>
       <LinearGradient
         colors={["#ff3d3d", "#ff5c5c", "#fff"]}
         style={styles.gradientContainer}
       >
-        <SafeAreaView style={{ flex: 1, width: '100%', alignItems: 'center' }}>
+        <SafeAreaView style={{ flex: 1, width: '100%', alignItems: 'center',marginTop:30 }}>
           <Text style={styles.title}>Welcome to Hatari</Text>
           <Text style={styles.subtitle}>Elevate Your Experience</Text>
 
@@ -238,7 +238,7 @@ const ExperienceScreen = () => {
           )}
         </SafeAreaView>
       </LinearGradient>
-    </DashboardScreen>
+    // </DashboardScreen>
   );
 };
 
@@ -303,6 +303,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 10,
     backgroundColor: '#fff',
+    height:"30%"
   },
   selectedRestaurant: { borderColor: '#e53935', borderWidth: 2 },
   restaurantImage: { width: 120, height: 120, borderRadius: 12, marginBottom: 8 },

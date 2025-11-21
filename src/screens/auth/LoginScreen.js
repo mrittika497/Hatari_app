@@ -22,6 +22,7 @@ import { useNavigation } from "@react-navigation/native";
 import LinearGradient from "react-native-linear-gradient";
 import Theme from "../../assets/theme";
 import ReusableBtn from "../../components/ReuseableBtn";
+import DashboardScreen from "../../components/DashboardScreen";
 
 const { width } = Dimensions.get("window");
 
@@ -78,7 +79,8 @@ const LoginScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+   
+    <View style={styles.container}>
       
       <LinearGradient
         colors={["#ff3d3d", "#ff5c5c", "#fff"]}
@@ -172,7 +174,7 @@ const LoginScreen = () => {
           </ScrollView>
         </KeyboardAvoidingView>
       </LinearGradient>
-    </SafeAreaView>
+    </View>
   );
 };
 
