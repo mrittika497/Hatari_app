@@ -250,8 +250,10 @@ const handleDeleteAddress = (id) => {
 };
 
   return (
+    <> 
+       <CustomHeader title="Order Summary" />
     <DashboardScreen scrollable={false}>
-      <CustomHeader title="Order Summary" />
+   
 
       <ScrollView contentContainerStyle={{paddingBottom: 200}} showsVerticalScrollIndicator={false}>
         {/* ADDRESS CARD */}
@@ -524,6 +526,7 @@ const handleDeleteAddress = (id) => {
         </View>
       </Modal>
     </DashboardScreen>
+    </>
   );
 };
 
@@ -617,7 +620,7 @@ const styles = StyleSheet.create({
   totalValue: {fontSize: 15, fontWeight: '700', color: 'red'},
   bottomBar: {
     position: 'absolute',
-    bottom: 134,
+    bottom: 26,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

@@ -230,8 +230,10 @@ const handleSaveNote = async () => {
 
 
   return (
-    <DashboardScreen scrollable={false}>
+    <> 
       <CustomHeader title="My Cart" />
+    <DashboardScreen scrollable={false}>
+    
 
       <SafeAreaView style={{flex: 1}}>
         <KeyboardAvoidingView
@@ -332,6 +334,7 @@ const handleSaveNote = async () => {
         </View>
       </Modal>
     </DashboardScreen>
+    </>
   );
 };
 

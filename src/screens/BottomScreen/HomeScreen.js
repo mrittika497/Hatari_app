@@ -10,6 +10,7 @@ import {
   ScrollView,
   Animated,
   Dimensions,
+  StatusBar,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import ShimmerPlaceholder from 'react-native-shimmer-placeholder';
@@ -33,8 +34,8 @@ const HomeScreen = () => {
   const {selectedRestaurant, experienceType} = useSelector(
     state => state.experience,
   );
-  console.log(experienceType,"----------------------experienceTypej");
-  
+  console.log(experienceType, '----------------------experienceTypej');
+
   const isVeg = useSelector(state => state.foodFilter.isVeg);
   const {bannerlist} = useSelector(state => state.banners);
   const {data} = useSelector(state => state.subCategories);
@@ -48,21 +49,20 @@ const HomeScreen = () => {
   const bannerScrollRef = useRef();
 
   // ✅ Auto-scroll banners every 3 seconds
-useEffect(() => {
-  let index = 0;
-  const interval = setInterval(() => {
-    if (bannerlist?.length > 0) {
-      index = (index + 1) % bannerlist.length;
-      bannerScrollRef.current?.scrollTo({
-        x: index * width,
-        animated: true,
-      });
-    }
-  }, 3000);
+  useEffect(() => {
+    let index = 0;
+    const interval = setInterval(() => {
+      if (bannerlist?.length > 0) {
+        index = (index + 1) % bannerlist.length;
+        bannerScrollRef.current?.scrollTo({
+          x: index * width,
+          animated: true,
+        });
+      }
+    }, 3000);
 
-  return () => clearInterval(interval);
-}, [bannerlist]);
-
+    return () => clearInterval(interval);
+  }, [bannerlist]);
 
   // ✅ Fetch data
   useEffect(() => {
@@ -74,7 +74,9 @@ useEffect(() => {
           dispatch(fetchBanners()),
           dispatch(fetchAllFoodCat()),
         ]);
-        const res = await dispatch(fetchSubCategories({page: 1, limit: 10})).unwrap();
+        const res = await dispatch(
+          fetchSubCategories({page: 1, limit: 10}),
+        ).unwrap();
         if (res?.subcategories?.length > 0) setFoods(res.subcategories);
       } catch (e) {
         console.error(e);
@@ -89,7 +91,9 @@ useEffect(() => {
   const loadMoreFoods = async () => {
     if (!hasMore) return;
     const nextPage = page + 1;
-    const res = await dispatch(fetchSubCategories({page: nextPage, limit: 10})).unwrap();
+    const res = await dispatch(
+      fetchSubCategories({page: nextPage, limit: 10}),
+    ).unwrap();
     if (res?.subcategories?.length > 0) {
       setFoods(prev => [...prev, ...res.subcategories]);
       setPage(nextPage);
@@ -101,20 +105,44 @@ useEffect(() => {
 
   const filteredFoods = foods.filter(item => {
     const type = item?.type?.toLowerCase() || '';
-    return isVeg ? type === 'veg' : type === 'non-veg' || type === 'nonveg' || type === '';
+    return isVeg
+      ? type === 'veg'
+      : type === 'non-veg' || type === 'nonveg' || type === '';
   });
-  console.log(filteredFoods,"-------------------------filteredFoods");
-  
+  console.log(filteredFoods, '-------------------------filteredFoods');
 
   const categorieddata = [
-    {id: 1, name: 'Tandoori', image: require('../../assets/images/category/tandoori.jpeg'), cuisineType:'tandoori'},
-    {id: 2, name: 'Indian', image: require('../../assets/images/category/indian.jpeg'), cuisineType:'indian'},
-    {id: 3, name: 'Chinese', image: require('../../assets/images/category/chinese.jpeg'), cuisineType:'chinese'},
+    {
+      id: 1,
+      name: 'Tandoori',
+      image: require('../../assets/images/category/tandoori.jpeg'),
+      cuisineType: 'tandoori',
+    },
+    {
+      id: 2,
+      name: 'Indian',
+      image: require('../../assets/images/category/indian.jpeg'),
+      cuisineType: 'indian',
+    },
+    {
+      id: 3,
+      name: 'Chinese',
+      image: require('../../assets/images/category/chinese.jpeg'),
+      cuisineType: 'chinese',
+    },
   ];
 
   const experiences = [
-    {id: 1, title: 'Delivery', img: require('../../assets/images/deliveryH.png')},
-    {id: 2, title: 'Takeaway', img: require('../../assets/images/takeawayH.png')},
+    {
+      id: 1,
+      title: 'Delivery',
+      img: require('../../assets/images/deliveryH.png'),
+    },
+    {
+      id: 2,
+      title: 'Takeaway',
+      img: require('../../assets/images/takeawayH.png'),
+    },
   ];
 
   const renderHeader = () => (
@@ -193,55 +221,46 @@ useEffect(() => {
   ))}
 </View> */}
 
-
       {/* 🖼 Banners with auto-scroll */}
-    {/* 🖼 Banners with auto-scroll */}
-<Animated.ScrollView
-
-  style={{ marginVertical: 10 }}
-  contentContainerStyle={{ paddingHorizontal: 0 }}   // 👈 ADD THIS
-
-  ref={bannerScrollRef}
-  horizontal
-  pagingEnabled
-  showsHorizontalScrollIndicator={false}
-  onScroll={Animated.event(
-    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-    { useNativeDriver: false }
-  )}
-  scrollEventThrottle={16}
-
->
-  {loading
-    ? [1, 2, 3].map(i => (
-        <ShimmerPlaceholder key={i} style={styles.bannerShimmer} />
-      ))
-    : bannerlist?.map((banner, index) => (
-        <LinearGradient
-          key={index}
-          colors={["#fff", "#fff0f0"]}
-          style={styles.bannerCard}
-        >
-          <Image
-            source={{ uri: banner?.fullImageUrl }}
-            style={styles.bannerImage}
-       resizeMode="stretch"
-
-
-          />
-        </LinearGradient>
-      ))}
-</Animated.ScrollView>
-
+      {/* 🖼 Banners with auto-scroll */}
+      <Animated.ScrollView
+        style={{marginVertical: 10}}
+        contentContainerStyle={{paddingHorizontal: 0}} // 👈 ADD THIS
+        ref={bannerScrollRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{nativeEvent: {contentOffset: {x: scrollX}}}],
+          {useNativeDriver: false},
+        )}
+        scrollEventThrottle={16}>
+        {loading
+          ? [1, 2, 3].map(i => (
+              <ShimmerPlaceholder key={i} style={styles.bannerShimmer} />
+            ))
+          : bannerlist?.map((banner, index) => (
+              <LinearGradient
+                key={index}
+                colors={['#fff', '#fff0f0']}
+                style={styles.bannerCard}>
+                <Image
+                  source={{uri: banner?.fullImageUrl}}
+                  style={styles.bannerImage}
+                  resizeMode="stretch"
+                />
+              </LinearGradient>
+            ))}
+      </Animated.ScrollView>
 
       {/* 🟢 Dots indicator */}
       <View style={styles.dotsContainer}>
         {bannerlist?.map((_, i) => {
-    const opacity = scrollX.interpolate({
-  inputRange: [(i - 1) * width, i * width, (i + 1) * width],
-  outputRange: [0.3, 1, 0.3],
-  extrapolate: 'clamp',
-});
+          const opacity = scrollX.interpolate({
+            inputRange: [(i - 1) * width, i * width, (i + 1) * width],
+            outputRange: [0.3, 1, 0.3],
+            extrapolate: 'clamp',
+          });
 
           return <Animated.View key={i} style={[styles.dot, {opacity}]} />;
         })}
@@ -261,13 +280,14 @@ useEffect(() => {
               navigation.navigate('CatItemScreen', {
                 categoryId: item.id,
                 categoryName: item.name,
-                cuisineType : item?.cuisineType
+                cuisineType: item?.cuisineType,
               })
             }>
-            <LinearGradient colors={['#fd4b57ff', '#fefdfdff']} style={styles.categoryCircle}>
+            <LinearGradient
+              colors={['#fd4b57ff', '#fefdfdff']}
+              style={styles.categoryCircle}>
               <Image source={item.image} style={styles.categoryImage} />
             </LinearGradient>
-         
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -292,12 +312,14 @@ useEffect(() => {
         navigation.navigate('TopPicksScreen', {
           categoryId: item?._id,
           categoryName: item?.name,
-          cuisineType:item?.cuisineType
+          cuisineType: item?.cuisineType,
         })
       }>
       <Image source={{uri: item?.image}} style={styles.foodImage} />
       <View style={styles.foodInfo}>
-        <Text style={styles.foodTitle} numberOfLines={1}>{item?.name}</Text>
+        <Text style={styles.foodTitle} numberOfLines={1}>
+          {item?.name}
+        </Text>
         <Text
           style={[
             styles.foodType,
@@ -312,30 +334,38 @@ useEffect(() => {
   );
 
   return (
-    <DashboardScreen scrollable={false}>
+    <>
       <HomeHeader />
-      <FlatList
-        data={filteredFoods}
-        keyExtractor={(item, index) => item?._id || index.toString()}
-        numColumns={2}
-        ListHeaderComponent={renderHeader}
-        renderItem={renderItem}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: tabBarHeight + 200,
-          paddingHorizontal: 10,
-        }}
-        ListFooterComponent={
-          hasMore && (
-            <TouchableOpacity style={styles.exploreBtn} onPress={loadMoreFoods}>
-              <LinearGradient colors={['#FF512F', '#DD2476']} style={styles.exploreGradient}>
-                <Text style={styles.exploreText}>Explore More</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          )
-        }
-      />
-    </DashboardScreen>
+ 
+      <DashboardScreen scrollable={false}>
+
+        <FlatList
+          data={filteredFoods}
+          keyExtractor={(item, index) => item?._id || index.toString()}
+          numColumns={2}
+          ListHeaderComponent={renderHeader}
+          renderItem={renderItem}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingBottom: tabBarHeight + 200,
+            paddingHorizontal: 10,
+          }}
+          ListFooterComponent={
+            hasMore && (
+              <TouchableOpacity
+                style={styles.exploreBtn}
+                onPress={loadMoreFoods}>
+                <LinearGradient
+                  colors={['#FF512F', '#DD2476']}
+                  style={styles.exploreGradient}>
+                  <Text style={styles.exploreText}>Explore More</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            )
+          }
+        />
+      </DashboardScreen>
+    </>
   );
 };
 
@@ -346,7 +376,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 15,
-    marginVertical: 15,
+   marginBottom:10,
+  
   },
   expButton: {
     flexDirection: 'row',
@@ -364,24 +395,22 @@ const styles = StyleSheet.create({
   expIcon: {width: 24, height: 24, marginRight: 8, tintColor: '#333'},
   expText: {fontWeight: '700', fontSize: 15, color: '#333'},
 
-bannerCard: {
-  width: width,
-  height: 180,
-  overflow: 'hidden',
-  margin: 0,            // 👈 MUST ADD
-  padding: 0,           // 👈 MUST ADD
-},
+  bannerCard: {
+    width: width,
+    height: 180,
+    overflow: 'hidden',
+    margin: 0, // 👈 MUST ADD
+    padding: 0, // 👈 MUST ADD
+  },
 
-bannerImage: {
-  width: '90%',
-  height: '100%',
-
-},
-bannerShimmer: {
-  width: width,     // 👈 FULL WIDTH
-  height: 180,
-
-},
+  bannerImage: {
+    width: '95%',
+    height: '100%',
+  },
+  bannerShimmer: {
+    width: width, // 👈 FULL WIDTH
+    height: 180,
+  },
   dotsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -421,9 +450,19 @@ bannerShimmer: {
     shadowRadius: 10,
     shadowOffset: {width: 0, height: 3},
   },
-  foodImage: {width: '100%', height: 140, borderTopLeftRadius: 18, borderTopRightRadius: 18},
+  foodImage: {
+    width: '100%',
+    height: 140,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+  },
   foodInfo: {padding: 12, alignItems: 'center'},
-  foodTitle: {fontSize: 15, fontWeight: '700', color: '#222', textAlign: 'center'},
+  foodTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#222',
+    textAlign: 'center',
+  },
   foodType: {fontSize: 12, fontWeight: '600', marginTop: 5},
 
   exploreBtn: {alignItems: 'center', marginVertical: 25},
@@ -435,7 +474,7 @@ bannerShimmer: {
     shadowColor: '#FF512F',
   },
   exploreText: {
-    color: '#fff', 
+    color: '#fff',
     fontSize: 17,
     fontWeight: '800',
     textTransform: 'uppercase',

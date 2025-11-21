@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  StatusBar,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -22,22 +23,28 @@ const HomeHeader = () => {
   );
   const restaurantList = useSelector(state => state.restaurants.list || []);
   const cartItems = useSelector(state => state.cart.items || []);
-  // const totalCount =  cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
-const totalCount = cartItems.length;
+  const totalCount = cartItems.length;
+
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedExperience, setSelectedExperience] = useState('Delivery');
 
   return (
     <>
-      {/* 🔹 Gradient Header */}
+      {/* 🔥 FORCE RED STATUSBAR BACKGROUND */}
+      <StatusBar backgroundColor="#ef2435" barStyle="light-content" translucent={false} />
+      <View style={{ height: StatusBar.currentHeight, backgroundColor: "#ef2435" }} />
+
+      {/* 🔥 Gradient Header */}
       <LinearGradient
         colors={['#ef2435', '#fefefc']}
-        style={styles.headerBackground}>
+        style={styles.headerBackground}
+      >
         <View style={styles.headerTop}>
-          {/* 🔸 Branch Selector */}
+          {/* Location */}
           <TouchableOpacity
             style={styles.branchSelector}
-            onPress={() => setShowDropdown(!showDropdown)}>
+            onPress={() => setShowDropdown(!showDropdown)}
+          >
             <Image
               source={require('../assets/images/location.png')}
               style={styles.locationIcon}
@@ -51,14 +58,16 @@ const totalCount = cartItems.length;
             />
           </TouchableOpacity>
 
-          {/* 🔸 Cart Icon */}
+          {/* Cart */}
           <TouchableOpacity
             onPress={() => navigation.navigate('OderCartScreen')}
-            style={styles.cartContainer}>
+            style={styles.cartContainer}
+          >
             <Image
               source={require('../assets/images/cart.png')}
               style={styles.cartIcon}
             />
+
             {totalCount > 0 && (
               <View style={styles.cartBadge}>
                 <Text style={styles.cartCount}>{totalCount}</Text>
@@ -67,57 +76,54 @@ const totalCount = cartItems.length;
           </TouchableOpacity>
         </View>
 
-        {/* 🔸 Search Input */}
+        {/* Search */}
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={() => navigation.navigate('Bottom', { screen: 'MenuScreen' })}
-          style={styles.searchInput}>
-          <Text style={styles.placeholder}>
-            Search for dishes, restaurants...
-          </Text>
+          style={styles.searchInput}
+        >
+          <Text style={styles.placeholder}>Search for dishes, restaurants...</Text>
         </TouchableOpacity>
       </LinearGradient>
 
-      {/* 🔹 Dropdown List */}
+      {/* Dropdown */}
       {showDropdown && (
         <View style={styles.dropdownList}>
           <ScrollView style={{ maxHeight: 200 }}>
-            {restaurantList.length > 0 ? (
-              restaurantList.map((restaurant, index) => (
-                <TouchableOpacity
-                  key={restaurant._id || index}
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setShowDropdown(false);
-                    dispatch(setRestaurant(restaurant));
-                    dispatch(
-                      setExperience({
-                        id: experienceId,
-                        type: selectedExperience,
-                        restaurant,
-                      }),
-                    );
-                  }}>
-                  <Text
-                    style={[
-                      styles.dropdownText,
-                      selectedRestaurant?._id === restaurant._id && {
-                        color: '#ef2435',
-                        fontWeight: 'bold',
-                      },
-                    ]}>
-                    {restaurant.name}
-                  </Text>
-                </TouchableOpacity>
-              ))
-            ) : (
-              <Text style={styles.noDataText}>No restaurants available</Text>
-            )}
+            {restaurantList.map((restaurant, index) => (
+              <TouchableOpacity
+                key={restaurant._id || index}
+                style={styles.dropdownItem}
+                onPress={() => {
+                  setShowDropdown(false);
+                  dispatch(setRestaurant(restaurant));
+                  dispatch(
+                    setExperience({
+                      id: experienceId,
+                      type: selectedExperience,
+                      restaurant,
+                    })
+                  );
+                }}
+              >
+                <Text
+                  style={[
+                    styles.dropdownText,
+                    selectedRestaurant?._id === restaurant._id && {
+                      color: '#ef2435',
+                      fontWeight: 'bold',
+                    },
+                  ]}
+                >
+                  {restaurant.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </ScrollView>
         </View>
       )}
 
-      {/* 🔹 Veg / Non-Veg Toggle */}
+      {/* Veg / Non-Veg Switch */}
       <View style={styles.toggleWrapper}>
         <ToggleComponents />
       </View>
@@ -129,48 +135,33 @@ export default HomeHeader;
 
 const styles = StyleSheet.create({
   headerBackground: {
-    paddingVertical: 25,
+    paddingVertical: 35,
     paddingHorizontal: 15,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
-    elevation: 8,
-    marginTop:13
+    marginBottom: 20,
+    
   },
+
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+
   branchSelector: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '75%',
   },
-  locationIcon: {
-    width: 20,
-    height: 20,
-    tintColor: '#fff',
-    marginRight: 6,
-  },
-  branchText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  downArrow: {
-    width: 14,
-    height: 14,
-    tintColor: '#fff',
-    marginLeft: 6,
-  },
-  cartContainer: {
-    position: 'relative',
-  },
-  cartIcon: {
-    width: 24,
-    height: 24,
-    tintColor: '#fff',
-  },
+
+  locationIcon: { width: 20, height: 20, tintColor: '#fff', marginRight: 6 },
+  branchText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  downArrow: { width: 14, height: 14, tintColor: '#fff', marginLeft: 6 },
+
+  cartContainer: { position: 'relative' },
+  cartIcon: { width: 24, height: 24, tintColor: '#fff' },
+
   cartBadge: {
     position: 'absolute',
     right: -6,
@@ -180,11 +171,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     paddingVertical: 1,
   },
-  cartCount: {
-    color: '#ef2435',
-    fontSize: 10,
-    fontWeight: '700',
-  },
+  cartCount: { color: '#ef2435', fontSize: 10, fontWeight: '700' },
+
   searchInput: {
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -193,10 +181,8 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
   },
-  placeholder: {
-    color: '#000',
-    fontSize: 14,
-  },
+  placeholder: { color: '#000', fontSize: 14 },
+
   dropdownList: {
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -205,24 +191,21 @@ const styles = StyleSheet.create({
     marginTop: 5,
     paddingVertical: 5,
   },
+
   dropdownItem: {
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderBottomColor: '#eee',
     borderBottomWidth: 1,
   },
-  dropdownText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  noDataText: {
-    textAlign: 'center',
-    color: '#999',
-    paddingVertical: 10,
-  },
+
+  dropdownText: { fontSize: 14, color: '#333' },
+
   toggleWrapper: {
     alignItems: 'flex-end',
     paddingHorizontal: 20,
-    marginTop: 5,
+    marginTop: -10,
+        backgroundColor: "#f4eaeaff",
+        
   },
 });

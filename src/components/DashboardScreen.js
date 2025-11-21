@@ -19,7 +19,7 @@ const DashboardScreen = ({
   scrollable = true,
   style = {},
   contentStyle = {},
-  statusBarColor = "#fff",
+  statusBarColor = "#f42d2dff",
   barStyle = "dark-content",
   showNavigateButton = false,
 }) => {
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#f4eaeaff",
-    paddingHorizontal: responsiveWidth(5), // ~5% of screen width
+    paddingHorizontal: responsiveWidth(2), // ~5% of screen width
   },
   wrapper: {
     flexGrow: 1,

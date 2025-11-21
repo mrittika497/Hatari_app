@@ -202,7 +202,12 @@ console.log(categoryFoods,"------------------categoryFoods");
       setQuantity(1);
     });
   };
-
+const [initialLoading, setInitialLoading] = useState(true);
+  useEffect(() => {
+  if (!loading) {
+    setInitialLoading(false);
+  }
+}, [loading]);
   // update total when quantity or selectedOption changes
   useEffect(() => {
     if (!selectedFood) return;
@@ -319,38 +324,43 @@ console.log(categoryFoods,"------------------categoryFoods");
   };
 
   return (
+    <> 
+ <CustomHeader title={categoryName || "Items"} />
     <DashboardScreen scrollable={false}>
-      <CustomHeader title={categoryName || "Items"} />
+     
 
-      <View style={styles.container}>
-        {loading && (!categoryFoods || categoryFoods.length === 0) ? (
-          // show shimmer rows
-          <>
-            {Array.from({ length: 4 }).map((_, i) => renderSkeleton(i))}
-          </>
-        ) : error ? (
-          <Text style={styles.errorText}>{String(error)}</Text>
-        ) : filteredFoods && filteredFoods.length > 0 ? (
-          <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-            <FlatList
-              data={filteredFoods}
-              renderItem={renderItem}
-              keyExtractor={keyExtractor}
-              onEndReached={handleLoadMore}
-              onEndReachedThreshold={0.5}
-              contentContainerStyle={{ paddingBottom: 120 }}
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-              ListFooterComponent={
-                loading && hasMore ? (
-                  <ActivityIndicator size="large" color="#FF4D4D" style={{ margin: 10 }} />
-                ) : null
-              }
-            />
-          </Animated.View>
-        ) : (
-          <Text style={styles.noData}>No items found</Text>
-        )}
-      </View>
+    <View style={styles.container}>
+  {initialLoading ? (
+    <>
+      {Array.from({ length: 4 }).map((_, i) => renderSkeleton(i))}
+    </>
+  ) : error ? (
+    <Text style={styles.errorText}>{String(error)}</Text>
+  ) : filteredFoods && filteredFoods.length > 0 ? (
+    <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+      <FlatList
+        data={filteredFoods}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        contentContainerStyle={{ paddingBottom: 120 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        ListFooterComponent={
+          loading && hasMore ? (
+            <ActivityIndicator size="large" style={{ margin: 10 }} />
+          ) : null
+        }
+      />
+    </Animated.View>
+  ) : (
+    <Text style={styles.noData}>No items found</Text>
+  )}
+</View>
+
 
       {/* Modal */}
       <Modal transparent visible={modalVisible} animationType="none">
@@ -475,13 +485,14 @@ console.log(categoryFoods,"------------------categoryFoods");
         </Animated.View>
       )}
     </DashboardScreen>
+    </>
   );
 };
 
 export default CatItemScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, marginTop: 20 },
+  container: { flex: 1,paddingHorizontal:10 },
   noData: { textAlign: "center", color: "#666", marginTop: 40, fontSize: 16 },
   errorText: { textAlign: "center", color: "#cc3333", marginTop: 20 },
 

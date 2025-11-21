@@ -17,7 +17,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
 import ShimmerPlaceHolder from "react-native-shimmer-placeholder";
 import LinearGradient from "react-native-linear-gradient";
@@ -62,6 +62,16 @@ const CatItemScreen = () => {
 
   // API filter param
   const type = isVeg === null ? "" : isVeg ? "veg" : "non-veg";
+
+  useFocusEffect(
+  useCallback(() => {
+    return () => {
+      // Hide bottom modal when leaving this screen
+      setBottomBoxVisible(false);
+      boxAnim.setValue(150);
+    };
+  }, [])
+);
 
   // -------------------------
   // API calls
@@ -260,7 +270,9 @@ const CatItemScreen = () => {
               />
             </View>
 
-            <Text style={styles.name}>{food.name}</Text>
+            
+
+            <Text style={styles.name} numberOfLines={1} >{food?.name}</Text>
           </View>
 
           {food.priceInfo?.hasVariation ? (
@@ -299,8 +311,11 @@ const CatItemScreen = () => {
   }, [quantity, selectedOption, selectedFood]);
 
   return (
+
+    <> 
+        <CustomHeader title="All Menu" />
     <DashboardScreen scrollable={false}>
-      <CustomHeader title="All Menu" />
+  
 
       {/* Search Box */}
       <View style={styles.searchBox}>
@@ -323,7 +338,7 @@ const CatItemScreen = () => {
       <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
         <FlatList
           data={filteredFoods}
-          showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
           contentContainerStyle={{ paddingBottom: 140, paddingHorizontal: 12 }}
@@ -343,7 +358,7 @@ const CatItemScreen = () => {
             ) : (
               // show shimmer placeholders while loading first page
               <View style={{ padding: 12 }}>
-                {[1, 2, 3].map((i) => (
+                {[1, 2, 3,4,5,6,7,8,9,10,11,12,13,14,15,16].map((i) => (
                   <ShimmerPlaceHolder key={i} style={styles.shimmerRow} />
                 ))}
               </View>
@@ -499,6 +514,7 @@ const CatItemScreen = () => {
         </Animated.View>
       )}
     </DashboardScreen>
+    </>
   );
 };
 
@@ -506,7 +522,7 @@ export default CatItemScreen;
 
 // ======================= STYLES =======================
 const styles = StyleSheet.create({
-  searchBox: { margin: 15 },
+  searchBox: { margin: 15,marginTop:-10 },
   searchInput: {
     backgroundColor: "hsla(0, 0%, 100%, 1.00)",
     height: 40,
@@ -528,7 +544,7 @@ const styles = StyleSheet.create({
   image: { width: 80, height: 80, borderRadius: 10, backgroundColor: "#eee" },
   details: { flex: 1, marginLeft: 10 },
   cuisine: { fontSize: 12, color: "black" },
-  name: { fontSize: 15, fontWeight: "600", color: "black" },
+  name: { fontSize: 15, fontWeight: "600", color: "black",width:'90%' },
 
   row: { flexDirection: "row", alignItems: "center", marginTop: 4 },
   totalText: { fontSize: 16, fontWeight: "bold", color: "#eb2626ff" },
@@ -664,7 +680,17 @@ const styles = StyleSheet.create({
   },
   confirmBtnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
 
-  shimmerRow: { height: 90, borderRadius: 10, marginVertical: 8 },
+  shimmerRow: {  
+       flexDirection: "row",
+    backgroundColor: "#f9f9f9",
+    borderRadius: 15,
+    padding: 10,
+    marginBottom: 15,
+    alignItems: "center",
+    // elevation: 3,
+    height:89,
+    width:"100%"
+  },
 
   bottomBox: {
     position: "absolute",

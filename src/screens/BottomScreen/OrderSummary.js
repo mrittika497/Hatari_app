@@ -65,8 +65,11 @@ const OrderSummary = () => {
     );
 
   return (
+    <> 
+          <CustomHeader title="My Orders" />
+
     <DashboardScreen scrollable={false}>
-      <CustomHeader title="My Orders" />
+
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {orderData.map((item, index) => {
           const restaurant = item?.restaurant || {};
@@ -190,6 +193,7 @@ const OrderSummary = () => {
         })}
       </ScrollView>
     </DashboardScreen>
+        </>
   );
 };
 

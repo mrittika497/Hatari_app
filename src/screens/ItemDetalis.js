@@ -22,10 +22,10 @@ const ItemDetalis = () => {
   const dispatch = useDispatch();
   const {orders, loading, error} = useSelector(state => state.foodOrder);
   const orderData = orders?.data || [];
-  // console.log(
-  //   orderData[0]?.restaurant?.image,
-  //   '------------------------------orderData',
-  // );
+  console.log(
+    orderData,
+    '------------------------------orderData',
+  );
 
 
   
@@ -64,8 +64,10 @@ const ItemDetalis = () => {
     );
 
   return (
-    <DashboardScreen scrollable={false}>
+    <> 
       <CustomHeader title="My Orders" />
+    <DashboardScreen scrollable={false}>
+    
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {orderData.map((item, index) => {
           const restaurant = item?.restaurant || {};
@@ -136,6 +138,7 @@ const ItemDetalis = () => {
                         Qty: {food?.quantity} | ₹
                         {food?.price || food?.foodId?.price || 0}
                       </Text>
+                      <Text style={styles.foodDesc}>{food?.note}</Text>
                     </View>
 
                     <View style={styles.foodPriceBox}>
@@ -181,6 +184,7 @@ const ItemDetalis = () => {
         })}
       </ScrollView>
     </DashboardScreen>
+    </>
   );
 };
 

@@ -45,7 +45,8 @@ const VegNonVegToggle = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginVertical: 10 },
+  container: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end',
+     marginVertical: 10,},
   label: { fontSize: 14, fontWeight: '600', marginHorizontal: 6 },
   toggle: { width: 50, height: 26, borderRadius: 15, padding: 3, justifyContent: 'center' },
   thumb: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff' },

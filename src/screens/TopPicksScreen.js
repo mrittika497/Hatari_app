@@ -308,8 +308,11 @@ const TopPicksScreen = () => {
   const keyExtractor = (item, idx) => String(item?.food?._id ?? item?._id ?? item?.id ?? idx);
 
   return (
+    <> 
+     <CustomHeader title={categoryName ?? "Top Picks"} />
+
     <DashboardScreen scrollable={false}>
-      <CustomHeader title={categoryName ?? "Top Picks"} />
+     
 
       <View style={styles.container}>
         {loading && page === 1 ? (
@@ -471,13 +474,14 @@ const TopPicksScreen = () => {
         </Animated.View>
       )}
     </DashboardScreen>
+        </>
   );
 };
 
 export default TopPicksScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, marginTop: 20 },
+  container: { flex: 1, paddingHorizontal:10 },
   noData: { textAlign: "center", marginTop: 20, color: "gray" },
 
   // card

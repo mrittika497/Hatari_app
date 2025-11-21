@@ -44,8 +44,10 @@ const OrderDetailsScreen = ({route}) => {
       : '#FF9500';
 
   return (
-    <DashboardScreen scrollable={false}>
+    <> 
       <CustomHeader title='Order Detalis'/>
+    <DashboardScreen scrollable={false}>
+    
       <ScrollView
         style={styles.container}
         contentContainerStyle={{paddingBottom: 30}}
@@ -92,6 +94,9 @@ const OrderDetailsScreen = ({route}) => {
                 <Text style={styles.foodQtyPrice}>Qty: {item?.quantity}</Text>
                 <Text style={styles.foodPrice}>
                   ₹{item?.price || item?.foodId?.price}
+                </Text>
+                     <Text style={styles.foodPrice}>
+                  {item?.note}
                 </Text>
               </View>
             )}
@@ -168,13 +173,14 @@ const OrderDetailsScreen = ({route}) => {
         </View>
       </ScrollView>
     </DashboardScreen>
+    </>
   );
 };
 
 export default OrderDetailsScreen;
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#f2f2f2', padding: 10},
+  container: {flex: 1,padding: 10},
 
   section: {
     backgroundColor: '#fff',

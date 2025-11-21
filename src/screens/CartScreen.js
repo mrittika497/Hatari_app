@@ -177,8 +177,10 @@ const CartScreen = () => {
   );
 
   return (
+    <>
+       <CustomHeader title="My Cart" />
     <DashboardScreen scrollable={false}>
-      <CustomHeader title="My Cart" />
+   
       <View style={styles.container}>
         <TouchableOpacity
           style={styles.addMore}
@@ -242,6 +244,7 @@ const CartScreen = () => {
         )}
       </View>
     </DashboardScreen>
+     </>
   );
 };
 
@@ -250,7 +253,7 @@ export default CartScreen;
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "#fff",
-    marginTop: 10,
+    // marginTop: 10,
     // paddingHorizontal: 16,
     flex: 1,
   },

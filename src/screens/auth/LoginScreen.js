@@ -79,6 +79,7 @@ const LoginScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      
       <LinearGradient
         colors={["#ff3d3d", "#ff5c5c", "#fff"]}
         style={styles.backgroundGradient}
