@@ -7,8 +7,8 @@ export const fetchUserProfile = createAsyncThunk(
   "profile/fetchUserProfile",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.delete(API.profile);
-      console.log("----------------------", response);
+      const response = await axiosInstance.get(API.profile);
+      console.log("----------------------responsr", response);
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response?.data || "Profile Fetch Failed");

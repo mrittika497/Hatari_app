@@ -335,37 +335,93 @@ const CatItemScreen = () => {
       </View>
 
       {/* FOOD LIST */}
-      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-        <FlatList
-          data={filteredFoods}
-        showsVerticalScrollIndicator={false}
-          keyExtractor={keyExtractor}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingBottom: 140, paddingHorizontal: 12 }}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={
-            loading && hasMore ? (
-              <ActivityIndicator size="large" color="#FF4D4D" style={{ marginBottom: 10 }} />
-            ) : null
-          }
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={
-            !loading ? (
-              <View style={{ padding: 30, alignItems: "center" }}>
-                <Text style={{ color: "#555" }}>No items found.</Text>
-              </View>
-            ) : (
-              // show shimmer placeholders while loading first page
-              <View style={{ padding: 12 }}>
-                {[1, 2, 3,4,5,6,7,8,9,10,11,12,13,14,15,16].map((i) => (
-                  <ShimmerPlaceHolder key={i} style={styles.shimmerRow} />
-                ))}
-              </View>
-            )
-          }
-        />
-      </Animated.View>
+    <Animated.View style={{flex: 1, opacity: fadeAnim}}>
+          <FlatList
+            data={filteredFoods}
+            showsVerticalScrollIndicator={false}
+            keyExtractor={keyExtractor}
+            renderItem={renderItem}
+            contentContainerStyle={{paddingBottom: 140, paddingHorizontal: 12}}
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.5}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            ListFooterComponent={
+              loading && hasMore ? (
+                <ActivityIndicator
+                  size="large"
+                  color="#FF4D4D"
+                  style={{marginBottom: 10}}
+                />
+              ) : null
+            }
+            ListEmptyComponent={
+              loading && page === 1 ? (
+                <View style={{padding: 12}}>
+                  {[...Array(6)].map((_, idx) => (
+                    <View key={idx} style={styles.card}>
+                      {/* Image Placeholder */}
+                      <ShimmerPlaceHolder
+                        LinearGradient={LinearGradient}
+                        style={{
+                          width: 80,
+                          height: 80,
+                          borderRadius: 10,
+                          backgroundColor: '#eee',
+                        }}
+                      />
+                      {/* Details */}
+                      <View style={{flex: 1, marginLeft: 10}}>
+                        <ShimmerPlaceHolder
+                          LinearGradient={LinearGradient}
+                          style={{
+                            width: '50%',
+                            height: 12,
+                            borderRadius: 4,
+                            marginBottom: 6,
+                          }}
+                        />
+                        <ShimmerPlaceHolder
+                          LinearGradient={LinearGradient}
+                          style={{
+                            width: '70%',
+                            height: 14,
+                            borderRadius: 4,
+                            marginBottom: 4,
+                          }}
+                        />
+                        <ShimmerPlaceHolder
+                          LinearGradient={LinearGradient}
+                          style={{
+                            width: '30%',
+                            height: 12,
+                            borderRadius: 4,
+                            marginTop: 6,
+                          }}
+                        />
+                      </View>
+                      {/* Add button placeholder */}
+                      <ShimmerPlaceHolder
+                        LinearGradient={LinearGradient}
+                        style={{
+                          width: 50,
+                          height: 25,
+                          borderRadius: 12,
+                          marginLeft: 8,
+                        }}
+                      />
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View style={{padding: 30, alignItems: 'center'}}>
+                  <Text style={{color: '#555'}}>No items found.</Text>
+                </View>
+              )
+            }
+          />
+        </Animated.View>
 
       {/* ========================= MODAL ======================== */}
       <Modal transparent visible={modalVisible} animationType="none">

@@ -238,6 +238,7 @@ console.log(selectedRestaurant,"--------------------why not show");
 
 const handleDeleteAddress = (id) => {
 
+console.log(id,"------------------id");
 
   Alert.alert('Delete Address', 'Are you sure?', [
     { text: 'Cancel', style: 'cancel' },

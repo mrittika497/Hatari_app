@@ -24,6 +24,7 @@ import {fetchSubCategories} from '../../redux/slice/subCategoriSlice';
 import DashboardScreen from '../../components/DashboardScreen';
 import SectionDivider from '../../components/SectionDivider';
 import HomeHeader from '../../components/Homeheader';
+import HomeCatModal from '../../components/HomeCatModal';
 
 const {width} = Dimensions.get('window');
 
@@ -39,7 +40,8 @@ const HomeScreen = () => {
   const isVeg = useSelector(state => state.foodFilter.isVeg);
   const {bannerlist} = useSelector(state => state.banners);
   const {data} = useSelector(state => state.subCategories);
-
+  const [modalVisible, setModalVisible] = useState(false);
+  const [subCategoryData, setSubCategoryData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedExperience, setSelectedExperience] = useState(experienceType);
   const [foods, setFoods] = useState([]);
@@ -112,13 +114,13 @@ const HomeScreen = () => {
   console.log(filteredFoods, '-------------------------filteredFoods');
 
   const categorieddata = [
-    {
+        {
       id: 1,
-      name: 'Tandoori',
-      image: require('../../assets/images/category/tandoori.jpeg'),
-      cuisineType: 'tandoori',
+      name: 'Chinese',
+      image: require('../../assets/images/category/chinese.jpeg'),
+      cuisineType: 'chinese',
     },
-    {
+        {
       id: 2,
       name: 'Indian',
       image: require('../../assets/images/category/indian.jpeg'),
@@ -126,10 +128,12 @@ const HomeScreen = () => {
     },
     {
       id: 3,
-      name: 'Chinese',
-      image: require('../../assets/images/category/chinese.jpeg'),
-      cuisineType: 'chinese',
+      name: 'Tandoori',
+      image: require('../../assets/images/category/tandoori.jpeg'),
+      cuisineType: 'tandoori',
     },
+
+
   ];
 
   const experiences = [
@@ -144,6 +148,40 @@ const HomeScreen = () => {
       img: require('../../assets/images/takeawayH.png'),
     },
   ];
+
+    const subCategories = {
+    chinese: [
+      { name: "Noodles" },
+      { name: "Fried Rice" },
+      { name: "Manchurian" },
+      { name: "Spring Rolls" },
+    ],
+
+    indian: [
+      { name: "North Indian" },
+      { name: "South Indian" },
+      { name: "Biryani" },
+      { name: "Thali" },
+    ],
+
+    tandoori: [
+      { name: "Tandoori Chicken" },
+      { name: "Paneer Tikka" },
+      { name: "Malai Tikka" },
+      { name: "Seekh Kabab" },
+    ],
+  };
+
+    const openModal = (item) => {
+    const data = subCategories[item.cuisineType];
+    setSubCategoryData(data);
+    setModalVisible(true);
+  };
+
+  const onSelectSubCategory = (sub) => {
+    alert("Selected: " + sub.name);
+    setModalVisible(false);
+  };
 
   const renderHeader = () => (
     <>
@@ -268,30 +306,39 @@ const HomeScreen = () => {
 
       {/* 🍽 Categories */}
       <SectionDivider title="What would you like to have today?" />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoryScroll}>
-        {categorieddata.map((item, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.categoryCard}
-            onPress={() =>
-              navigation.navigate('CatItemScreen', {
-                categoryId: item.id,
-                categoryName: item.name,
-                cuisineType: item?.cuisineType,
-              })
-            }>
-            <LinearGradient
-              colors={['#fd4b57ff', '#fefdfdff']}
-              style={styles.categoryCircle}>
-              <Image source={item.image} style={styles.categoryImage} />
-            </LinearGradient>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+    <View style={styles.categoryWrapper}>
+  {categorieddata.map((item, index) => (
+    <TouchableOpacity
+      key={index}
+      style={styles.categoryCard}
+        onPress={() => openModal(item)}
+      // onPress={() =>
+      //   navigation.navigate("CatItemScreen", {
+      //     categoryId: item.id,
+      //     categoryName: item.name,
+      //     cuisineType: item?.cuisineType,
+      //   })
+      // }
+    >
+      <LinearGradient
+        colors={["#fd4b57ff", "#fefdfdff"]}
+        style={styles.categoryCircle}
+      >
+        <Image source={item.image} style={styles.categoryImage} />
+      </LinearGradient>
 
+      <Text style={styles.categoryName}>{item.name}</Text>
+    </TouchableOpacity>
+  ))}
+</View>
+
+      <HomeCatModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        title="Choose Sub Category"
+        data={subCategoryData}
+        onSelect={onSelectSubCategory}
+      />
       <SectionDivider
         title={
           isVeg === 'Veg'
@@ -423,20 +470,39 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF512F',
     marginHorizontal: 5,
   },
-
+categoryScroll: {
+  paddingHorizontal: 20,
+ 
+},
+categoryWrapper: {
+  flexDirection: "row",
+  justifyContent: "center",
+  alignItems: "center",
+  // gap: 20,
+  marginVertical: 10,
+},
+categoryCard: {
+  alignItems: "center",
+  marginRight: 20,
+},
   categoryScroll: {paddingHorizontal: 15, paddingVertical: 10},
-  categoryCard: {alignItems: 'center', marginRight: 22},
-  categoryCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-    shadowColor: '#FF512F',
-    shadowOpacity: 0.25,
-  },
-  categoryImage: {width: 55, height: 55, borderRadius: 30},
+  categoryCard: {alignItems: 'center', marginRight: 20},
+ categoryCircle: {
+  width: 90,
+  height: 90,
+  borderRadius: 45,
+  justifyContent: "center",
+  alignItems: "center",
+  backgroundColor: "#fff",
+  borderWidth: 1,
+  borderColor: "#eee",
+},
+
+categoryImage: {
+  width: 55,
+  height: 55,
+  borderRadius: 30,
+},
   categoryName: {fontSize: 14, color: '#333', fontWeight: '700', marginTop: 8},
 
   foodCard: {

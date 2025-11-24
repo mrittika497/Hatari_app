@@ -10,7 +10,7 @@ export const deleteUserAddress = createAsyncThunk(
     console.log(addressId,"----------------addressId");
     
     try {
-      const response = await axiosInstance.post(`${API.AddressDelete}/${addressId}`);
+      const response = await axiosInstance.delete(`${API.AddressDelete}/${addressId}`);
       console.log('Address deleted:', response.data);
       return addressId; // return deleted address ID
     } catch (error) {
