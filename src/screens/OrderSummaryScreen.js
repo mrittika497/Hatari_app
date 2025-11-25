@@ -235,20 +235,40 @@ console.log(selectedRestaurant,"--------------------why not show");
       ToastAndroid.show('Order failed. Try again.', ToastAndroid.SHORT);
     }
   };
+  const [localAddresses, setLocalAddresses] = useState([]);
+
+useEffect(() => {
+  setLocalAddresses(addresses);
+}, [addresses]);
 
 const handleDeleteAddress = (id) => {
-
-console.log(id,"------------------id");
-
+  console.log(id, "------------------id");
+setLocalAddresses(prev => prev.filter(item => item._id !== id));
   Alert.alert('Delete Address', 'Are you sure?', [
     { text: 'Cancel', style: 'cancel' },
     {
       text: 'Delete',
       style: 'destructive',
-      onPress: () => dispatch(deleteUserAddress(id)), // ✅ Correct thunk
+      onPress: async () => {
+        try {
+          // Dispatch delete thunk
+          await dispatch(deleteUserAddress(id)).unwrap();
+
+          // Update savedAddress if it was the deleted one
+          if (savedAddress?._id === id) {
+            setSavedAddress(null);
+            await AsyncStorage.removeItem('savedAddress');
+          }
+
+          ToastAndroid.show('Address deleted', ToastAndroid.SHORT);
+        } catch (error) {
+          ToastAndroid.show('Failed to delete address', ToastAndroid.SHORT);
+        }
+      },
     },
   ]);
 };
+
 
   return (
     <> 
@@ -258,35 +278,36 @@ console.log(id,"------------------id");
 
       <ScrollView contentContainerStyle={{paddingBottom: 200}} showsVerticalScrollIndicator={false}>
         {/* ADDRESS CARD */}
-        <View style={styles.addressCard}>
-          {savedAddress ? (
-            <>
-              <View style={{flex: 1}}>
-                <Text style={styles.addrName}>
-                  {savedAddress?.name} ({savedAddress?.addressType})
-                </Text>
-                <Text style={styles.addrDetails}>
-                  {savedAddress.flat}, {savedAddress.address},{' '}
-                  {savedAddress.pin}
-                </Text>
-                <Text style={styles.addrPhone}>{savedAddress.contact}</Text>
-              </View>
+     {/* ADDRESS CARD */}
+<View style={styles.addressCard}>
+  {savedAddress ? (
+    <>
+      <View style={{flex: 1}}>
+        <Text style={styles.addrName}>
+          {savedAddress?.name} ({savedAddress?.addressType})
+        </Text>
+        <Text style={styles.addrDetails}>
+          {savedAddress.flat}, {savedAddress.address}, {savedAddress.pin}
+        </Text>
+        <Text style={styles.addrPhone}>{savedAddress.contact}</Text>
+      </View>
 
-              <TouchableOpacity
-                onPress={() => setModalVisible(true)}
-                style={styles.changeBtn}>
-                <Text style={styles.changeText}>Change</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <TouchableOpacity
-              onPress={() => navigation.navigate('MapScreen')}
-              style={{flexDirection: 'row', alignItems: 'center'}}>
-              <Icon name="add-location-alt" size={22} color="red" />
-              <Text style={styles.addAddressText}>Add Delivery Address</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+      <TouchableOpacity
+        onPress={() => setModalVisible(true)}
+        style={styles.changeBtn}>
+        <Text style={styles.changeText}>Change</Text>
+      </TouchableOpacity>
+    </>
+  ) : (
+    <TouchableOpacity
+      onPress={() => navigation.navigate('MapScreen')}
+      style={{flexDirection: 'row', alignItems: 'center'}}>
+      <Icon name="add-location-alt" size={22} color="red" />
+      <Text style={styles.addAddressText}>Add Delivery Address</Text>
+    </TouchableOpacity>
+  )}
+</View>
+
 
         {/* COUPONS */}
         <View style={styles.sectionBox}>
@@ -418,85 +439,79 @@ console.log(id,"------------------id");
       )}
 
       {/* ADDRESS MODAL */}
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.savemodalView}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Select Address</Text>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Icon name="close" size={26} color="red" />
+{/* ADDRESS MODAL */}
+<Modal
+  visible={modalVisible}
+  transparent
+  animationType="slide"
+  onRequestClose={() => setModalVisible(false)}
+>
+  <View style={styles.savemodalView}>
+    <View style={styles.modalHeader}>
+      <Text style={styles.modalTitle}>Select Address</Text>
+      <TouchableOpacity onPress={() => setModalVisible(false)}>
+        <Icon name="close" size={26} color="red" />
+      </TouchableOpacity>
+    </View>
+
+    <TouchableOpacity
+      style={styles.locationContainer}
+      onPress={() => navigation.navigate('MapScreen')}
+    >
+      <Text style={styles.locationText}>Select your current location +</Text>
+    </TouchableOpacity>
+
+    {/* Scrollable Address List */}
+    {loading ? (
+      <ActivityIndicator color="red" />
+    ) : (
+      <ScrollView style={{ maxHeight: 450 }}>
+        {localAddresses.map(item => (
+          <View key={item._id} style={styles.addressItem}>
+            <TouchableOpacity
+              style={{ flex: 1 }}
+              onPress={async () => {
+                setSavedAddress(item);
+                await AsyncStorage.setItem(
+                  'savedAddress',
+                  JSON.stringify(item)
+                );
+                setModalVisible(false);
+                ToastAndroid.show('Address selected!', ToastAndroid.SHORT);
+              }}
+            >
+              <Text style={styles.addressType}>{item.addressType}</Text>
+              <Text style={styles.addressText}>
+                {item.flat}, {item.address}
+              </Text>
+              <Text style={styles.nameText}>
+                {item.name} - {item.contact}
+              </Text>
+            </TouchableOpacity>
+
+            {savedAddress?._id === item._id && (
+              <Ionicons name="checkmark-circle" size={22} color="#f11b1b" />
+            )}
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate('MapScreen', { editData: item })}
+              style={{ marginLeft: 10 }}
+            >
+              <Ionicons name="create-outline" size={22} color="blue" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => handleDeleteAddress(item._id)}
+              style={{ marginLeft: 10 }}
+            >
+              <Ionicons name="trash-outline" size={22} color="red" />
             </TouchableOpacity>
           </View>
-
-          <TouchableOpacity
-            style={styles.locationContainer}
-            onPress={() => navigation.navigate('MapScreen')}>
-            <Text style={styles.locationText}>
-              Select your current location +
-            </Text>
-          </TouchableOpacity>
-
-          {/* Scrollable Address List */}
-          {loading ? (
-            <ActivityIndicator color="red" />
-          ) : (
-            <ScrollView style={{maxHeight: 450}}>
-              {addresses.map(item => (
-                <View key={item._id} style={styles.addressItem}>
-                  <TouchableOpacity
-                    style={{flex: 1}}
-                    onPress={async () => {
-                      setSavedAddress(item);
-                      await AsyncStorage.setItem(
-                        'savedAddress',
-                        JSON.stringify(item),
-                      );
-                      setModalVisible(false);
-                      ToastAndroid.show('Address selected!', ToastAndroid.SHORT);
-                    }}>
-                    <Text style={styles.addressType}>{item.addressType}</Text>
-                    <Text style={styles.addressText}>
-                      {item.flat}, {item.address}
-                    </Text>
-                    <Text style={styles.nameText}>
-                      {item.name} - {item.contact}
-                    </Text>
-                    
-                  </TouchableOpacity>
-
-                  {/* CHECKMARK */}
-                  {savedAddress?._id === item._id && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={22}
-                      color="#f11b1b"
-                    />
-                  )}
-
-                  {/* EDIT BUTTON */}
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate('MapScreen', {editData: item})
-                    }
-                    style={{marginLeft: 10}}>
-                    <Ionicons name="create-outline" size={22} color="blue" />
-                  </TouchableOpacity>
-
-                  {/* DELETE BUTTON */}
-                  <TouchableOpacity
-                    onPress={() => handleDeleteAddress(item._id)}
-                    style={{marginLeft: 10}}>
-                    <Ionicons name="trash-outline" size={22} color="red" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </ScrollView>
-          )}
-        </View>
-      </Modal>
+        ))}
+      </ScrollView>
+    )}
+  </View>
+</Modal>
 
       {/* COD MODAL */}
       <Modal
@@ -594,6 +609,7 @@ const styles = StyleSheet.create({
   },
   itemImage: {width: 55, height: 55, borderRadius: 8},
   itemName: {fontSize: 14, fontWeight: '600', color: '#000'},
+  foodQtyPrice:{fontSize: 14, fontWeight: '600', color: '#8e8b8bff'},
   noteTag: {
     marginTop: 6,
     backgroundColor: '#FFF6E5',

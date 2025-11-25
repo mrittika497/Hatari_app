@@ -5,10 +5,12 @@ import { API } from '../../global_Url/GlobalUrl';
 // ✅ Async thunk to fetch subcategories with pagination
 export const fetchSubCategories = createAsyncThunk(
   'subCategories/fetchSubCategories',
-  async ({ page = 1, limit = 10 }, { rejectWithValue }) => {
+  async ({ page = 1, limit = 10,categoryId }, { rejectWithValue }) => {
+    console.log('categoryId================api',categoryId);
+    
     try {
       const response = await axiosInstance.get(
-        `${API.getAllSubCategory}?page=${page}&limit=${limit}`
+        `${API.getAllSubCategory}?page=${page}&limit=${limit}&categoryId=${categoryId}`
       );
 
       console.log('📦 SubCategory Response:', response.data);

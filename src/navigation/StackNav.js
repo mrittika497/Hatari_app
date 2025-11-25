@@ -21,6 +21,7 @@ import OderCartScreen from '../screens/OderCartScreen';
 import CouponesScreen from '../screens/CouponesScreen';
 import TopPicksScreen from '../screens/TopPicksScreen';
 import SaveAddressModal from '../components/SaveAddressModal';
+import CuisineTypeSubCat from '../screens/CuisineTypeSubCat';
 
 
 const Stack = createNativeStackNavigator();
@@ -151,6 +152,11 @@ const StackNav = () => {
                      <Stack.Screen 
       name='SaveAddressModal'
       component={SaveAddressModal}
+      options={{headerShown:false}}
+      />
+                         <Stack.Screen 
+      name='CuisineTypeSubCat'
+      component={CuisineTypeSubCat}
       options={{headerShown:false}}
       />
 

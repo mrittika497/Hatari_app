@@ -42,6 +42,8 @@ const HomeScreen = () => {
   const {data} = useSelector(state => state.subCategories);
   const [modalVisible, setModalVisible] = useState(false);
   const [subCategoryData, setSubCategoryData] = useState([]);
+  console.log(subCategoryData,"-------------------------------subCategoryData11111");
+  
   const [loading, setLoading] = useState(true);
   const [selectedExperience, setSelectedExperience] = useState(experienceType);
   const [foods, setFoods] = useState([]);
@@ -111,7 +113,7 @@ const HomeScreen = () => {
       ? type === 'veg'
       : type === 'non-veg' || type === 'nonveg' || type === '';
   });
-  console.log(filteredFoods, '-------------------------filteredFoods');
+  // console.log(filteredFoods, '-------------------------filteredFoods');
 
   const categorieddata = [
         {
@@ -149,31 +151,10 @@ const HomeScreen = () => {
     },
   ];
 
-    const subCategories = {
-    chinese: [
-      { name: "Noodles" },
-      { name: "Fried Rice" },
-      { name: "Manchurian" },
-      { name: "Spring Rolls" },
-    ],
 
-    indian: [
-      { name: "North Indian" },
-      { name: "South Indian" },
-      { name: "Biryani" },
-      { name: "Thali" },
-    ],
 
-    tandoori: [
-      { name: "Tandoori Chicken" },
-      { name: "Paneer Tikka" },
-      { name: "Malai Tikka" },
-      { name: "Seekh Kabab" },
-    ],
-  };
-
-    const openModal = (item) => {
-    const data = subCategories[item.cuisineType];
+    const openModal = (cuisineType) => {
+    const data = cuisineType;
     setSubCategoryData(data);
     setModalVisible(true);
   };
@@ -311,7 +292,7 @@ const HomeScreen = () => {
     <TouchableOpacity
       key={index}
       style={styles.categoryCard}
-        onPress={() => openModal(item)}
+        onPress={() => openModal(item?.cuisineType)}
       // onPress={() =>
       //   navigation.navigate("CatItemScreen", {
       //     categoryId: item.id,
@@ -335,8 +316,9 @@ const HomeScreen = () => {
       <HomeCatModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        title="Choose Sub Category"
-        data={subCategoryData}
+        title={subCategoryData}
+        cuisineType = {subCategoryData}
+        // data={subCategoryData}
         onSelect={onSelectSubCategory}
       />
       <SectionDivider

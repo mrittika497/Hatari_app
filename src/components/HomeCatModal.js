@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -9,62 +9,82 @@ import {
   Image,
 } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchAllCategories } from "../redux/slice/GetAllCategorySlice";
+import { fetchSubCategories } from "../redux/slice/subCategoriSlice";
+import { useNavigation } from "@react-navigation/native";
 
 const HomeCatModal = ({
   visible,
   onClose,
   title = "What Are You Craving?",
-  data = [],
+  cuisineType,
   onSelect,
 }) => {
+  const dispatch = useDispatch();
+
+  const [selectedCategory, setSelectedCategory] = useState(null);
+const navigation = useNavigation()
+  const categoriesState = useSelector((state) => state.categories);
+  const categoriesData = categoriesState?.categories?.foods;
+
+  // Fetch categories when modal opens
+  useEffect(() => {
+    if (visible && cuisineType) {
+      dispatch(fetchAllCategories(cuisineType));
+    }
+  }, [visible, cuisineType]);
+
+  // Category clicked
+const handleCategoryClick = (item) => {
+  setSelectedCategory(item);
+
+  navigation.navigate("CuisineTypeSubCat", { id: item?._id, cuisineType});
+
+  onClose?.();
+};
+
+
   return (
-    <Modal transparent visible={visible} animationType="slide">
+    <Modal transparent visible={visible} animationType="fade">
       <View style={styles.overlay}>
         <TouchableOpacity style={styles.backdrop} onPress={onClose} />
 
         <View style={styles.container}>
           {/* HEADER */}
-  <LinearGradient
-   colors={['#ef2435', '#fefefc']}
-  style={styles.header}
-  start={{ x: 0, y: 0 }}
-  end={{ x: 1, y: 0 }}
->
-  <Text style={styles.headerTitle}>{title}</Text>
-  <TouchableOpacity onPress={onClose}>
-    <Text style={styles.closeText}>✕</Text>
-  </TouchableOpacity>
-</LinearGradient>
+          <LinearGradient colors={["#ff3b3b", "#ffc9c9"]} style={styles.header}>
+            <Text style={styles.headerTitle}>{title}</Text>
 
+            <TouchableOpacity onPress={onClose}>
+              <Text style={styles.closeText}>✕</Text>
+            </TouchableOpacity>
+          </LinearGradient>
 
-          {/* LIST */}
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            style={{ maxHeight: 400, marginTop: 10 }}
-          >
-            {data.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.itemBox}
-                onPress={() => onSelect(item)}
-              >
-                {item?.icon && (
+          {/* CATEGORY GRID */}
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={styles.grid}>
+              {categoriesData?.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.card}
+                  onPress={() => handleCategoryClick(item)}
+                >
                   <LinearGradient
-                colors={['#ef2435', '#fefefc']}
-                    style={styles.itemIconWrapper}
+                    colors={["#ffecec", "#ffffff"]}
+                    style={styles.categoryCircle}
                   >
-                    <Image source={item.icon} style={styles.itemIcon} />
+                    <Image
+                      source={{ uri: item.image }}
+                      style={styles.foodImage}
+                    />
                   </LinearGradient>
-                )}
 
-                <Text style={styles.itemText}>{item.name}</Text>
-
-                {/* <Image
-                  source={require("../../assets/images/arrow-right.png")}
-                  style={styles.arrowIcon}
-                /> */}
-              </TouchableOpacity>
-            ))}
+                  <Text style={styles.name} numberOfLines={1}>
+                    {item?.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </ScrollView>
         </View>
       </View>
@@ -77,83 +97,69 @@ export default HomeCatModal;
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    justifyContent: "flex-end",
     backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "flex-end",
   },
   backdrop: {
     flex: 1,
   },
-container: {
-  backgroundColor: "#fff",
-  borderTopLeftRadius: 25,
-  borderTopRightRadius: 25,
-  paddingBottom: 20,
-  paddingHorizontal: 0, // remove padding so header can stretch full width
-  elevation: 20,
-  shadowColor: "#000",
-  shadowOpacity: 0.25,
-  shadowRadius: 10,
-  shadowOffset: { width: 0, height: -3 },
-},
-
-header: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  width: "100%",           // 👈 full width
-  paddingVertical: 18,
-  paddingHorizontal: 20,   // internal spacing
-  borderTopLeftRadius: 25,
-  borderTopRightRadius: 25,
-}
-
-,
+  container: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    maxHeight: "83%",
+    elevation: 15,
+  },
+  header: {
+    paddingVertical: 18,
+    paddingHorizontal: 22,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   headerTitle: {
     fontSize: 20,
     fontWeight: "700",
     color: "#fff",
   },
   closeText: {
-    fontSize: 22,
-    color: "#fb0d0dff",
+    fontSize: 24,
+    color: "#fff",
     fontWeight: "700",
   },
-  itemBox: {
+  grid: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fefefe",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 15,
-    marginBottom: 12,
-    shadowColor: "#aaa",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    paddingHorizontal: 18,
+    paddingTop: 12,
   },
-  itemIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  card: {
+    width: "30%",
+    alignItems: "center",
+    marginBottom: 25,
+  },
+  categoryCircle: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    backgroundColor: "#fff",
+    elevation: 5,
   },
-  itemIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  foodImage: {
+    width: 75,
+    height: 75,
+    borderRadius: 40,
   },
-  itemText: {
-    flex: 1,
-    fontSize: 17,
+  name: {
+    fontSize: 14,
     fontWeight: "600",
     color: "#333",
-  },
-  arrowIcon: {
-    width: 18,
-    height: 18,
-    tintColor: "#666",
+    marginTop: 8,
+    textAlign: "center",
   },
 });
