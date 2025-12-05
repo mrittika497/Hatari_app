@@ -5,34 +5,46 @@ import {API} from '../../global_Url/GlobalUrl';
 export const fetchCategoryFoods = createAsyncThunk(
   'catItems/fetch',
   async (
-    {categoryId, categoryIngredients, restaurantId, cuisineType, page = 1, limit = 100,search},
+    {
+      categoryId,
+      categoryIngredients,
+      restaurantId,
+      cuisineType,
+      page = 1,
+      limit = 100,
+      search,
+      isTrending = true,
+    },
     {rejectWithValue},
   ) => {
     try {
       const params = new URLSearchParams();
 
       if (categoryId) params.append('categoryId', categoryId);
-      if (categoryIngredients) params.append('ingredients', categoryIngredients);
+      if (categoryIngredients)
+        params.append('ingredients', categoryIngredients);
       if (restaurantId) params.append('restaurantId', restaurantId);
       if (cuisineType) params.append('cuisineType', cuisineType); // 👈 use correct key
-      if(search) params.append('search',search)  ;
+      if (search) params.append('search', search);
       params.append('page', page);
       params.append('limit', limit);
-
+      params.append('isTrending', isTrending);
       const url = `${API.getCatItemfoods}?${params.toString()}`;
       console.log('🔍 Final URL:', url);
 
       const response = await axiosInstance.get(url);
-      console.log('📦 Category Foods Response:', response.data);
+      console.log('cattem-------222 Category Foods Response:', response.data);
 
       // extract actual data array safely
       const items = response.data?.data || [];
-     console.log('🍽️ Fetched Items:', items);
-     
+      console.log('🍽️ Fetched Items:', items);
 
       return {page, data: items};
     } catch (error) {
-      console.log('❌ Fetch Category Foods Error:', error.response || error.message);
+      console.log(
+        '❌ Fetch Category Foods Error:',
+        error.response || error.message,
+      );
       return rejectWithValue(error.response?.data || error.message);
     }
   },

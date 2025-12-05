@@ -284,7 +284,6 @@ const CatItemScreen = () => {
             <Text style={styles.priceText}>Price: ₹{food.priceInfo?.staticPrice}</Text>
           )}
 
-          <Text style={styles.rating}>★ {food.rating ?? "4.2"}</Text>
         </View>
 
         <TouchableOpacity style={styles.addBtn} onPress={() => openModal(food)}>

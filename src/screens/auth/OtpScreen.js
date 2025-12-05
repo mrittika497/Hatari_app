@@ -12,6 +12,7 @@ import {
   Animated,
   Easing,
   Dimensions,
+  ImageBackground,
 } from 'react-native';
 import {useDispatch, useSelector} from 'react-redux';
 import {
@@ -150,27 +151,22 @@ const OtpScreen = ({route, navigation}) => {
   }, [isButtonActive]);
 
   return (
-    <LinearGradient
-     colors={["#ff3d3d", "#ff5c5c", "#fff"]}
-      style={{flex: 1}}
-      start={{x: 0, y: 0}}
-      end={{x: 1, y: 1}}>
+    <ImageBackground
+      source={require('../../assets/images/Cover/coverpost.jpg')} // ← YOUR IMAGE
+      style={styles.bgImage}
+      resizeMode="cover">
+            <View style={styles.overlay} />
       <KeyboardAvoidingView
         style={{flex: 1}}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-
-        
         <ScrollView
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled">
-
-
-                        <Image
-              source={require('../../assets/images/project_logo.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Text style={styles.tagline}>Chinese • Indian • Tandoor</Text>
+          <Image
+            source={require('../../assets/images/Cover/logo.png')}
+            style={styles.logo}
+          />
+          <Text style={styles.tagline}>Chinese • Indian • Tandoor</Text>
           {/* Transparent White Card */}
           <Animated.View
             style={[
@@ -187,7 +183,6 @@ const OtpScreen = ({route, navigation}) => {
                 ],
               },
             ]}>
-
             <Text style={styles.heading}>Enter the OTP</Text>
             <Text style={styles.subText}>Sent to +91 {phone}</Text>
 
@@ -250,7 +245,7 @@ const OtpScreen = ({route, navigation}) => {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </ImageBackground>
   );
 };
 
@@ -264,42 +259,51 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 40,
   },
+  bgImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+    overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
   card: {
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    borderRadius: 20,
-    padding: 25,
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
+    backgroundColor: 'rgba(249, 238, 238, 0.15)',
+    padding: 20,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
   },
   logo: {
-    width: width * 0.6,
-    height: width * 0.6,
-    marginBottom: 5,
+    width: width * 0.55,
+    height: width * 0.55,
+    resizeMode: 'contain',
+    marginBottom: 15,
   },
   tagline: {
     fontSize: 15,
-    color: "#fff",
-    fontWeight: "500",
+    color: '#fff',
+    fontWeight: '500',
     letterSpacing: 1,
     marginBottom: 40,
   },
   heading: {
+    color: '#fff',
     fontSize: 22,
     fontWeight: '700',
-    color: '#222',
-    marginBottom: 8,
+    textAlign: 'center',
+    marginBottom: 20,
   },
   subText: {
     fontSize: 14,
-    color: '#555',
+    color: '#fff',
     marginBottom: 25,
   },
   codeFieldRoot: {
     marginBottom: 25,
     flexDirection: 'row',
+   
   },
   cell: {
     width: CELL_WIDTH,
@@ -309,12 +313,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(249, 238, 238, 0.15)',
     elevation: 2,
   },
   cellText: {
     fontSize: CELL_WIDTH * 0.45,
-    color: '#222',
+     color: '#fff',
     fontWeight: '600',
   },
   buttonWrapper: {
@@ -328,7 +332,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 4,
     width: '100%',
-    paddingHorizontal:"33%"
+    paddingHorizontal: '33%',
   },
   btnText: {
     color: '#fff',
@@ -338,8 +342,9 @@ const styles = StyleSheet.create({
   },
   resendText: {
     fontSize: 14,
-    color: '#555',
+    color: '#fff',
     marginTop: 15,
+    textAlign: 'center',
   },
   resendLink: {
     color: '#FF3B30',

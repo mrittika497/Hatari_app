@@ -62,8 +62,9 @@ const TopPicksScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedOption, setSelectedOption] = useState("half"); // 'half'|'full'|'static'
   const [totalPrice, setTotalPrice] = useState(0);
-
-  // animations
+  console.log(totalPrice,"----------------------------totalPrice----------------------");
+  
+  // animations  
   const slideAnim = useRef(new Animated.Value(0)).current;
   const boxAnim = useRef(new Animated.Value(150)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -292,10 +293,6 @@ const TopPicksScreen = () => {
           </View>
 
           <Text style={styles.priceText}>Price: {priceDisplay}</Text>
-
-          <View style={styles.ratingWrapper}>
-            <Text style={styles.ratingText}>★ {food.rating ?? "4"}</Text>
-          </View>
         </View>
 
         <TouchableOpacity style={styles.addBtn} onPress={() => openModal(food)}>

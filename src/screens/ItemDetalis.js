@@ -77,6 +77,8 @@ const ItemDetalis = () => {
           );
 
           const foodDetails = item?.foodDetails || [];
+          console.log(foodDetails,"--------------------------foodDetails----------------------4444");
+          
           const deliveryTime = item?.deliveryTime || '30-45 mins';
           const status = item?.deliveryStatus || 'Ordered';
           const paymentStatus = item?.paymentStatus || 0;

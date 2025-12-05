@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, {useState, useRef, useEffect} from 'react';
 import {
   View,
   Text,
@@ -14,22 +14,22 @@ import {
   Keyboard,
   Alert,
   ToastAndroid,
-} from "react-native";
-import Video from "react-native-video";
-import { useDispatch, useSelector } from "react-redux";
-import { sendOtp } from "../../redux/slice/authSlice";
-import { useNavigation } from "@react-navigation/native";
+  ImageBackground,
+} from 'react-native';
+import {useDispatch, useSelector} from 'react-redux';
+import {sendOtp} from '../../redux/slice/authSlice';
+import {useNavigation} from '@react-navigation/native';
 
-const { width } = Dimensions.get("window");
+const {width, height} = Dimensions.get('window');
 
 const LoginScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const { loading } = useSelector((state) => state.auth);
+  const {loading} = useSelector(state => state.auth);
 
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState('');
 
-  // 💫 Animations
+  // Animation
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
 
@@ -48,190 +48,183 @@ const LoginScreen = () => {
     ]).start();
   }, []);
 
-  // 📱 Handle Phone Input
-  const handlePhoneChange = (text) => {
-    const cleaned = text.replace(/[^0-9]/g, "");
+  const handlePhoneChange = text => {
+    const cleaned = text.replace(/[^0-9]/g, '');
     setPhone(cleaned);
     if (cleaned.length === 10) Keyboard.dismiss();
   };
 
-  // 📩 SEND OTP FUNCTION (Redux + Navigation)
   const handleSendOtp = () => {
     if (phone.length !== 10) {
-      Alert.alert("Invalid Number", "Please enter a valid 10-digit mobile number.");
+      Alert.alert(
+        'Invalid Number',
+        'Please enter a valid 10-digit mobile number.',
+      );
       return;
     }
 
-    dispatch(sendOtp(phone)).then((res) => {
-      if (res.meta.requestStatus === "fulfilled") {
-        Platform.OS === "android"
-          ? ToastAndroid.show("OTP Sent Successfully ✔", ToastAndroid.SHORT)
-          : Alert.alert("Success", "OTP sent successfully");
+    dispatch(sendOtp(phone)).then(res => {
+      if (res.meta.requestStatus === 'fulfilled') {
+        Platform.OS === 'android'
+          ? ToastAndroid.show('OTP Sent Successfully ✔', ToastAndroid.SHORT)
+          : Alert.alert('Success', 'OTP sent successfully');
 
-        navigation.navigate("OtpScreen", { phone });
+        navigation.navigate('OtpScreen', {phone});
       } else {
-        const msg = res.payload?.message || "Failed to send OTP. Try again!";
-        Platform.OS === "android"
+        const msg = res.payload?.message || 'Failed to send OTP. Try again!';
+        Platform.OS === 'android'
           ? ToastAndroid.show(msg, ToastAndroid.LONG)
-          : Alert.alert("Error", msg);
+          : Alert.alert('Error', msg);
       }
     });
   };
 
   return (
     <View style={styles.container}>
-      {/* VIDEO BACKGROUND */}
-      <Video
-        source={require("../../assets/videos/hatari.mp4")}
-        style={styles.backgroundVideo}
-        resizeMode="cover"
-        repeat
-        muted
-      />
+      {/* ⭐ BACKGROUND IMAGE ADDED HERE ⭐ */}
+      <ImageBackground
+        source={require('../../assets/images/Cover/coverpost.jpg')} // ← YOUR IMAGE
+        style={styles.bgImage}
+        resizeMode="cover">
+        {/* DARK OVERLAY */}
+        <View style={styles.overlay} />
 
-      {/* DARK OVERLAY */}
-      <View style={styles.overlay} />
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={{ flex: 1 }}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* LOGO SECTION */}
-          <Animated.View
-            style={{
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-              alignItems: "center",
-              marginBottom: 20,
-            }}
-          >
-            <Image
-              source={require("../../assets/images/project_logo.png")}
-              style={styles.logo}
-            />
-            <Text style={styles.tagline}>Chinese • Indian • Tandoor</Text>
-          </Animated.View>
-
-          {/* LOGIN GLASS CARD */}
-          <Animated.View
-            style={[
-              styles.card,
-              {
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{flex: 1}}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            keyboardShouldPersistTaps="handled">
+            {/* LOGO SECTION */}
+            <Animated.View
+              style={{
                 opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <Text style={styles.title}>Login to Continue</Text>
-
-            {/* INPUT BOX */}
-            <View style={styles.inputRow}>
-              <View style={styles.countryBox}>
-                <Text style={styles.countryText}>+91</Text>
-              </View>
-
-              <TextInput
-                style={styles.input}
-                placeholder="Enter mobile number"
-                placeholderTextColor="#ccc"
-                keyboardType="number-pad"
-                value={phone}
-                maxLength={10}
-                onChangeText={handlePhoneChange}
+                transform: [{translateY: slideAnim}],
+                alignItems: 'center',
+                marginBottom: 20,
+              }}>
+              <Image
+                source={require('../../assets/images/Cover/logo.png')}
+                style={styles.logo}
               />
-            </View>
+              <Text style={styles.tagline}>Chinese • Indian • Tandoor</Text>
+            </Animated.View>
 
-            {/* GET OTP BUTTON */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              disabled={phone.length !== 10 || loading}
-              onPress={handleSendOtp}
-            >
-              <View
-                style={[
-                  styles.loginBtn,
-                  { backgroundColor: phone.length === 10 ? "#ff3b30" : "#888" },
-                ]}
-              >
-                <Text style={styles.loginText}>
-                  {loading ? "Sending..." : "Get OTP"}
-                </Text>
+            {/* CARD */}
+            <Animated.View
+              style={[
+                styles.card,
+                {opacity: fadeAnim, transform: [{translateY: slideAnim}]},
+              ]}>
+              <Text style={styles.title}>Login to Continue</Text>
+
+              {/* INPUT */}
+              <View style={styles.inputRow}>
+                <View style={styles.countryBox}>
+                  <Text style={styles.countryText}>+91</Text>
+                </View>
+
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter mobile number"
+                  placeholderTextColor="#ccc"
+                  keyboardType="number-pad"
+                  value={phone}
+                  maxLength={10}
+                  onChangeText={handlePhoneChange}
+                />
               </View>
-            </TouchableOpacity>
 
-            <Text style={styles.footerText}>
-              By continuing, you agree to our{" "}
-              <Text style={styles.highlight}>Terms & Conditions</Text>
-            </Text>
-          </Animated.View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+              {/* BUTTON */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                disabled={phone.length !== 10 || loading}
+                onPress={handleSendOtp}>
+                <View
+                  style={[
+                    styles.loginBtn,
+                    {backgroundColor: phone.length === 10 ? '#ff3b30' : '#888'},
+                  ]}>
+                  <Text style={styles.loginText}>
+                    {loading ? 'Sending...' : 'Get OTP'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <Text style={styles.footerText}>
+                By continuing, you agree to our{' '}
+                <Text style={styles.highlight}>Terms & Conditions</Text>
+              </Text>
+            </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </ImageBackground>
     </View>
   );
 };
 
 export default LoginScreen;
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000" },
+// ===================== STYLES =====================
 
-  backgroundVideo: {
-    ...StyleSheet.absoluteFillObject,
+const styles = StyleSheet.create({
+  container: {flex: 1},
+
+  bgImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
   },
 
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: 'rgba(0,0,0,0.45)',
   },
 
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: "center",
+    justifyContent: 'center',
     paddingHorizontal: 20,
   },
 
   logo: {
     width: width * 0.55,
     height: width * 0.55,
-    resizeMode: "contain",
+    resizeMode: 'contain',
     marginBottom: 10,
   },
 
   tagline: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: '600',
     opacity: 0.9,
     letterSpacing: 1,
   },
 
   card: {
-    backgroundColor: "rgba(249, 238, 238, 0.15)",
+    backgroundColor: 'rgba(249, 238, 238, 0.15)',
     padding: 20,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.25)",
+    borderColor: 'rgba(255,255,255,0.25)',
   },
 
   title: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 22,
-    fontWeight: "700",
-    textAlign: "center",
+    fontWeight: '700',
+    textAlign: 'center',
     marginBottom: 20,
   },
 
   inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.1)",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.25)",
+    borderColor: 'rgba(255,255,255,0.25)',
     paddingHorizontal: 12,
     marginBottom: 20,
   },
@@ -239,45 +232,34 @@ const styles = StyleSheet.create({
   countryBox: {
     paddingVertical: 8,
     paddingHorizontal: 10,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: 8,
     marginRight: 10,
   },
 
   countryText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: '700',
   },
 
-  input: {
-    flex: 1,
-    color: "#fff",
-    fontSize: 16,
-  },
+  input: {flex: 1, color: '#fff', fontSize: 16},
 
   loginBtn: {
     paddingVertical: 14,
     borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
-  loginText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
+  loginText: {color: '#fff', fontSize: 16, fontWeight: '700'},
 
   footerText: {
-    color: "#eee",
+    color: '#eee',
     fontSize: 12,
-    textAlign: "center",
+    textAlign: 'center',
     marginTop: 18,
   },
 
-  highlight: {
-    color: "#ff3b30",
-    fontWeight: "800",
-  },
+  highlight: {color: '#ff3b30', fontWeight: '800'},
 });

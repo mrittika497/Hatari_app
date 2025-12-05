@@ -1,4 +1,3 @@
-// src/screens/ExperienceScreen.js
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -12,6 +11,7 @@ import {
   Alert,
   ActivityIndicator,
   Animated,
+  ImageBackground
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Geolocation from 'react-native-geolocation-service';
@@ -19,9 +19,10 @@ import LinearGradient from 'react-native-linear-gradient';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchNearestRestaurants } from '../redux/slice/nearestResSlice';
 import { setExperience, setRestaurant } from '../redux/slice/experienceSlice';
-import DashboardScreen from '../components/DashboardScreen';
+import LocationErrorModal from './LocationErrorModal';
 
-// Dummy experiences
+
+
 const experiences = [
   { id: 1, title: 'Delivery', icon: require('../assets/images/delivery.png'), redirection: "HomeScreen" },
   { id: 2, title: 'Takeaway', icon: require('../assets/images/takeaway.png'), redirection: "HomeScreen" },
@@ -32,44 +33,31 @@ const ExperienceScreen = () => {
   const navigation = useNavigation();
 
   const { experienceId, selectedRestaurant } = useSelector((state) => state.experience);
-  console.log(selectedRestaurant,"--------------selectedRestaurant11111111");
-  
-
-  const [location, setLocation] = useState(null);
-
   const { data: nearestRestaurants, loading, error } = useSelector(
     (state) => state.nearestRestaurants
   );
 
-  // Animation refs
-  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const [location, setLocation] = useState(null);
+  const [locationModalVisible, setLocationModalVisible] = useState(true);
+  const [isSearching, setIsSearching] = useState(true);
+
+  const continueScale = useRef(new Animated.Value(0)).current;
   const pressAnim = useRef(new Animated.Value(1)).current;
 
-  // Animate "Continue" button when selection done
   useEffect(() => {
     if (experienceId && selectedRestaurant) {
-      Animated.spring(scaleAnim, {
+      Animated.spring(continueScale, {
         toValue: 1,
         useNativeDriver: true,
-        friction: 5,
-        tension: 100,
-      }).start(() => {
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(scaleAnim, { toValue: 1.05, duration: 800, useNativeDriver: true }),
-            Animated.timing(scaleAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-          ])
-        ).start();
-      });
+        friction: 6,
+      }).start();
     }
   }, [experienceId, selectedRestaurant]);
 
-  // Request location permission
   useEffect(() => {
     requestLocationPermission();
   }, []);
 
-  // When location received → fetch nearest restaurants
   useEffect(() => {
     if (location) {
       dispatch(
@@ -81,34 +69,30 @@ const ExperienceScreen = () => {
     }
   }, [location]);
 
-  // ⭐ AUTO-SELECT NEAREST RESTAURANT ⭐
   useEffect(() => {
     if (nearestRestaurants && nearestRestaurants.length > 0) {
-      dispatch(setRestaurant(nearestRestaurants[0])); // auto select nearest
-      dispatch(setExperience({ id: null, type: null })); // reset experience
+      dispatch(setRestaurant(nearestRestaurants[0]));
     }
   }, [nearestRestaurants]);
 
   const requestLocationPermission = async () => {
+    setIsSearching(true);
+    setLocationModalVisible(true);
+
     if (Platform.OS === 'android') {
       try {
         const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          {
-            title: 'Location Permission',
-            message: 'This app needs access to your location',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
-          }
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
         );
+
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
           getCurrentLocation();
         } else {
-          Alert.alert('Permission Denied', 'Location permission is required');
+          setIsSearching(false);
         }
       } catch (err) {
         console.warn(err);
+        setIsSearching(false);
       }
     } else {
       getCurrentLocation();
@@ -116,60 +100,58 @@ const ExperienceScreen = () => {
   };
 
   const getCurrentLocation = () => {
+    setIsSearching(true);
+
     Geolocation.getCurrentPosition(
-      (pos) => setLocation(pos.coords),
-      (error) => {
-        console.log(error);
-        Alert.alert('Error', 'Unable to fetch location');
+      (pos) => {
+        setLocation(pos.coords);
+        setIsSearching(false);
+        setLocationModalVisible(false);
+      },
+      () => {
+        setIsSearching(false);
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
     );
   };
 
   const handleContinue = () => {
-    if (experienceId && selectedRestaurant) {
-      const selectedExp = experiences.find(exp => exp.id === experienceId);
-      if (!selectedExp) return;
-
-      if (selectedExp.redirection === 'HomeScreen') {
-        navigation.navigate('Bottom', { screen: 'HomeScreen' });
-      } else {
-        navigation.navigate(selectedExp.redirection);
-      }
-    } else {
+    if (!experienceId || !selectedRestaurant) {
       Alert.alert('Selection Required', 'Please select a restaurant and an experience.');
+      return;
     }
-  };
 
-  const handlePressIn = () => {
-    Animated.spring(pressAnim, {
-      toValue: 0.95,
-      useNativeDriver: true,
-      friction: 3,
-    }).start();
-  };
+    const expObj = experiences.find((exp) => exp.id === experienceId);
+    if (!expObj) return;
 
-  const handlePressOut = () => {
-    Animated.spring(pressAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      friction: 3,
-    }).start();
+    navigation.navigate('Bottom', { screen: expObj.redirection });
   };
 
   return (
-    // <DashboardScreen contentStyle={{ alignItems: "center", justifyContent: "center" }}>
-      <LinearGradient
-        colors={["#ff3d3d", "#ff5c5c", "#fff"]}
-        style={styles.gradientContainer}
+    <>
+      <LocationErrorModal
+        visible={locationModalVisible}
+        searching={isSearching}
+        onRetry={requestLocationPermission}
+        onClose={() => setLocationModalVisible(false)}
+      />
+
+      <ImageBackground
+        source={require('../assets/images/Cover/cover.jpg')}
+        style={styles.bgImage}
+        resizeMode="cover"
+        blurRadius={3}
       >
-        <SafeAreaView style={{ flex: 1, width: '100%', alignItems: 'center',marginTop:30 }}>
+        <View style={styles.overlay} />
+
+        <SafeAreaView style={styles.container}>
           <Text style={styles.title}>Welcome to Hatari</Text>
           <Text style={styles.subtitle}>Elevate Your Experience</Text>
 
           <Text style={styles.sectionHeading}>Nearest Restaurants</Text>
-          {loading && <ActivityIndicator size="large" color="#e53935" />}
-          {error && <Text style={{ color: 'red' }}>{error}</Text>}
+
+          {loading && <ActivityIndicator size="large" color="#fff" />}
+          {error && <Text style={styles.errorText}>{error}</Text>}
 
           {nearestRestaurants?.map((res) => (
             <TouchableOpacity
@@ -178,39 +160,34 @@ const ExperienceScreen = () => {
                 styles.restaurantCard,
                 selectedRestaurant?._id === res._id && styles.selectedRestaurant,
               ]}
-              onPress={() => {
-                dispatch(setRestaurant(res));
-                dispatch(setExperience({ id: null, type: null }));
-              }}
+              onPress={() => dispatch(setRestaurant(res))}
             >
               <Image source={{ uri: res.image }} style={styles.restaurantImage} />
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.restaurantName}>{res.name}</Text>
-                <Text style={styles.restaurantDetails}>{res.address}</Text>
-                <Text style={styles.restaurantDetails}>
-                  Distance: {(res.distance / 1000).toFixed(2)} km
-                </Text>
-              </View>
+              <Text style={styles.restaurantName}>{res.name}</Text>
+              <Text style={styles.restaurantDetails}>{res.address}</Text>
+              <Text style={styles.restaurantDetails}>
+                Distance: {(res.distance / 1000).toFixed(2)} km
+              </Text>
             </TouchableOpacity>
           ))}
 
           <Text style={styles.sectionHeading}>Choose your experience</Text>
+
           <View style={styles.experienceContainer}>
             {experiences.map((item) => {
               const disabled = !selectedRestaurant;
               return (
                 <TouchableOpacity
                   key={item.id}
+                  disabled={disabled}
+                  onPress={() =>
+                    dispatch(setExperience({ id: item.id, type: item.title }))
+                  }
                   style={[
                     styles.experienceCard,
                     experienceId === item.id && styles.selectedCard,
-                    disabled && { opacity: 0.5 },
+                    disabled && { opacity: 0.4 },
                   ]}
-                  onPress={() => {
-                    if (disabled) return;
-                    dispatch(setExperience({ id: item.id, type: item.title }));
-                  }}
-                  disabled={disabled}
                 >
                   <Image source={item.icon} style={styles.icon} resizeMode="contain" />
                   <Text style={styles.cardText}>{item.title}</Text>
@@ -221,102 +198,131 @@ const ExperienceScreen = () => {
 
           {experienceId && selectedRestaurant && (
             <TouchableOpacity
+              activeOpacity={0.9}
               onPress={handleContinue}
-              onPressIn={handlePressIn}
-              onPressOut={handlePressOut}
-              activeOpacity={0.8}
             >
               <LinearGradient
                 colors={['#ff3b30', '#ff6666']}
                 style={styles.continueButton}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
               >
                 <Text style={styles.continueText}>Continue</Text>
               </LinearGradient>
             </TouchableOpacity>
           )}
         </SafeAreaView>
-      </LinearGradient>
-    // </DashboardScreen>
+      </ImageBackground>
+    </>
   );
 };
 
 export default ExperienceScreen;
 
 const styles = StyleSheet.create({
-  gradientContainer: {
+  bgImage: { flex: 1, width: "100%", height: "100%" },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  container: {
     flex: 1,
-    width: '100%',
-    alignItems: 'center',
-    paddingVertical: 20,
+    width: "100%",
+    alignItems: "center",
+    paddingTop: 30,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-    textAlign: 'center',
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#ffffff",
+    textAlign: "center",
   },
   subtitle: {
-    fontSize: 14,
-    color: '#080808ff',
+    fontSize: 15,
+    color: "#eaeaea",
+    fontWeight: "700",
     marginBottom: 15,
-    fontWeight: '500',
-    textAlign: 'center',
+    opacity: 0.85,
   },
   sectionHeading: {
-    fontSize: 16,
-    color: '#000',
-    fontWeight: '500',
+    fontSize: 20,
+    fontWeight: "900",
+    color: "#fff",
+    marginTop: 25,
+  },
+  errorText: { color: "red", marginTop: 10 },
+  restaurantCard: {
+    width: "90%",
+    padding: 18,
+    borderRadius: 18,
+    marginBottom: 16,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.20)",
+    alignItems: "center",
+  },
+  selectedRestaurant: {
+    borderColor: "#ff3636",
+    backgroundColor: "rgba(14, 3, 3, 0.20)",
+  },
+  restaurantImage: {
+    width: 130,
+    height: 130,
+    borderRadius: 16,
     marginBottom: 12,
-    marginTop: 20,
-    textAlign: 'center',
+  },
+  restaurantName: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#fff",
+    textAlign: "center",
+  },
+  restaurantDetails: {
+    fontSize: 13,
+    color: "#f0f0f0",
+    opacity: 0.8,
+    textAlign: "center",
+    marginTop: 3,
   },
   experienceContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 20,
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    justifyContent: "center",
+    flexWrap: "wrap",
+    marginTop: 10,
   },
   experienceCard: {
-    width: 100,
+    width: 110,
+    borderRadius: 16,
+    paddingVertical: 22,
+    margin: 8,
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.15)",
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 12,
-    paddingVertical: 20,
-    margin: 5,
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    borderColor: "rgba(255,255,255,0.22)",
   },
-  selectedCard: { borderColor: '#e53935', borderWidth: 2 },
-  icon: { width: 40, height: 40, marginBottom: 8 },
-  cardText: { fontSize: 14, color: '#000', textAlign: 'center' },
-
-  restaurantCard: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    width: '90%',
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 12,
-    padding: 10,
-    backgroundColor: '#fff',
-    height:"30%"
+  selectedCard: {
+    borderColor: "#ff3b30",
+    backgroundColor: "rgba(255,255,255,0.18)",
   },
-  selectedRestaurant: { borderColor: '#e53935', borderWidth: 2 },
-  restaurantImage: { width: 120, height: 120, borderRadius: 12, marginBottom: 8 },
-  restaurantName: { fontSize: 16, fontWeight: '600', color: '#000', textAlign: 'center' },
-  restaurantDetails: { fontSize: 12, color: '#555', textAlign: 'center' },
-
+  icon: {
+    width: 42,
+    height: 42,
+    marginBottom: 10,
+    tintColor: "#fff",
+  },
+  cardText: {
+    fontSize: 15,
+    color: "#fff",
+    fontWeight: "600",
+  },
   continueButton: {
-    paddingVertical: 15,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 20,
-    width: 180,
-    alignSelf: 'center',
+    paddingVertical: 16,
+    width: 220,
+    borderRadius: 30,
+    alignItems: "center",
+    marginTop: 25,
   },
-  continueText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  continueText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+  },
 });
