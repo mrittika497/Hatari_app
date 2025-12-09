@@ -34,12 +34,14 @@ const OderCartScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const {items: cartItems} = useSelector(state => state.cart);
+  console.log("--------7777777777777777777777777",cartItems,"----------------------odercatScreen666666---------------");
+  
   const [loading, setLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  console.log(cartItems,"----------------------selectedItemodercatScreen---------------");
+  // console.log(cartItems,"----------------------selectedItemodercatScreen---------------");
   
   const [noteText, setNoteText] = useState('');
-  console.log(noteText,"------------------------------noteText");
+  // console.log(noteText,"------------------------------noteText");
 
   
   
@@ -134,27 +136,10 @@ const handleSaveNote = async () => {
     closeModal(); // ✅ Always close modal
   }
 };
-
  const renderItem = ({item}) => {
 
-  const priceInfo = item?.priceInfo;
+console.log(item,"----------------------itemodercatScreen---------------");
 
-  // Determine unit price
-  let unitPrice = 0;
-
-  if (priceInfo?.hasVariation) {
-    // Use selected size price (half / full)
-    unitPrice =
-      item?.selectedSize === "half"
-        ? priceInfo?.halfPrice
-        : priceInfo?.fullPrice;
-  } else {
-    // Use static price
-    unitPrice = priceInfo?.staticPrice;
-  }
-
-  // Total price
-  const totalPrice = unitPrice * item.quantity;
 
   return (
     <View style={styles.itemCard}>
@@ -178,16 +163,22 @@ const handleSaveNote = async () => {
           <Text style={styles.itemName} numberOfLines={1}>
             {item.name}
           </Text>
+
+     
         </View>
 
         {/* PRICE DISPLAY */}
-        <Text style={styles.itemPrice}>
-          {formatCurrency(totalPrice)}
-        </Text>
+  {/* PRICE DISPLAY */}
+<Text style={styles.itemPrice}>
+  {formatCurrency(
+    (item?.totalPrice || item?.priceInfo?.staticPrice || 0) * (item?.quantity || 1)
+  )}{" "}
+  {item.selectedOption === "half" ? "(Half)" : item.selectedOption === "full" ? "(Full)" : ""}
+</Text>
 
-        <View style={styles.ratingWrapper}>
-          <Text style={styles.ratingText}>★ {item?.rating}</Text>
-        </View>
+ <Text style={{ color: "#555", fontSize: 13 }}>
+  {item?.selectedAddOns?.map(a => a.name).join(", ")}
+</Text>
 
         <View style={styles.actionRow}>
           <TouchableOpacity style={styles.customizeBtn} onPress={() => openModal(item)}>

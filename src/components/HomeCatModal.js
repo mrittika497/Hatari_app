@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,6 @@ import {
 import LinearGradient from "react-native-linear-gradient";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAllCategories } from "../redux/slice/GetAllCategorySlice";
-import { fetchSubCategories } from "../redux/slice/subCategoriSlice";
 import { useNavigation } from "@react-navigation/native";
 
 const HomeCatModal = ({
@@ -19,31 +18,29 @@ const HomeCatModal = ({
   onClose,
   title = "What Are You Craving?",
   cuisineType,
-  onSelect,
 }) => {
   const dispatch = useDispatch();
+  const navigation = useNavigation();
 
-  const [selectedCategory, setSelectedCategory] = useState(null);
-const navigation = useNavigation()
+  const isVeg = useSelector((state) => state.foodFilter.isVeg);
   const categoriesState = useSelector((state) => state.categories);
-  const categoriesData = categoriesState?.categories?.foods;
+  const categoriesData = categoriesState?.categories?.foods || [];
 
-  // Fetch categories when modal opens
   useEffect(() => {
     if (visible && cuisineType) {
       dispatch(fetchAllCategories(cuisineType));
     }
   }, [visible, cuisineType]);
 
-  // Category clicked
-const handleCategoryClick = (item) => {
-  setSelectedCategory(item);
+  const handleCategoryClick = (item) => {
+    navigation.navigate("CuisineTypeSubCat", { id: item?._id, cuisineType });
+    onClose?.();
+  };
 
-  navigation.navigate("CuisineTypeSubCat", { id: item?._id, cuisineType});
-
-  onClose?.();
-};
-
+  const filteredFoods = categoriesData.filter((item) => {
+    const type = item?.type?.toLowerCase() || "";
+    return isVeg ? type === "veg" : type !== "veg";
+  });
 
   return (
     <Modal transparent visible={visible} animationType="fade">
@@ -63,7 +60,7 @@ const handleCategoryClick = (item) => {
           {/* CATEGORY GRID */}
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.grid}>
-              {categoriesData?.map((item, index) => (
+              {filteredFoods.map((item, index) => (
                 <TouchableOpacity
                   key={index}
                   style={styles.card}
@@ -79,9 +76,19 @@ const handleCategoryClick = (item) => {
                     />
                   </LinearGradient>
 
-                  <Text style={styles.name} numberOfLines={1}>
-                    {item?.name}
-                  </Text>
+                  {/* CLEAN CATEGORY NAME */}
+               <Text style={styles.name} numberOfLines={1}>
+  {item?.name
+    ?.replace(/\s*\(veg\)/gi, "")        // remove (veg)
+    ?.replace(/\s*\(nonveg\)/gi, "")     // remove (nonveg)
+    ?.replace(/\s*\(non-veg\)/gi, "")    // remove (non-veg)
+    ?.replace(/\bveg\b/gi, "")           // remove word veg
+    ?.replace(/\bnonveg\b/gi, "")        // remove nonveg
+    ?.replace(/\bnon-veg\b/gi, "")       // remove non-veg
+    ?.replace(/[()]/g, "")               // remove any leftover brackets
+    ?.trim()}                           
+</Text>
+
                 </TouchableOpacity>
               ))}
             </View>

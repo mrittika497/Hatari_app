@@ -29,8 +29,11 @@ import {clearCart} from '../redux/slice/cartSlice';
 import {fetchDeliverySettings} from '../redux/slice/deliverySettingsSlice';
 import {fetchCoupons} from '../redux/slice/couponSlice';
 import {postBilling} from '../redux/slice/postBillingSlice';
-import {fetchUserAddresses, deleteAddress} from '../redux/slice/saveaddressSlice';
-import { deleteUserAddress } from '../redux/slice/AddressDeleteSlice';
+import {
+  fetchUserAddresses,
+  deleteAddress,
+} from '../redux/slice/saveaddressSlice';
+import {deleteUserAddress} from '../redux/slice/AddressDeleteSlice';
 
 const {width} = Dimensions.get('window');
 
@@ -41,10 +44,16 @@ const OrderSummaryScreen = () => {
   const {selectedRestaurant, experienceType} = useSelector(
     state => state.experience,
   );
-console.log(selectedRestaurant,"--------------------why not show");
+  const {billingdata} = useSelector(state => state.billing);
+  console.log(
+    billingdata,
+    '--------------------billingdata----------------------by api',
+  );
 
   const {addresses, loading} = useSelector(state => state.address);
   const {items: cartItems} = useSelector(state => state.cart);
+  console.log(cartItems, '------------------cartItems');
+
   const {token} = useSelector(state => state.auth);
   const {data} = useSelector(state => state.deliverySettings);
   const couponState = useSelector(state => state.coupons);
@@ -101,15 +110,45 @@ console.log(selectedRestaurant,"--------------------why not show");
   }, []);
 
   // Total calculations
-  const itemTotal = cartItems.reduce((sum, item) => {
-    const price = !item?.priceInfo?.hasVariation
-      ? item?.priceInfo?.staticPrice
-      : item.selectedSize === 'half'
-      ? item?.priceInfo?.halfPrice
-      : item?.priceInfo?.fullPrice;
+  // const itemTotal = cartItems.reduce((sum, item) => {
+  //   return sum + item.totalPrice * item.quantity;
+  // }, 0);
 
-    return sum + price * item.quantity;
-  }, 0);
+  // Calculate total addon price for an item
+const getAddOnsTotal = (item) => {
+  return (item?.selectedAddOns || []).reduce(
+    (sum, addon) => sum + Number(addon.price),
+    0
+  );
+};
+
+// Calculate total price for a single cart item
+const getItemTotal = (item) => {
+  const quantity = Number(item.quantity) || 1;
+
+  // Base price (half/full/static)
+  const basePrice = Number(item.totalPrice) || 0;
+  console.log(basePrice,"----------------------basePrice");
+  
+
+  // Add-ons total for ONE unit
+  const addonsTotal =
+    (item?.selectedAddOns || []).reduce((sum, add) => {
+      return sum + Number(add.price || 0);
+    }, 0);
+
+  // Multiply both by quantity
+  return (basePrice + addonsTotal) * quantity;
+};
+
+
+// Final total for all cart items
+const itemTotal = cartItems.reduce((sum, item) => {
+  return sum + getItemTotal(item);
+}, 0);
+
+
+  console.log(itemTotal, '------------------itemTotal777');
 
   const packingFee = cartItems.reduce(
     (sum, item) => sum + (item.packagingCharges || 0),
@@ -163,10 +202,7 @@ console.log(selectedRestaurant,"--------------------why not show");
   // Proceed button (MINIMUM ORDER VALIDATION ADDED)
   const handleProceed = () => {
     if (itemTotal < 500) {
-      ToastAndroid.show(
-        'Minimum order amount is ₹500',
-        ToastAndroid.SHORT,
-      );
+      ToastAndroid.show('Minimum order amount is ₹500', ToastAndroid.SHORT);
       return;
     }
 
@@ -180,8 +216,13 @@ console.log(selectedRestaurant,"--------------------why not show");
 
   // COD confirm
   const handleConfirmCOD = async () => {
-    console.log(userid,selectedRestaurant?._id,savedAddress?._id,"------------------why error");
-    
+    console.log(
+      userid,
+      selectedRestaurant?._id,
+      savedAddress?._id,
+      '------------------why error',
+    );
+
     try {
       const billingData = {
         userId: userid,
@@ -194,26 +235,48 @@ console.log(selectedRestaurant,"--------------------why not show");
         deliveryCharges: Number(data?.delivery_charges_value) || 0,
 
         foodDetails: cartItems.map(item => {
-          const priceInfo = item?.priceInfo || {};
-          let obj = {
-            foodId: item.id || item.foodId,
-            quantity: Number(item.quantity),
-            note: item.note || '',
-          };
+  console.log(item, '----------------------item ------------------11223');
 
-          if (!priceInfo.hasVariation) {
-            obj.price = Number(priceInfo.staticPrice) || 0;
-          } else {
-            if (item.selectedSize === 'full') {
-              obj.variant = 'full';
-              obj.fullPrice = priceInfo.fullPrice;
-            } else {
-              obj.variant = 'half';
-              obj.halfPrice = priceInfo.halfPrice;
-            }
-          }
-          return obj;
-        }),
+  const priceInfo = item?.priceInfo || {};
+
+  let obj = {
+    foodId: item.id || item.foodId,
+    quantity: Number(item.quantity),
+    variant: item.selectedOption || 'full',
+    note: item.note || '',
+  };
+
+  console.log(obj, '---------------------------obj');
+
+  // 👉 Add Add-ons to object
+obj.addOns = (item.selectedAddOns || []).map(add => ({
+  name: add.name,
+  image: add.image || "",
+  type: add.type || "",
+  price: Number(add.price) || 0,
+}));
+
+
+  // 👉 If item has NO variation
+  if (!item?.hasVariation) {
+    obj.price =
+      Number(item?.totalPrice) || Number(priceInfo?.staticPrice) || 0;
+  }
+
+  // 👉 If item has variation
+  else {
+    if (item.selectedOption === 'full') {
+      obj.variant = 'full';
+      obj.price = Number(priceInfo.fullPrice);
+    } else {
+      obj.variant = 'half';
+      obj.price = Number(priceInfo.halfPrice);
+    }
+  }
+
+  return obj;
+}),
+
 
         totalAmount: itemTotal,
         grossAmount: grandTotal,
@@ -230,318 +293,367 @@ console.log(selectedRestaurant,"--------------------why not show");
 
       ToastAndroid.show('Order placed successfully!', ToastAndroid.LONG);
 
-      navigation.navigate('OrderSuccessScreen');
+      // navigation.navigate('OrderSuccessScreen');
     } catch (e) {
       ToastAndroid.show('Order failed. Try again.', ToastAndroid.SHORT);
     }
   };
   const [localAddresses, setLocalAddresses] = useState([]);
 
-useEffect(() => {
-  setLocalAddresses(addresses);
-}, [addresses]);
+  useEffect(() => {
+    setLocalAddresses(addresses);
+  }, [addresses]);
 
-const handleDeleteAddress = (id) => {
-  console.log(id, "------------------id");
-setLocalAddresses(prev => prev.filter(item => item._id !== id));
-  Alert.alert('Delete Address', 'Are you sure?', [
-    { text: 'Cancel', style: 'cancel' },
-    {
-      text: 'Delete',
-      style: 'destructive',
-      onPress: async () => {
-        try {
-          // Dispatch delete thunk
-          await dispatch(deleteUserAddress(id)).unwrap();
+  const handleDeleteAddress = id => {
+    console.log(id, '------------------id');
+    setLocalAddresses(prev => prev.filter(item => item._id !== id));
+    Alert.alert('Delete Address', 'Are you sure?', [
+      {text: 'Cancel', style: 'cancel'},
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            // Dispatch delete thunk
+            await dispatch(deleteUserAddress(id)).unwrap();
 
-          // Update savedAddress if it was the deleted one
-          if (savedAddress?._id === id) {
-            setSavedAddress(null);
-            await AsyncStorage.removeItem('savedAddress');
+            // Update savedAddress if it was the deleted one
+            if (savedAddress?._id === id) {
+              setSavedAddress(null);
+              await AsyncStorage.removeItem('savedAddress');
+            }
+
+            ToastAndroid.show('Address deleted', ToastAndroid.SHORT);
+          } catch (error) {
+            ToastAndroid.show('Failed to delete address', ToastAndroid.SHORT);
           }
-
-          ToastAndroid.show('Address deleted', ToastAndroid.SHORT);
-        } catch (error) {
-          ToastAndroid.show('Failed to delete address', ToastAndroid.SHORT);
-        }
+        },
       },
-    },
-  ]);
-};
-
+    ]);
+  };
 
   return (
-    <> 
-       <CustomHeader title="Order Summary" />
-    <DashboardScreen scrollable={false}>
-   
-
-      <ScrollView contentContainerStyle={{paddingBottom: 200}} showsVerticalScrollIndicator={false}>
-        {/* ADDRESS CARD */}
-     {/* ADDRESS CARD */}
-<View style={styles.addressCard}>
-  {savedAddress ? (
     <>
-      <View style={{flex: 1}}>
-        <Text style={styles.addrName}>
-          {savedAddress?.name} ({savedAddress?.addressType})
-        </Text>
-        <Text style={styles.addrDetails}>
-          {savedAddress.flat}, {savedAddress.address}, {savedAddress.pin}
-        </Text>
-        <Text style={styles.addrPhone}>{savedAddress.contact}</Text>
-      </View>
+      <CustomHeader title="Order Summary" />
+      <DashboardScreen scrollable={false}>
+        <ScrollView
+          contentContainerStyle={{paddingBottom: 200}}
+          showsVerticalScrollIndicator={false}>
+          {/* ADDRESS CARD */}
+          {/* ADDRESS CARD */}
+          <View style={styles.addressCard}>
+            {savedAddress ? (
+              <>
+                <View style={{flex: 1}}>
+                  <Text style={styles.addrName}>
+                    {savedAddress?.name} ({savedAddress?.addressType})
+                  </Text>
+                  <Text style={styles.addrDetails}>
+                    {savedAddress.flat}, {savedAddress.address},{' '}
+                    {savedAddress.pin}
+                  </Text>
+                  <Text style={styles.addrPhone}>{savedAddress.contact}</Text>
+                </View>
 
-      <TouchableOpacity
-        onPress={() => setModalVisible(true)}
-        style={styles.changeBtn}>
-        <Text style={styles.changeText}>Change</Text>
-      </TouchableOpacity>
-    </>
-  ) : (
-    <TouchableOpacity
-      onPress={() => navigation.navigate('MapScreen')}
-      style={{flexDirection: 'row', alignItems: 'center'}}>
-      <Icon name="add-location-alt" size={22} color="red" />
-      <Text style={styles.addAddressText}>Add Delivery Address</Text>
-    </TouchableOpacity>
-  )}
-</View>
-
-
-        {/* COUPONS */}
-        <View style={styles.sectionBox}>
-          <Text style={styles.sectionTitle}>Available Coupons</Text>
-
-          {couponList.map(coupon => (
-            <LinearGradient
-              key={coupon._id}
-              colors={
-                selectedCoupon?._id === coupon._id
-                  ? ['#f50606e6', '#c16280ff']
-                  : ['#e47369ff', '#db2b2bff']
-              }
-              style={styles.couponCard}>
-              <View style={{flex: 1}}>
-                <Text style={styles.couponDesc}>{coupon.description}</Text>
-                <Text style={styles.couponDetails}>
-                  Min ₹{coupon.minOrderAmount} | {coupon.discountDisplay}
-                </Text>
-              </View>
-
+                <TouchableOpacity
+                  onPress={() => setModalVisible(true)}
+                  style={styles.changeBtn}>
+                  <Text style={styles.changeText}>Change</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
               <TouchableOpacity
-                onPress={() => applyCoupon(coupon)}
-                style={[
-                  styles.applyBtn,
-                  selectedCoupon?._id === coupon._id && {backgroundColor: '#ccc'},
-                ]}>
-                <Text style={styles.applyText}>
-                  {selectedCoupon?._id === coupon._id ? 'APPLIED' : 'APPLY'}
-                </Text>
+                onPress={() => navigation.navigate('MapScreen')}
+                style={{flexDirection: 'row', alignItems: 'center'}}>
+                <Icon name="add-location-alt" size={22} color="red" />
+                <Text style={styles.addAddressText}>Add Delivery Address</Text>
               </TouchableOpacity>
-            </LinearGradient>
-          ))}
-        </View>
+            )}
+          </View>
 
-        {/* CART ITEMS */}
-        <View style={styles.sectionBox}>
-          <Text style={styles.sectionTitle}>Your Items</Text>
+          {/* COUPONS */}
+          <View style={styles.sectionBox}>
+            <Text style={styles.sectionTitle}>Available Coupons</Text>
 
-          {cartItems.map(item => (
-            <View key={item._id} style={styles.itemRow}>
-              <Image source={{uri: item.image}} style={styles.itemImage} />
+            {couponList.map(coupon => (
+              <LinearGradient
+                key={coupon._id}
+                colors={
+                  selectedCoupon?._id === coupon._id
+                    ? ['#f50606e6', '#c16280ff']
+                    : ['#e47369ff', '#db2b2bff']
+                }
+                style={styles.couponCard}>
+                <View style={{flex: 1}}>
+                  <Text style={styles.couponDesc}>{coupon.description}</Text>
+                  <Text style={styles.couponDetails}>
+                    Min ₹{coupon.minOrderAmount} | {coupon.discountDisplay}
+                  </Text>
+                </View>
 
-              <View style={{flex: 1, marginLeft: 10}}>
-                <Text style={styles.itemName}>{item?.name}</Text>
-      <Text style={styles.foodQtyPrice}>Qty: {item?.quantity}</Text>
-                {item.note ? (
-                  <View style={styles.noteTag}>
-                    <Text style={styles.noteText}>📝 {item.note}</Text>
-                  </View>
-                ) : null}
+                <TouchableOpacity
+                  onPress={() => applyCoupon(coupon)}
+                  style={[
+                    styles.applyBtn,
+                    selectedCoupon?._id === coupon._id && {
+                      backgroundColor: '#ccc',
+                    },
+                  ]}>
+                  <Text style={styles.applyText}>
+                    {selectedCoupon?._id === coupon._id ? 'APPLIED' : 'APPLY'}
+                  </Text>
+                </TouchableOpacity>
+              </LinearGradient>
+            ))}
+          </View>
+
+          {/* CART ITEMS */}
+          <View style={styles.sectionBox}>
+            <Text style={styles.sectionTitle}>Your Items</Text>
+
+            {cartItems.map(item => (
+              <View key={item._id} style={styles.itemRow}>
+                <Image source={{uri: item.image}} style={styles.itemImage} />
+
+                <View style={{flex: 1, marginLeft: 10}}>
+                  <Text style={styles.itemName}>{item?.name}</Text>
+                  <Text style={styles.foodQtyPrice}>Qty: {item?.quantity}</Text>
+
+                  <Text style={styles.itemPrice}>
+                    {formatCurrency(
+                      (item?.totalPrice || item?.priceInfo?.staticPrice || 0) *
+                        (item?.quantity || 1),
+                    )}{' '}
+                    {item.selectedOption === 'half'
+                      ? '(Half)'
+                      : item.selectedOption === 'full'
+                      ? '(Full)'
+                      : ''}
+                  </Text>
+
+                  <Text style={{color: '#555', fontSize: 13}}>
+                    {item?.selectedAddOns
+                      ?.map(a => `${a.name} (+₹${a.price})`)
+                      .join(', ')}
+                  </Text>
+
+                  {item.note ? (
+                    <View style={styles.noteTag}>
+                      <Text style={styles.noteText}>📝 {item.note}</Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                <Text style={styles.itemPrice}>
+                  {formatCurrency(
+                    (item?.totalPrice || item?.priceInfo?.staticPrice || 0) *
+                      (item?.quantity || 1),
+                  )}
+                </Text>
               </View>
-
-              <Text style={styles.itemPrice}>
-                {formatCurrency(
-                  (!item?.priceInfo?.hasVariation
-                    ? item?.priceInfo?.staticPrice
-                    : item.selectedSize === 'half'
-                    ? item?.priceInfo?.halfPrice
-                    : item?.priceInfo?.fullPrice) * item.quantity,
-                )}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        {/* BILL DETAILS */}
-        <View style={styles.sectionBox}>
-          <Text style={styles.sectionTitle}>Bill Details</Text>
-
-          <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Item Total</Text>
-            <Text style={styles.billLabel}>{formatCurrency(itemTotal)}</Text>
+            ))}
           </View>
 
-          <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Delivery Fee</Text>
-            <Text style={styles.billLabel}>
-              {formatCurrency(data?.delivery_charges_value || 0)}
-            </Text>
-          </View>
+          {/* BILL DETAILS */}
+          <View style={styles.sectionBox}>
+            <Text style={styles.sectionTitle}>Bill Details</Text>
 
-          <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Packing Fee</Text>
-            <Text style={styles.billLabel}>{formatCurrency(packingFee)}</Text>
-          </View>
-
-          {data?.Cgst && (
             <View style={styles.billRow}>
-              <Text style={styles.billLabel}>CGST ({data.Cgst}%)</Text>
-              <Text style={styles.billValue}>{formatCurrency(cgstAmt)}</Text>
+              <Text style={styles.billLabel}>Item Total</Text>
+              <Text style={styles.billLabel}>{formatCurrency(itemTotal)}</Text>
             </View>
-          )}
 
-          {data?.Sgst && (
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>SGST ({data.Sgst}%)</Text>
-              <Text style={styles.billValue}>{formatCurrency(sgstAmt)}</Text>
-            </View>
-          )}
+            {cartItems.map((item, index) =>
+              item?.selectedAddOns?.length > 0 ? (
+                <View key={index}>
+                  <Text style={{fontWeight: '600', marginTop: 10}}>
+                    {item.name}
+                  </Text>
 
-          {selectedCoupon && (
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Coupon Discount</Text>
-              <Text style={styles.billLabel}>
-                - {formatCurrency(discount)}
-              </Text>
-            </View>
-          )}
-
-          <View style={styles.divider} />
-
-          <View style={styles.billRow}>
-            <Text style={styles.totalLabel}>Grand Total</Text>
-            <Text style={styles.totalValue}>{formatCurrency(grandTotal)}</Text>
-          </View>
-        </View>
-      </ScrollView>
-
-      {/* BOTTOM BAR */}
-      {cartItems.length > 0 && (
-        <View style={styles.bottomBar}>
-          <Text style={styles.bottomTotal}>{formatCurrency(grandTotal)}</Text>
-
-          <TouchableOpacity onPress={handleProceed} style={styles.continueBtn}>
-            <Text style={styles.continueText}>Proceed to Pay</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* ADDRESS MODAL */}
-{/* ADDRESS MODAL */}
-<Modal
-  visible={modalVisible}
-  transparent
-  animationType="slide"
-  onRequestClose={() => setModalVisible(false)}
->
-  <View style={styles.savemodalView}>
-    <View style={styles.modalHeader}>
-      <Text style={styles.modalTitle}>Select Address</Text>
-      <TouchableOpacity onPress={() => setModalVisible(false)}>
-        <Icon name="close" size={26} color="red" />
-      </TouchableOpacity>
-    </View>
-
-    <TouchableOpacity
-      style={styles.locationContainer}
-      onPress={() => navigation.navigate('MapScreen')}
-    >
-      <Text style={styles.locationText}>Select your current location +</Text>
-    </TouchableOpacity>
-
-    {/* Scrollable Address List */}
-    {loading ? (
-      <ActivityIndicator color="red" />
-    ) : (
-      <ScrollView style={{ maxHeight: 450 }}>
-        {localAddresses.map(item => (
-          <View key={item._id} style={styles.addressItem}>
-            <TouchableOpacity
-              style={{ flex: 1 }}
-              onPress={async () => {
-                setSavedAddress(item);
-                await AsyncStorage.setItem(
-                  'savedAddress',
-                  JSON.stringify(item)
-                );
-                setModalVisible(false);
-                ToastAndroid.show('Address selected!', ToastAndroid.SHORT);
-              }}
-            >
-              <Text style={styles.addressType}>{item.addressType}</Text>
-              <Text style={styles.addressText}>
-                {item.flat}, {item.address}
-              </Text>
-              <Text style={styles.nameText}>
-                {item.name} - {item.contact}
-              </Text>
-            </TouchableOpacity>
-
-            {savedAddress?._id === item._id && (
-              <Ionicons name="checkmark-circle" size={22} color="#f11b1b" />
+                  {item.selectedAddOns.map((a, i) => (
+                    <View key={i} style={styles.billRow}>
+                      <Text style={styles.billLabel}>{a.name}</Text>
+                      <Text style={styles.billLabel}>
+                        {formatCurrency(a.price)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null,
             )}
 
-            <TouchableOpacity
-              onPress={() => navigation.navigate('MapScreen', { editData: item })}
-              style={{ marginLeft: 10 }}
-            >
-              <Ionicons name="create-outline" size={22} color="blue" />
-            </TouchableOpacity>
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>Delivery Fee</Text>
+              <Text style={styles.billLabel}>
+                {formatCurrency(data?.delivery_charges_value || 0)}
+              </Text>
+            </View>
+
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>Packing Fee</Text>
+              <Text style={styles.billLabel}>{formatCurrency(packingFee)}</Text>
+            </View>
+
+            {data?.Cgst && (
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>CGST ({data.Cgst}%)</Text>
+                <Text style={styles.billValue}>{formatCurrency(cgstAmt)}</Text>
+              </View>
+            )}
+
+            {data?.Sgst && (
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>SGST ({data.Sgst}%)</Text>
+                <Text style={styles.billValue}>{formatCurrency(sgstAmt)}</Text>
+              </View>
+            )}
+
+            {selectedCoupon && (
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>Coupon Discount</Text>
+                <Text style={styles.billLabel}>
+                  - {formatCurrency(discount)}
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.divider} />
+
+            <View style={styles.billRow}>
+              <Text style={styles.totalLabel}>Grand Total</Text>
+              <Text style={styles.totalValue}>
+                {formatCurrency(grandTotal)}
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* BOTTOM BAR */}
+        {cartItems.length > 0 && (
+          <View style={styles.bottomBar}>
+            <Text style={styles.bottomTotal}>{formatCurrency(grandTotal)}</Text>
 
             <TouchableOpacity
-              onPress={() => handleDeleteAddress(item._id)}
-              style={{ marginLeft: 10 }}
-            >
-              <Ionicons name="trash-outline" size={22} color="red" />
+              onPress={handleProceed}
+              style={styles.continueBtn}>
+              <Text style={styles.continueText}>Proceed to Pay</Text>
             </TouchableOpacity>
           </View>
-        ))}
-      </ScrollView>
-    )}
-  </View>
-</Modal>
+        )}
 
-      {/* COD MODAL */}
-      <Modal
-        visible={codModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setCodModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Ionicons name="cash-outline" size={50} color="red" />
-            <Text style={styles.modalTitle}>Cash on Delivery</Text>
-            <Text style={styles.modalText}>
-              You’ll pay {formatCurrency(grandTotal)} on delivery.
-            </Text>
+        {/* ADDRESS MODAL */}
+        {/* ADDRESS MODAL */}
+        <Modal
+          visible={modalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setModalVisible(false)}>
+          <View style={styles.savemodalView}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Address</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Icon name="close" size={26} color="red" />
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
-              onPress={handleConfirmCOD}
-              style={styles.modalBtn}>
-              <Text style={styles.modalBtnText}>Confirm Order</Text>
+              style={styles.locationContainer}
+              onPress={() => navigation.navigate('MapScreen')}>
+              <Text style={styles.locationText}>
+                Select your current location +
+              </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => setCodModalVisible(false)}
-              style={[styles.modalBtn, {backgroundColor: '#ccc', marginTop: 8}]}>
-              <Text style={styles.modalBtnText}>Cancel</Text>
-            </TouchableOpacity>
+            {/* Scrollable Address List */}
+            {loading ? (
+              <ActivityIndicator color="red" />
+            ) : (
+              <ScrollView style={{maxHeight: 450}}>
+                {localAddresses.map(item => (
+                  <View key={item._id} style={styles.addressItem}>
+                    <TouchableOpacity
+                      style={{flex: 1}}
+                      onPress={async () => {
+                        setSavedAddress(item);
+                        await AsyncStorage.setItem(
+                          'savedAddress',
+                          JSON.stringify(item),
+                        );
+                        setModalVisible(false);
+                        ToastAndroid.show(
+                          'Address selected!',
+                          ToastAndroid.SHORT,
+                        );
+                      }}>
+                      <Text style={styles.addressType}>{item.addressType}</Text>
+                      <Text style={styles.addressText}>
+                        {item.flat}, {item.address}
+                      </Text>
+                      <Text style={styles.nameText}>
+                        {item.name} - {item.contact}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {savedAddress?._id === item._id && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={22}
+                        color="#f11b1b"
+                      />
+                    )}
+
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.navigate('MapScreen', {editData: item})
+                      }
+                      style={{marginLeft: 10}}>
+                      <Ionicons name="create-outline" size={22} color="blue" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => handleDeleteAddress(item._id)}
+                      style={{marginLeft: 10}}>
+                      <Ionicons name="trash-outline" size={22} color="red" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
           </View>
-        </View>
-      </Modal>
-    </DashboardScreen>
+        </Modal>
+
+        {/* COD MODAL */}
+        <Modal
+          visible={codModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setCodModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Ionicons name="cash-outline" size={50} color="red" />
+              <Text style={styles.modalTitle}>Cash on Delivery</Text>
+              <Text style={styles.modalText}>
+                You’ll pay {formatCurrency(grandTotal)} on delivery.
+              </Text>
+
+              <TouchableOpacity
+                onPress={handleConfirmCOD}
+                style={styles.modalBtn}>
+                <Text style={styles.modalBtnText}>Confirm Order</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setCodModalVisible(false)}
+                style={[
+                  styles.modalBtn,
+                  {backgroundColor: '#ccc', marginTop: 8},
+                ]}>
+                <Text style={styles.modalBtnText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </DashboardScreen>
     </>
   );
 };
@@ -584,7 +696,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     elevation: 2,
   },
-  sectionTitle: {fontSize: 15, fontWeight: '700', marginBottom: 8,color:"black"},
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 8,
+    color: 'black',
+  },
   couponCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -609,7 +726,7 @@ const styles = StyleSheet.create({
   },
   itemImage: {width: 55, height: 55, borderRadius: 8},
   itemName: {fontSize: 14, fontWeight: '600', color: '#000'},
-  foodQtyPrice:{fontSize: 14, fontWeight: '600', color: '#8e8b8bff'},
+  foodQtyPrice: {fontSize: 14, fontWeight: '600', color: '#8e8b8bff'},
   noteTag: {
     marginTop: 6,
     backgroundColor: '#FFF6E5',
@@ -620,7 +737,7 @@ const styles = StyleSheet.create({
     width: width * 0.55,
   },
   noteText: {fontSize: width * 0.035, color: '#444'},
-  itemPrice: {fontSize: 13, color: '#444',marginTop:-10},
+  itemPrice: {fontSize: 13, color: '#444'},
   billRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -646,7 +763,7 @@ const styles = StyleSheet.create({
     width: '100%',
     elevation: 5,
   },
-  bottomTotal: {fontSize: 16, fontWeight: '700',color:"black"},
+  bottomTotal: {fontSize: 16, fontWeight: '700', color: 'black'},
   continueBtn: {
     backgroundColor: 'red',
     paddingVertical: 12,
@@ -655,19 +772,18 @@ const styles = StyleSheet.create({
   },
   continueText: {color: '#fff', fontWeight: '700', fontSize: 14},
 
-savemodalView: {
-  position: 'absolute',       // Make it absolute to position relative to screen
-  bottom: 0,                  // Stick to bottom
-  left: 0,
-  right: 0,
-  backgroundColor: '#fff',
-  borderTopLeftRadius: 12,
-  borderTopRightRadius: 12,
-  padding: 15,
-  elevation: 6,
-  maxHeight: '80%',
-},
-
+  savemodalView: {
+    position: 'absolute', // Make it absolute to position relative to screen
+    bottom: 0, // Stick to bottom
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    padding: 15,
+    elevation: 6,
+    maxHeight: '80%',
+  },
 
   modalHeader: {
     flexDirection: 'row',

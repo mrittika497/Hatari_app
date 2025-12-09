@@ -22,13 +22,8 @@ const ItemDetalis = () => {
   const dispatch = useDispatch();
   const {orders, loading, error} = useSelector(state => state.foodOrder);
   const orderData = orders?.data || [];
-  console.log(
-    orderData,
-    '------------------------------orderData',
-  );
+  console.log(orderData, '------------------------------orderDataitemdetails');
 
-
-  
   useEffect(() => {
     dispatch(fetchFoodOrders());
   }, [dispatch]);
@@ -64,128 +59,139 @@ const ItemDetalis = () => {
     );
 
   return (
-    <> 
+    <>
       <CustomHeader title="My Orders" />
-    <DashboardScreen scrollable={false}>
-    
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {orderData.map((item, index) => {
-          const restaurant = item?.restaurant || {};
-          console.log(
-            restaurant,
-            '-------------------------restaurant----------------------3333',
-          );
+      <DashboardScreen scrollable={false}>
+        <ScrollView
+          style={styles.container}
+          showsVerticalScrollIndicator={false}>
+          {orderData.map((item, index) => {
+            const restaurant = item?.restaurant || {};
+            console.log(
+              restaurant,
+              '-------------------------restaurant----------------------3333',
+            );
 
-          const foodDetails = item?.foodDetails || [];
-          console.log(foodDetails,"--------------------------foodDetails----------------------4444");
-          
-          const deliveryTime = item?.deliveryTime || '30-45 mins';
-          const status = item?.deliveryStatus || 'Ordered';
-          const paymentStatus = item?.paymentStatus || 0;
+            const foodDetails = item?.foodDetails || [];
+            console.log(
+              foodDetails,
+              '--------------------------foodDetails----------------------4444',
+            );
 
-          const statusColor =
-            status === 'Delivered'
-              ? '#4BB543'
-              : status === 'Cancelled'
-              ? '#d24942ff'
-              : '#FF9500';
+            const deliveryTime = item?.deliveryTime || '30-45 mins';
+            const status = item?.deliveryStatus || 'Ordered';
+            const paymentStatus = item?.paymentStatus || 0;
 
-          return (
-            <TouchableOpacity
-              key={item._id || index}
-              style={styles.orderCard}
-              activeOpacity={0.9}
-              onPress={() =>
-                navigation.navigate('OrderDetailsScreen', {order: item})
-              }>
-              {/* Restaurant Header */}
-              <View style={styles.headerRow}>
-                <Image
-                  source={{
-                    uri:
-                      restaurant?.image ||
-                      'https://cdn-icons-png.flaticon.com/512/2921/2921820.png',
-                  }}
-                  style={styles.restaurantImage}
-                />
-                <View style={{flex: 1, marginLeft: 12}}>
-                  <Text style={styles.restaurantName}>
-                    {restaurant?.name || 'Restaurant Name'}
-                  </Text>
-                 
-                </View>
-                <View style={styles.statusBadge(statusColor)}>
-                  <Text style={styles.statusBadgeText}>{status}</Text>
-                </View>
-              </View>
+            const statusColor =
+              status === 'Delivered'
+                ? '#4BB543'
+                : status === 'Cancelled'
+                ? '#d24942ff'
+                : '#FF9500';
 
-              {/* Food Item List */}
-              <View style={styles.foodListContainer}>
-                {foodDetails.map((food, idx) => (
-                  <View key={idx} style={styles.foodRow}>
-                    <Image
-                      source={{
-                        uri:
-                          food?.food?.image ||
-                          'https://cdn-icons-png.flaticon.com/512/1046/1046784.png',
-                      }}
-                      style={styles.foodImage}
-                    />
-
-                    <View style={styles.foodInfo}>
-                      <Text style={styles.foodName}>
-                        {food?.foodId?.name || 'Food Item'}
-                      </Text>
-                      <Text style={styles.foodDesc}>
-                        Qty: {food?.quantity} | ₹
-                        {food?.price || food?.foodId?.price || 0}
-                      </Text>
-                      <Text style={styles.foodDesc}>{food?.note}</Text>
-                    </View>
-
-                    <View style={styles.foodPriceBox}>
-                      <Text style={styles.foodPrice}>
-                        ₹
-                        {(food?.price || food?.foodId?.price || 0) *
-                          (food?.quantity || 1)}
-                      </Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-
-              {/* Footer */}
-              <View style={styles.footerRow}>
-                <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                  <MaterialIcons
-                    name={
-                      paymentStatus === 1 ? 'check-circle' : 'pending-actions'
-                    }
-                    size={18}
-                    color={paymentStatus === 1 ? '#4BB543' : '#FF3B30'}
+            return (
+              <TouchableOpacity
+                key={item._id || index}
+                style={styles.orderCard}
+                activeOpacity={0.9}
+                onPress={() =>
+                  navigation.navigate('OrderDetailsScreen', {order: item})
+                }>
+                {/* Restaurant Header */}
+                <View style={styles.headerRow}>
+                  <Image
+                    source={{
+                      uri:
+                        restaurant?.image ||
+                        'https://cdn-icons-png.flaticon.com/512/2921/2921820.png',
+                    }}
+                    style={styles.restaurantImage}
                   />
-                  <Text
-                    style={[
-                      styles.paymentStatus,
-                      {color: paymentStatus === 1 ? '#4BB543' : '#FF3B30'},
-                    ]}>
-                    {paymentStatus === 1 ? 'Paid' : 'Pending'}
-                  </Text>
+                  <View style={{flex: 1, marginLeft: 12}}>
+                    <Text style={styles.restaurantName}>
+                      {restaurant?.name || 'Restaurant Name'}
+                    </Text>
+                  </View>
+                  <View style={styles.statusBadge(statusColor)}>
+                    <Text style={styles.statusBadgeText}>{status}</Text>
+                  </View>
                 </View>
 
-                <TouchableOpacity
-                  style={styles.viewDetailsButton}
-                  onPress={() =>
-                    navigation.navigate('OrderDetailsScreen', {order: item})
-                  }>
-                  <Text style={styles.viewDetailsText}>View Details</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-    </DashboardScreen>
+                {/* Food Item List */}
+                <View style={styles.foodListContainer}>
+                  {foodDetails.map((food, idx) => (
+                    <View key={idx} style={styles.foodRow}>
+                      <Image
+                        source={{
+                          uri:
+                            food?.food?.image ||
+                            'https://cdn-icons-png.flaticon.com/512/1046/1046784.png',
+                        }}
+                        style={styles.foodImage}
+                      />
+
+                      <View style={styles.foodInfo}>
+                        <Text style={styles.foodName}>
+                          {food?.foodId?.name || 'Food Item'}
+                        </Text>
+                        <Text style={styles.foodDesc}>
+                          Qty: {food?.quantity} | ₹
+                          {food?.price || food?.foodId?.price || 0}
+                        </Text>
+                        <Text style={styles.foodDesc}>
+                          Qty: {food?.quantity} | ₹
+                          {food?.halfPrice || food?.foodId?.halfPrice || 0}
+                        </Text>
+                        <Text style={styles.foodDesc}>
+                          Qty: {food?.quantity} | ₹
+                          {food?.halfPrice || food?.foodId?.fullfPrice || 0}
+                        </Text>
+                        <Text style={styles.foodDesc}>{food?.note}</Text>
+                      </View>
+
+                      <View style={styles.foodPriceBox}>
+                        <Text style={styles.foodPrice}>
+                          ₹
+                          {(food?.price || food?.foodId?.price || 0) *
+                            (food?.quantity || 1)}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Footer */}
+                <View style={styles.footerRow}>
+                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                    <MaterialIcons
+                      name={
+                        paymentStatus === 1 ? 'check-circle' : 'pending-actions'
+                      }
+                      size={18}
+                      color={paymentStatus === 1 ? '#4BB543' : '#FF3B30'}
+                    />
+                    <Text
+                      style={[
+                        styles.paymentStatus,
+                        {color: paymentStatus === 1 ? '#4BB543' : '#FF3B30'},
+                      ]}>
+                      {paymentStatus === 1 ? 'Paid' : 'Pending'}
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.viewDetailsButton}
+                    onPress={() =>
+                      navigation.navigate('OrderDetailsScreen', {order: item})
+                    }>
+                    <Text style={styles.viewDetailsText}>View Details</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </DashboardScreen>
     </>
   );
 };
@@ -223,17 +229,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#333',
   },
-deliveryTimeRow: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  marginTop: 6,
-},
+  deliveryTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+  },
 
-deliveryTimeText: {
-  fontSize: 12,
-  color: '#777',
-  fontWeight: '500',
-},
+  deliveryTimeText: {
+    fontSize: 12,
+    color: '#777',
+    fontWeight: '500',
+  },
 
   statusBadge: color => ({
     backgroundColor: color + '15',

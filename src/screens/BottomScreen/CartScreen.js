@@ -112,9 +112,10 @@ const CartScreen = () => {
           </Text>
         </View>
 
-        <Text style={styles.itemPrice}>
-          {formatCurrency(item.price * item.quantity)}
-        </Text>
+      <Text style={styles.itemVariant}>
+  {item.priceInfo.selected || item.totalPrice}
+</Text>
+
         <View style={styles.ratingWrapper}>
           <Text style={styles.ratingText}>★ {item?.rating}</Text>
         </View>
