@@ -22,7 +22,7 @@ const ItemDetalis = () => {
   const dispatch = useDispatch();
   const {orders, loading, error} = useSelector(state => state.foodOrder);
   const orderData = orders?.data || [];
-  console.log(orderData, '------------------------------orderDataitemdetails');
+  console.log(orderData, '------------------------------orderDataitemdetailsyyyyyyyy');
 
   useEffect(() => {
     dispatch(fetchFoodOrders());
@@ -60,23 +60,17 @@ const ItemDetalis = () => {
 
   return (
     <>
-      <CustomHeader title="My Orders" />
+      <CustomHeader title="order summarry" />
       <DashboardScreen scrollable={false}>
         <ScrollView
           style={styles.container}
           showsVerticalScrollIndicator={false}>
           {orderData.map((item, index) => {
             const restaurant = item?.restaurant || {};
-            console.log(
-              restaurant,
-              '-------------------------restaurant----------------------3333',
-            );
+     
 
             const foodDetails = item?.foodDetails || [];
-            console.log(
-              foodDetails,
-              '--------------------------foodDetails----------------------4444',
-            );
+    
 
             const deliveryTime = item?.deliveryTime || '30-45 mins';
             const status = item?.deliveryStatus || 'Ordered';
@@ -134,18 +128,12 @@ const ItemDetalis = () => {
                         <Text style={styles.foodName}>
                           {food?.foodId?.name || 'Food Item'}
                         </Text>
-                        <Text style={styles.foodDesc}>
-                          Qty: {food?.quantity} | ₹
-                          {food?.price || food?.foodId?.price || 0}
-                        </Text>
+                   
                         <Text style={styles.foodDesc}>
                           Qty: {food?.quantity} | ₹
                           {food?.halfPrice || food?.foodId?.halfPrice || 0}
                         </Text>
-                        <Text style={styles.foodDesc}>
-                          Qty: {food?.quantity} | ₹
-                          {food?.halfPrice || food?.foodId?.fullfPrice || 0}
-                        </Text>
+                   
                         <Text style={styles.foodDesc}>{food?.note}</Text>
                       </View>
 

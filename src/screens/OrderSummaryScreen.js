@@ -65,6 +65,11 @@ const OrderSummaryScreen = () => {
   const [selectedCoupon, setSelectedCoupon] = useState(null);
   const [codModalVisible, setCodModalVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+const basePriceTotal = cartItems.reduce(
+  (sum, item) => sum + Number(item.unitPrice) * Number(item.quantity || 1),
+  0
+);
+console.log(basePriceTotal, '------------------basePriceTotal');
 
   // Currency formatter
   const formatCurrency = value => {
@@ -109,43 +114,31 @@ const OrderSummaryScreen = () => {
     })();
   }, []);
 
-  // Total calculations
-  // const itemTotal = cartItems.reduce((sum, item) => {
-  //   return sum + item.totalPrice * item.quantity;
-  // }, 0);
 
-  // Calculate total addon price for an item
-const getAddOnsTotal = (item) => {
-  return (item?.selectedAddOns || []).reduce(
-    (sum, addon) => sum + Number(addon.price),
-    0
-  );
-};
 
-// Calculate total price for a single cart item
+
 const getItemTotal = (item) => {
   const quantity = Number(item.quantity) || 1;
 
-  // Base price (half/full/static)
+  // Base price per unit
   const basePrice = Number(item.totalPrice) || 0;
-  console.log(basePrice,"----------------------basePrice");
+  console.log(basePrice, '------------------basePrice');
   
 
-  // Add-ons total for ONE unit
-  const addonsTotal =
-    (item?.selectedAddOns || []).reduce((sum, add) => {
-      return sum + Number(add.price || 0);
-    }, 0);
-
-  // Multiply both by quantity
-  return (basePrice + addonsTotal) * quantity;
+  // Add-ons total per unit
+  const addonsTotal = (item?.selectedAddOns || []).reduce(
+    (sum, add) => sum + Number(add.price || 0),
+    0
+  );
+  console.log(addonsTotal, '------------------addonsTotal');
+  // Total for this item including quantity
+  return (basePrice + addonsTotal) ;
 };
 
-
-// Final total for all cart items
 const itemTotal = cartItems.reduce((sum, item) => {
   return sum + getItemTotal(item);
 }, 0);
+
 
 
   console.log(itemTotal, '------------------itemTotal777');
@@ -293,7 +286,7 @@ obj.addOns = (item.selectedAddOns || []).map(add => ({
 
       ToastAndroid.show('Order placed successfully!', ToastAndroid.LONG);
 
-      // navigation.navigate('OrderSuccessScreen');
+      navigation.navigate('OrderSuccessScreen');
     } catch (e) {
       ToastAndroid.show('Order failed. Try again.', ToastAndroid.SHORT);
     }
@@ -334,7 +327,7 @@ obj.addOns = (item.selectedAddOns || []).map(add => ({
 
   return (
     <>
-      <CustomHeader title="Order Summary" />
+      {/* <CustomHeader title="Order Summary" /> */}
       <DashboardScreen scrollable={false}>
         <ScrollView
           contentContainerStyle={{paddingBottom: 200}}
@@ -421,14 +414,7 @@ obj.addOns = (item.selectedAddOns || []).map(add => ({
 
                   <Text style={styles.itemPrice}>
                     {formatCurrency(
-                      (item?.totalPrice || item?.priceInfo?.staticPrice || 0) *
-                        (item?.quantity || 1),
-                    )}{' '}
-                    {item.selectedOption === 'half'
-                      ? '(Half)'
-                      : item.selectedOption === 'full'
-                      ? '(Full)'
-                      : ''}
+                      (item?.totalPrice))}
                   </Text>
 
                   <Text style={{color: '#555', fontSize: 13}}>
@@ -444,12 +430,10 @@ obj.addOns = (item.selectedAddOns || []).map(add => ({
                   ) : null}
                 </View>
 
-                <Text style={styles.itemPrice}>
-                  {formatCurrency(
-                    (item?.totalPrice || item?.priceInfo?.staticPrice || 0) *
-                      (item?.quantity || 1),
-                  )}
-                </Text>
+                     <Text style={styles.itemPrice}>
+                    {formatCurrency(
+                      (item?.totalPrice))}
+                  </Text>
               </View>
             ))}
           </View>
@@ -458,10 +442,10 @@ obj.addOns = (item.selectedAddOns || []).map(add => ({
           <View style={styles.sectionBox}>
             <Text style={styles.sectionTitle}>Bill Details</Text>
 
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Item Total</Text>
-              <Text style={styles.billLabel}>{formatCurrency(itemTotal)}</Text>
-            </View>
+        <View style={styles.billRow}>
+    <Text style={styles.billLabel}>Item Total</Text>
+    <Text style={styles.billLabel}>{formatCurrency(basePriceTotal)}</Text>
+  </View>
 
             {cartItems.map((item, index) =>
               item?.selectedAddOns?.length > 0 ? (

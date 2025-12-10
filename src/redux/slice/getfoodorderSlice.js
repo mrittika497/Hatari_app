@@ -8,6 +8,9 @@ export const fetchFoodOrders = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get(API.getfoodOrder);
+ console.log(response,"-------------------response.data in getfoodorderSlice");
+ 
+      
       return response.data; // Axios already parses JSON
     } catch (error) {
       return rejectWithValue(error.message);

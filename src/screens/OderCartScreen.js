@@ -171,14 +171,18 @@ console.log(item,"----------------------itemodercatScreen---------------");
   {/* PRICE DISPLAY */}
 <Text style={styles.itemPrice}>
   {formatCurrency(
-    (item?.totalPrice || item?.priceInfo?.staticPrice || 0) * (item?.quantity || 1)
+    (item?.totalPrice)
   )}{" "}
   {item.selectedOption === "half" ? "(Half)" : item.selectedOption === "full" ? "(Full)" : ""}
 </Text>
 
- <Text style={{ color: "#555", fontSize: 13 }}>
-  {item?.selectedAddOns?.map(a => a.name).join(", ")}
+<Text style={{ color: "#555", fontSize: 13 }}>
+  {item?.selectedAddOns
+    ?.map(a => `${a.name} ₹${a.price}`)
+    .join(", ")
+  }
 </Text>
+
 
         <View style={styles.actionRow}>
           <TouchableOpacity style={styles.customizeBtn} onPress={() => openModal(item)}>

@@ -51,7 +51,11 @@ const CatItemScreen = () => {
   const [selectedFood, setSelectedFood] = useState(null);
   const [selectedOption, setSelectedOption] = useState('half'); // 'half' | 'full'
   const [totalPrice, setTotalPrice] = useState(0);
+  console.log(totalPrice,"-----------------------totalPrice");
+  
   const [quantity, setQuantity] = useState(1);
+  console.log(quantity,"-----------------------quantity");
+  
   const [modalVisible, setModalVisible] = useState(false);
 
   const [bottomBoxVisible, setBottomBoxVisible] = useState(false);
@@ -60,6 +64,8 @@ const CatItemScreen = () => {
 // Tracks selected add-ons in the modal
 const [selectedAddOns, setSelectedAddOns] = useState([]);
 console.log("-----------------------selectedAddOns");
+const [baseTotal, setBaseTotal] = useState(0);
+const [addonsTotal, setAddonsTotal] = useState(0);
 
 
   // animations
@@ -169,30 +175,63 @@ console.log("-----------------------selectedAddOns");
   //   return Number(info.staticPrice || 0);
   // };
 // Compute unit price based on option + addons + quantity
+// const computeUnitPrice = () => {
+//   if (!selectedFood) return 0;
+
+//   const basePrice = selectedFood.priceInfo.hasVariation
+
+  
+//     ? (selectedOption === "half" ? selectedFood.priceInfo.halfPrice : selectedFood.priceInfo.fullPrice)
+//     : selectedFood.priceInfo.staticPrice;
+// console.log(basePrice,"-----------------------basePrice");
+
+//   const addOnsTotal = selectedAddOns.reduce((sum, a) => sum + Number(a.price || 0), 0);
+
+//   return (basePrice + addOnsTotal) * quantity;
+// };
+
 const computeUnitPrice = () => {
   if (!selectedFood) return 0;
 
   const basePrice = selectedFood.priceInfo.hasVariation
-    ? (selectedOption === "half" ? selectedFood.priceInfo.halfPrice : selectedFood.priceInfo.fullPrice)
-    : selectedFood.priceInfo.staticPrice;
+    ? (selectedOption === "half"
+        ? Number(selectedFood.priceInfo.halfPrice)
+        : Number(selectedFood.priceInfo.fullPrice))
+    : Number(selectedFood.priceInfo.staticPrice);
 
-  const addOnsTotal = selectedAddOns.reduce((sum, a) => sum + Number(a.price || 0), 0);
+  const addOnsTotal = selectedAddOns.reduce(
+    (sum, a) => sum + Number(a.price || 0),
+    0
+  );
 
-  return (basePrice + addOnsTotal) * quantity;
+  return {
+    basePrice,       // price for 1 base
+    addOnsTotal,     // add-ons price (NOT multiplied)
+  };  // ❗ NO MULTIPLY BY quantity
+};
+
+const updateTotal = (qty = quantity) => {
+  if (!selectedFood) return;
+
+  const { basePrice, addOnsTotal } = computeUnitPrice();
+
+  // Base price × quantity
+  const baseTotal = basePrice * qty;
+
+  // Add-ons not multiplied
+  const addonsFinalTotal = addOnsTotal;
+
+  // Final Total
+  const finalTotal = baseTotal + addonsFinalTotal;
+
+  // Save individually
+  setBaseTotal(baseTotal);
+  setAddonsTotal(addonsFinalTotal);
+  setTotalPrice(finalTotal);
 };
 
 
 
-  const updateTotal = (qty = 1, option = selectedOption) => {
-    if (!selectedFood) return;
-    const unit = computeUnitPrice(selectedFood, option);
-    setTotalPrice(unit * qty);
-  };
-
-  // -------------------------
-  // Filtered view for immediate UI responsiveness
-  // (This is a light local filter so the user sees instant results while server results update)
-  // -------------------------
   const filteredFoods = AllFoodsData.filter(item => {
     const food = item.food;
     if (!food) return false;
@@ -254,7 +293,23 @@ const computeUnitPrice = () => {
   const handleConfirmAdd = () => {
     if (!selectedFood) return;
 
-    dispatch(addToCart({...selectedFood, quantity, selectedOption, selectedAddOns: selectedAddOns || [],}));
+   dispatch(
+  addToCart({
+    ...selectedFood,
+    quantity,
+    selectedOption,
+    selectedAddOns: selectedAddOns || [],
+
+    // NEW VALUES
+    baseUnitPrice: computeUnitPrice().basePrice,      // base price of 1 item
+    addOnsUnitPrice: computeUnitPrice().addOnsTotal,  // addon price (no qty)
+    
+    baseTotal,        // basePrice × quantity
+    addonsTotal,      // addonsTotal × 1
+    totalPrice,       // finalTotal = baseTotal + addonsTotal
+  })
+);
+
 
     closeModal();
     setBottomBoxVisible(true);
@@ -611,18 +666,25 @@ console.log(food,"-----------------------food");
               {/* Footer: Total + Confirm */}
               <View style={styles.modalFooter}>
                <View style={{flex: 1}}> 
-                <Text style={styles.totalPrice}>
-                  Total: ₹{totalPrice}{" "}
-                  {selectedOption === "half"
-                    ? "(Half)"
-                    : selectedOption === "full"
-                    ? "(Full)"
-                    : ""}{" "}
-                  {selectedAddOns.length > 0 &&
-                    `+ ${selectedAddOns
-                      .map((a) => `${a.name} ₹${a.price}`)
-                      .join(", ")}`}
-                </Text>
+             <Text style={styles.totalPrice}>
+  {/* Base Price × Quantity */}
+  Base: ₹{baseTotal}{" "}
+  {selectedOption === "half"
+    ? "(Half)"
+    : selectedOption === "full"
+    ? "(Full)"
+    : ""}
+
+  {/* Add-ons */}
+  {selectedAddOns.length > 0 &&
+    `  +  Add-ons: ${selectedAddOns
+      .map(a => `${a.name} ₹${a.price}`)
+      .join(", ")}`}
+
+  {/* Final Total */}
+  {/* {`\nTotal: ₹${totalPrice}`} */}
+</Text>
+
                 </View>
                 <View style={{flex: 1, alignItems: "flex-end"}}> 
                 <TouchableOpacity
