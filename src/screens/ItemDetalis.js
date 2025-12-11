@@ -1,3 +1,4 @@
+// ⭐ ITEM DETAILS SCREEN — CLEAN & ENHANCED
 import React, {useEffect} from 'react';
 import {
   View,
@@ -13,7 +14,6 @@ import {fetchFoodOrders} from '../redux/slice/getfoodorderSlice';
 import DashboardScreen from '../components/DashboardScreen';
 import CustomHeader from '../components/CustomHeader';
 import {useNavigation} from '@react-navigation/native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Theme from '../assets/theme';
 
@@ -21,8 +21,10 @@ const ItemDetalis = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const {orders, loading, error} = useSelector(state => state.foodOrder);
+  console.log(orders,"-------------------orders in ItemDetalis");
+  
+
   const orderData = orders?.data || [];
-  console.log(orderData, '------------------------------orderDataitemdetailsyyyyyyyy');
 
   useEffect(() => {
     dispatch(fetchFoodOrders());
@@ -31,7 +33,7 @@ const ItemDetalis = () => {
   if (loading)
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#FF6347" />
+        <ActivityIndicator size="large" color={Theme.colors.red} />
       </View>
     );
 
@@ -46,9 +48,7 @@ const ItemDetalis = () => {
     return (
       <View style={styles.center}>
         <Image
-          source={{
-            uri: 'https://cdn-icons-png.flaticon.com/512/4076/4076500.png',
-          }}
+          source={{uri: 'https://cdn-icons-png.flaticon.com/512/4076/4076500.png'}}
           style={{width: 120, height: 120, marginBottom: 20}}
         />
         <Text style={styles.noDataText}>No orders found yet</Text>
@@ -58,29 +58,40 @@ const ItemDetalis = () => {
       </View>
     );
 
+  const getSelectedPrice = food => {
+    console.log(food,"---------------------response.data in getfoodorderSlice");
+    
+    if (!food) return 0;
+    if (food?.variant === 'fullPrice') return Number(food?.fullPrice || 0);
+    if (food?.variant === 'halfPrice') return Number(food?.halfPrice || 0);
+    return Number(food?.price || food?.fullPrice || food?.halfPrice || 0);
+  };
+
+  const getAddOnsTotal = food => {
+    if (!food?.addOns || food.addOns.length === 0) return 0;
+    return food.addOns.reduce(
+      (sum, addon) => sum + Number(addon.price || 0) * (addon.quantity || 1),
+      0,
+    );
+  };
+
   return (
     <>
-      <CustomHeader title="order summarry" />
+      <CustomHeader title="Order Summary" />
       <DashboardScreen scrollable={false}>
-        <ScrollView
-          style={styles.container}
-          showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
           {orderData.map((item, index) => {
+            console.log(item,"--------------------------------------itemDetalis-------------");
+            
             const restaurant = item?.restaurant || {};
-     
-
             const foodDetails = item?.foodDetails || [];
-    
-
-            const deliveryTime = item?.deliveryTime || '30-45 mins';
             const status = item?.deliveryStatus || 'Ordered';
             const paymentStatus = item?.paymentStatus || 0;
-
             const statusColor =
               status === 'Delivered'
                 ? '#4BB543'
                 : status === 'Cancelled'
-                ? '#d24942ff'
+                ? '#d24942'
                 : '#FF9500';
 
             return (
@@ -91,7 +102,8 @@ const ItemDetalis = () => {
                 onPress={() =>
                   navigation.navigate('OrderDetailsScreen', {order: item})
                 }>
-                {/* Restaurant Header */}
+
+                {/* RESTAURANT HEADER */}
                 <View style={styles.headerRow}>
                   <Image
                     source={{
@@ -103,7 +115,7 @@ const ItemDetalis = () => {
                   />
                   <View style={{flex: 1, marginLeft: 12}}>
                     <Text style={styles.restaurantName}>
-                      {restaurant?.name || 'Restaurant Name'}
+                      {restaurant?.name || 'Restaurant'}
                     </Text>
                   </View>
                   <View style={styles.statusBadge(statusColor)}>
@@ -111,50 +123,69 @@ const ItemDetalis = () => {
                   </View>
                 </View>
 
-                {/* Food Item List */}
+                {/* FOOD ITEMS */}
                 <View style={styles.foodListContainer}>
-                  {foodDetails.map((food, idx) => (
-                    <View key={idx} style={styles.foodRow}>
-                      <Image
-                        source={{
-                          uri:
-                            food?.food?.image ||
-                            'https://cdn-icons-png.flaticon.com/512/1046/1046784.png',
-                        }}
-                        style={styles.foodImage}
-                      />
+                  {foodDetails.map((food, idx) => {
+                    const basePrice = getSelectedPrice(food);
+                    const addOnsTotal = getAddOnsTotal(food);
+                    const totalPrice = (basePrice + addOnsTotal) * (food?.quantity || 1);
 
-                      <View style={styles.foodInfo}>
-                        <Text style={styles.foodName}>
-                          {food?.foodId?.name || 'Food Item'}
-                        </Text>
-                   
-                        <Text style={styles.foodDesc}>
-                          Qty: {food?.quantity} | ₹
-                          {food?.halfPrice || food?.foodId?.halfPrice || 0}
-                        </Text>
-                   
-                        <Text style={styles.foodDesc}>{food?.note}</Text>
-                      </View>
+                    return (
+                      <View key={idx} style={styles.foodRow}>
+                        <Image
+                          source={{
+                            uri:
+                              food?.food?.image ||
+                              food?.foodId?.image ||
+                              'https://cdn-icons-png.flaticon.com/512/1046/1046784.png',
+                          }}
+                          style={styles.foodImage}
+                        />
 
-                      <View style={styles.foodPriceBox}>
-                        <Text style={styles.foodPrice}>
-                          ₹
-                          {(food?.price || food?.foodId?.price || 0) *
-                            (food?.quantity || 1)}
-                        </Text>
+                        <View style={styles.foodInfo}>
+                          <Text style={styles.foodName}>
+                            {food?.foodId?.name || 'Food Item'}
+                          </Text>
+                          <Text style={styles.foodDesc}>
+                            Qty: {food?.quantity} |
+                            {food?.variant === 'fullPrice' && ' Full Price'}
+                            {food?.variant === 'halfPrice' && ' Half Price'}
+                            {food?.variant === null && ' Static Price'}
+                          </Text>
+
+                          {/* AddOns */}
+                          {food?.addOns?.length > 0 && (
+                            <View style={{marginTop: 4}}>
+                              {food.addOns.map((ad, i) => (
+                                <Text key={i} style={styles.addOnText}>
+                                  ➤ {ad.name} (+₹{ad.price} × {ad.quantity})
+                                </Text>
+                              ))}
+                            </View>
+                          )}
+
+                          {/* Note */}
+                          {food?.note && (
+                            <Text style={[styles.foodDesc, {fontStyle: 'italic'}]}>
+                              📝 {food.note}
+                            </Text>
+                          )}
+                        </View>
+
+                        {/* PRICE */}
+                        <View style={styles.foodPriceBox}>
+                          <Text style={styles.foodPrice}>₹ {totalPrice}</Text>
+                        </View>
                       </View>
-                    </View>
-                  ))}
+                    );
+                  })}
                 </View>
 
-                {/* Footer */}
+                {/* FOOTER */}
                 <View style={styles.footerRow}>
                   <View style={{flexDirection: 'row', alignItems: 'center'}}>
                     <MaterialIcons
-                      name={
-                        paymentStatus === 1 ? 'check-circle' : 'pending-actions'
-                      }
+                      name={paymentStatus === 1 ? 'check-circle' : 'pending-actions'}
                       size={18}
                       color={paymentStatus === 1 ? '#4BB543' : '#FF3B30'}
                     />
@@ -186,6 +217,9 @@ const ItemDetalis = () => {
 
 export default ItemDetalis;
 
+
+/* ---------------------- STYLES ---------------------- */
+
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#f9f9f9', padding: 10},
   center: {flex: 1, justifyContent: 'center', alignItems: 'center'},
@@ -201,14 +235,15 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
   },
+
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
   },
   restaurantImage: {
-    width: 60,
-    height: 60,
+    width: 55,
+    height: 55,
     borderRadius: 10,
     backgroundColor: '#eee',
   },
@@ -216,17 +251,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#333',
-  },
-  deliveryTimeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-  },
-
-  deliveryTimeText: {
-    fontSize: 12,
-    color: '#777',
-    fontWeight: '500',
   },
 
   statusBadge: color => ({
@@ -253,15 +277,11 @@ const styles = StyleSheet.create({
   foodRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     marginVertical: 6,
     marginHorizontal: 8,
     borderRadius: 10,
     padding: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: {width: 0, height: 2},
-    shadowRadius: 3,
+    backgroundColor: '#fff',
     elevation: 2,
   },
 
@@ -289,6 +309,12 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
+  addOnText: {
+    fontSize: 12,
+    color: '#555',
+    marginTop: 2,
+  },
+
   foodPriceBox: {
     backgroundColor: '#FFF6F3',
     borderRadius: 8,
@@ -313,6 +339,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#eee',
     paddingTop: 10,
   },
+
   paymentStatus: {marginLeft: 6, fontSize: 13, fontWeight: '600'},
   viewDetailsButton: {
     backgroundColor: Theme.colors.red,

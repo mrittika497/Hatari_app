@@ -140,6 +140,13 @@ const handleSaveNote = async () => {
 
 console.log(item,"----------------------itemodercatScreen---------------");
 
+const getItemTotal = (item) => {
+  const base = Number(item.totalPrice) || 0;
+  const addons =
+    item?.selectedAddOns?.reduce((sum, a) => sum + Number(a.price), 0) || 0;
+
+  return (base + addons) * item.quantity;
+};
 
   return (
     <View style={styles.itemCard}>
@@ -170,9 +177,9 @@ console.log(item,"----------------------itemodercatScreen---------------");
         {/* PRICE DISPLAY */}
   {/* PRICE DISPLAY */}
 <Text style={styles.itemPrice}>
-  {formatCurrency(
-    (item?.totalPrice)
-  )}{" "}
+ <Text style={styles.itemPrice}>
+  {formatCurrency(getItemTotal(item))}
+</Text>{" "}
   {item.selectedOption === "half" ? "(Half)" : item.selectedOption === "full" ? "(Full)" : ""}
 </Text>
 
@@ -226,7 +233,7 @@ console.log(item,"----------------------itemodercatScreen---------------");
 
   return (
     <> 
-      <CustomHeader title="My Cart" />
+      {/* <CustomHeader title="My Cart" /> */}
     <DashboardScreen scrollable={false}>
     
 

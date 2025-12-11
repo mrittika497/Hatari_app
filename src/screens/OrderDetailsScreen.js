@@ -12,7 +12,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Theme from '../assets/theme';
 import DashboardScreen from '../components/DashboardScreen';
 import CustomHeader from '../components/CustomHeader';
-import { useSelector } from 'react-redux';
+import {useSelector} from 'react-redux';
 
 const {width} = Dimensions.get('window');
 
@@ -27,8 +27,8 @@ const OrderDetailsScreen = ({route}) => {
   const {selectedRestaurant, experienceType} = useSelector(
     state => state.experience,
   );
-  console.log(experienceType,"----------------------experienceTypej");
-  
+  console.log(experienceType, '----------------------experienceTypej');
+
   const restaurant = order?.restaurant || {};
   const foodDetails = order?.foodDetails || [];
   const address = order?.address || {};
@@ -44,135 +44,138 @@ const OrderDetailsScreen = ({route}) => {
       : '#FF9500';
 
   return (
-    <> 
-      <CustomHeader title='Order Detalis'/>
-    <DashboardScreen scrollable={false}>
-    
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={{paddingBottom: 30}}
-        showsVerticalScrollIndicator={false}>
-        {/* Restaurant Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Restaurant</Text>
-          <View style={styles.restaurantRow}>
-            <Image
-              source={{
-                uri: restaurant?.image || 'https://via.placeholder.com/100',
-              }}
-              style={styles.restaurantImage}
-            />
-            <View style={{flex: 1, marginLeft: 10}}>
-              <Text style={styles.restaurantName}>{restaurant?.name}</Text>
-              <Text style={styles.orderType}>
-                {order?.type?.toUpperCase() || 'TYPE'}
-              </Text>
-            </View>
-            <View style={[styles.statusBadge, {backgroundColor: statusColor}]}>
-              <Text style={styles.statusText}>{status}</Text>
+    <>
+      <CustomHeader title="Order Detalis" />
+      <DashboardScreen scrollable={false}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={{paddingBottom: 30}}
+          showsVerticalScrollIndicator={false}>
+          {/* Restaurant Info */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Restaurant</Text>
+            <View style={styles.restaurantRow}>
+              <Image
+                source={{
+                  uri: restaurant?.image || 'https://via.placeholder.com/100',
+                }}
+                style={styles.restaurantImage}
+              />
+              <View style={{flex: 1, marginLeft: 10}}>
+                <Text style={styles.restaurantName}>{restaurant?.name}</Text>
+                <Text style={styles.orderType}>
+                  {order?.type?.toUpperCase() || 'TYPE'}
+                </Text>
+              </View>
+              <View
+                style={[styles.statusBadge, {backgroundColor: statusColor}]}>
+                <Text style={styles.statusText}>{status}</Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* Food Items */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Food Items</Text>
-          <FlatList
-            data={foodDetails}
-            horizontal
-            keyExtractor={(item, idx) => idx.toString()}
-            showsHorizontalScrollIndicator={false}
-            renderItem={({item}) => (
-              <View style={styles.foodCard}>
-                <Image
-                  source={{
-                    uri: item?.food?.image || 'https://via.placeholder.com/80',
-                  }}
-                  style={styles.foodImage}
-                />
-                <Text style={styles.foodName}>{item?.foodId?.name}</Text>
-                <Text style={styles.foodQtyPrice}>Qty: {item?.quantity}</Text>
-                <Text style={styles.foodPrice}>
-                  ₹{item?.price || item?.foodId?.price}
-                </Text>
-                     <Text style={styles.foodPrice}>
-                  {item?.note}
+          {/* Food Items */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Food Items</Text>
+            <FlatList
+              data={foodDetails}
+              horizontal
+              keyExtractor={(item, idx) => idx.toString()}
+              showsHorizontalScrollIndicator={false}
+              renderItem={({item}) => (
+                <View style={styles.foodCard}>
+                  <Image
+                    source={{
+                      uri:
+                        item?.food?.image || 'https://via.placeholder.com/80',
+                    }}
+                    style={styles.foodImage}
+                  />
+                  <Text style={styles.foodName}>{item?.foodId?.name}</Text>
+                  <Text style={styles.foodQtyPrice}>Qty: {item?.quantity}</Text>
+                  <Text style={styles.foodPrice}>
+                    ₹{item?.price || item?.foodId?.price}
+                  </Text>
+                  <Text style={styles.foodPrice}>{item?.note}</Text>
+                </View>
+              )}
+            />
+          </View>
+
+          {/* Delivery Address */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Delivery Address</Text>
+            <View style={styles.infoRow}>
+              <MaterialIcons name="location-on" size={22} color="#FF6347" />
+              <View style={{marginLeft: 10}}>
+                <Text style={styles.infoText}>{address?.name}</Text>
+                <Text style={styles.infoText}>{address?.address}</Text>
+                <Text style={styles.infoText}>{address?.mobileNumber}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Charges */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Charges</Text>
+            <View style={styles.chargeRow}>
+              <Text style={styles.chargeText}>totalAmount</Text>
+              <Text style={styles.chargeText}>
+                ₹{(foodprices || 0).toFixed(2)}
+              </Text>
+            </View>
+            {experienceType === 'Delivery' && (
+              <View style={styles.chargeRow}>
+                <Text style={styles.chargeText}>Delivery</Text>
+                <Text style={styles.chargeText}>
+                  ₹{order?.deliveryCharges || 0}
                 </Text>
               </View>
             )}
-          />
-        </View>
 
-        {/* Delivery Address */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Delivery Address</Text>
-          <View style={styles.infoRow}>
-            <MaterialIcons name="location-on" size={22} color="#FF6347" />
-            <View style={{marginLeft: 10}}>
-              <Text style={styles.infoText}>{address?.name}</Text>
-              <Text style={styles.infoText}>{address?.address}</Text>
-              <Text style={styles.infoText}>{address?.mobileNumber}</Text>
+            <View style={styles.chargeRow}>
+              <Text style={styles.chargeText}>Convenience</Text>
+              <Text style={styles.chargeText}>
+                ₹{order?.convenienceCharges || 0}
+              </Text>
+            </View>
+            <View style={styles.chargeRow}>
+              <Text style={styles.chargeText}>packingCharge</Text>
+              <Text style={styles.chargeText}>
+                ₹{order?.packingCharge || 0}
+              </Text>
+            </View>
+            <View style={styles.chargeRow}>
+              <Text style={styles.chargeText}>CGST</Text>
+              <Text style={styles.chargeText}>₹{order?.CGST || 0}</Text>
+            </View>
+            <View style={styles.chargeRow}>
+              <Text style={styles.chargeText}>SGST</Text>
+              <Text style={styles.chargeText}>₹{order?.SGST || 0}</Text>
+            </View>
+            <View style={styles.chargeRow}>
+              <Text style={styles.chargeText}>discount</Text>
+              <Text style={styles.chargeText}>₹{order?.discount || 0}</Text>
+            </View>
+            <View style={[styles.chargeRow, {marginTop: 8}]}>
+              <Text
+                style={[
+                  styles.chargeText,
+                  {fontWeight: 'bold', color: '#FF6347'},
+                ]}>
+                Total
+              </Text>
+              <Text
+                style={[
+                  styles.chargeText,
+                  {fontWeight: 'bold', color: '#FF6347'},
+                ]}>
+                ₹{order?.grossAmount || 0}
+              </Text>
             </View>
           </View>
-        </View>
-
-        {/* Charges */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Charges</Text>
-          <View style={styles.chargeRow}>
-            <Text style={styles.chargeText}>totalAmount</Text>
-            <Text style={styles.chargeText}>
-              ₹{(foodprices || 0).toFixed(2)}
-            </Text>
-          </View>
-   {experienceType === "Delivery" && (
-  <View style={styles.chargeRow}>
-    <Text style={styles.chargeText}>Delivery</Text>
-    <Text style={styles.chargeText}>₹{order?.deliveryCharges || 0}</Text>
-  </View>
-)}
-
-          <View style={styles.chargeRow}>
-            <Text style={styles.chargeText}>Convenience</Text>
-            <Text style={styles.chargeText}>
-              ₹{order?.convenienceCharges || 0}
-            </Text>
-          </View>
-          <View style={styles.chargeRow}>
-            <Text style={styles.chargeText}>packingCharge</Text>
-            <Text style={styles.chargeText}>₹{order?.packingCharge || 0}</Text>
-          </View>
-          <View style={styles.chargeRow}>
-            <Text style={styles.chargeText}>CGST</Text>
-            <Text style={styles.chargeText}>₹{order?.CGST || 0}</Text>
-          </View>
-          <View style={styles.chargeRow}>
-            <Text style={styles.chargeText}>SGST</Text>
-            <Text style={styles.chargeText}>₹{order?.SGST || 0}</Text>
-          </View>
-          <View style={styles.chargeRow}>
-            <Text style={styles.chargeText}>discount</Text>
-            <Text style={styles.chargeText}>₹{order?.discount || 0}</Text>
-          </View>
-          <View style={[styles.chargeRow, {marginTop: 8}]}>
-            <Text
-              style={[
-                styles.chargeText,
-                {fontWeight: 'bold', color: '#FF6347'},
-              ]}>
-              Total
-            </Text>
-            <Text
-              style={[
-                styles.chargeText,
-                {fontWeight: 'bold', color: '#FF6347'},
-              ]}>
-              ₹{order?.grossAmount || 0}
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
-    </DashboardScreen>
+        </ScrollView>
+      </DashboardScreen>
     </>
   );
 };
@@ -180,7 +183,7 @@ const OrderDetailsScreen = ({route}) => {
 export default OrderDetailsScreen;
 
 const styles = StyleSheet.create({
-  container: {flex: 1,padding: 10},
+  container: {flex: 1, padding: 10},
 
   section: {
     backgroundColor: '#fff',
@@ -230,21 +233,21 @@ const styles = StyleSheet.create({
     color: Theme.colors.black,
   },
 
-infoRow: {
-  flexDirection: 'row',
-  alignItems: 'center',     // FIX 1: Perfect vertical alignment
-  marginTop: 6,
-  flexWrap: 'wrap',         // FIX 2: Prevents text from going outside the box
-  width: '100%',            // FIX 3: Makes wrapping work properly
-},
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center', // FIX 1: Perfect vertical alignment
+    marginTop: 6,
+    flexWrap: 'wrap', // FIX 2: Prevents text from going outside the box
+    width: '100%', // FIX 3: Makes wrapping work properly
+  },
 
-infoText: {
-  fontSize: 14,
-  color: '#0A0909',
-  marginLeft: 6,            // Space between icon & text
-  flexShrink: 1,            // FIX 4: Prevents overflow
-  flexWrap: 'wrap',         // Ensures long text wraps properly
-},
+  infoText: {
+    fontSize: 14,
+    color: '#0A0909',
+    marginLeft: 6, // Space between icon & text
+    flexShrink: 1, // FIX 4: Prevents overflow
+    flexWrap: 'wrap', // Ensures long text wraps properly
+  },
 
   chargeRow: {
     flexDirection: 'row',
