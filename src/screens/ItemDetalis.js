@@ -61,7 +61,7 @@ const ItemDetalis = () => {
   const getSelectedPrice = food => {
     console.log(food,"---------------------response.data in getfoodorderSlice");
     
-    if (!food) return 0;
+    if (!food) return 0;   
     if (food?.variant === 'fullPrice') return Number(food?.fullPrice || 0);
     if (food?.variant === 'halfPrice') return Number(food?.halfPrice || 0);
     return Number(food?.price || food?.fullPrice || food?.halfPrice || 0);

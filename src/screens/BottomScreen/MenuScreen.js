@@ -45,6 +45,8 @@ const CatItemScreen = () => {
     page = 1,
     hasMore,
   } = useSelector(s => s.FoodPagination);
+  console.log(AllFoodsData,"---------------------AllFoodsData12344");
+  
   const cartItems = useSelector(s => s.cart.items || []);
 
   // UI state

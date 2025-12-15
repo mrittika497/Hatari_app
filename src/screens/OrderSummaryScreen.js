@@ -38,6 +38,8 @@ const OrderSummaryScreen = () => {
   );
   const { addresses, loading } = useSelector((state) => state.address);
   const { items: cartItems } = useSelector((state) => state.cart);
+  console.log(cartItems, '-------cartItems');
+  
   const { token } = useSelector((state) => state.auth);
   const { data } = useSelector((state) => state.deliverySettings);
   const couponState = useSelector((state) => state.coupons);
@@ -96,21 +98,43 @@ const OrderSummaryScreen = () => {
   };
 
   // Calculate total per item including add-ons
-  const getItemTotal = (item) => {
-    let price = item.hasVariation
-      ? item.selectedOption === 'full'
-        ? Number(item.priceInfo?.fullPrice || 0)
-        : Number(item.priceInfo?.halfPrice || 0)
-      : Number(item.totalPrice || item.priceInfo?.staticPrice || 0);
+//   const getItemTotal = (item) => {
+//     console.log(item,"-------------------item");
+    
+//     let price = item.hasVariation && item?.totalPrice
+//       ? item.selectedOption === 'full'
+//         ? Number(item.priceInfo?.fullPrice || 0)
+//         : Number(item.priceInfo?.halfPrice || 0)
+//       : Number( item.priceInfo?.staticPrice || 0);
 
-    const addonsTotal = (item.selectedAddOns || []).reduce(
-      (sum, a) => sum + Number(a.price || 0),
-      0
-    );
-console.log(price, addonsTotal, '----------price, addonsTotal');
+//     const addonsTotal = (item.selectedAddOns || []).reduce(
+//       (sum, a) => sum + Number(a.price || 0),
+//       0
+//     );
+// console.log(price, addonsTotal, '----------price, addonsTotal');
 
-    return (price + addonsTotal) * Number(item.quantity || 1);
-  };
+//     return (price + addonsTotal) * Number(item.quantity || 1);
+//   };
+const getItemTotal = item => {
+  console.log(item,"---------------------------getitemss");
+  
+  let price = 0;
+  if (item.hasVariation) {
+    const variant = item.selectedOption?.toLowerCase() || 'full';
+    price = variant === 'full'
+      ? Number(item.priceInfo?.fullPrice || 0)
+      : Number(item.priceInfo?.halfPrice || 0);
+  } else {
+    price = Number(item.priceInfo?.staticPrice ?? item.totalPrice ?? item.unitPrice ?? 0);
+  }
+
+  const addonsTotal = (item.selectedAddOns || []).reduce(
+    (sum, a) => sum + (Number(a.price) * (a.quantity || 1)),
+    0
+  );
+
+  return (price + addonsTotal) * (Number(item.quantity) || 1);
+};
 
   const itemTotal = cartItems.reduce((sum, item) => sum + getItemTotal(item), 0);
 
@@ -184,10 +208,15 @@ console.log(price, addonsTotal, '----------price, addonsTotal');
         billingMobile: savedAddress?.contact,
         type: experienceType?.toLowerCase() || 'delivery',
         deliveryCharges: Number(data?.delivery_charges_value) || 0,
-        foodDetails: cartItems.map((item) => ({
+        foodDetails: cartItems.map((item) => (   
+      
+        
+           
+          {
           foodId: item.id || item.foodId,
           quantity: Number(item.quantity),
-          variant: item.selectedOption || 'full',
+          variant: item.selectedOption,
+        //  variant: item?.variant,
           note: item.note || '',
           price: item.hasVariation
             ? item.selectedOption === 'full'
@@ -201,6 +230,7 @@ console.log(price, addonsTotal, '----------price, addonsTotal');
             price: Number(add.price || 0),
           })),
         })),
+
   
         
         totalAmount: itemTotal,
@@ -211,6 +241,7 @@ console.log(price, addonsTotal, '----------price, addonsTotal');
         couponCode: selectedCoupon?.code || null,
         paymentStatus: 'Pending',
       };
+console.log(billingData, '-------billingData');
 
       await dispatch(postBilling(billingData)).unwrap();
       dispatch(clearCart());
