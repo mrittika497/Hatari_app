@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,32 +7,62 @@ import {
   Image,
   FlatList,
   Dimensions,
+  BackHandler,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Theme from '../assets/theme';
 import DashboardScreen from '../components/DashboardScreen';
 import CustomHeader from '../components/CustomHeader';
 import {useSelector} from 'react-redux';
+import { CommonActions, useFocusEffect, useNavigation } from '@react-navigation/native';
 
 const {width} = Dimensions.get('window');
 
 const OrderDetailsScreen = ({route}) => {
+    const navigation = useNavigation();
   const {order} = route.params;
-  console.log(order, '---------------------------order');
+
   const foodprices = order?.foodDetails.reduce(
     (total, item) => total + (item?.price || 0),
     0,
   );
-  console.log(foodprices, '----------------------foodprices');
+
+
+  useFocusEffect(
+    useCallback(() => {
+      const backHandler = BackHandler.addEventListener(
+        'hardwareBackPress',
+        () => {
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [
+                {
+                  name: 'Bottom',
+                  state: {
+                    routes: [{ name: 'HomeScreen' }],
+                  },
+                },
+              ],
+            })
+          );
+          return true; // ⛔ block default back
+        }
+      );
+  
+      return () => backHandler.remove(); // ✅ correct cleanup
+    }, [navigation])
+  );
+
   const {selectedRestaurant, experienceType} = useSelector(
     state => state.experience,
   );
-  console.log(experienceType, '----------------------experienceTypej');
+
 
   const restaurant = order?.restaurant || {};
   const foodDetails = order?.foodDetails || [];
   const address = order?.address || {};
-  console.log(address, '------------------------------------addd');
+
 
   const status = order?.deliveryStatus || 'Ordered';
 

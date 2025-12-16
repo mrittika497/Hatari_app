@@ -5,28 +5,30 @@ import axiosInstance from "../../global_Url/axiosInstance";
 import { API } from "../../global_Url/GlobalUrl";
 
 
-// ------------------------------
-// 🔥 Thunk: Fetch All Categories
-// ------------------------------
+
 export const fetchAllCategories = createAsyncThunk(
   "categories/fetchAll",
-  async (cuisineType, { rejectWithValue }) => {
-    console.log(cuisineType,"---------------------bakenapi");
+  async ({ mainCategory, type }, { rejectWithValue }) => {
+    console.log(mainCategory,"---------------------mainCategorybaken");
     
     try {
-      const res = await axiosInstance.get(API.GetAllCategory);
-      return res.data; // assuming your API returns an array of categories
+      const res = await axiosInstance.get(
+        `${API.GetAllCategory}?mainCategory=${mainCategory}&type=${type}`
+      );
+      return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data || "Something went wrong");
     }
   }
 );
 
+
+
 // ------------------------------
 // 🔥 Slice
 // ------------------------------
 const GetAllCategorySlice = createSlice({
-  name: "categories",
+  name: "categoriesAllcat",
   initialState: {
     categories: [],
     loading: false,

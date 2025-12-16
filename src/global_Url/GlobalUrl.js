@@ -25,6 +25,7 @@ export const API = {
   Categoryitem :`${BASE_URL}food/by`,
   profile:`${BASE_URL}profile/getMyProfile`,
   AddressDelete : `${BASE_URL}users/address/delete`,
-  GetAllCategory: `${BASE_URL}catfood/getAllCategory`
+  GetAllCategory: `${BASE_URL}catfood/getAllCategory`,
+  GetMainCat: `${BASE_URL}catfood/getMainCat`,
 
 };

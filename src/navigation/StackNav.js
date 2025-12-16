@@ -7,14 +7,14 @@ import Splash from '../screens/Splash';
 import LoginScreen from '../screens/auth/LoginScreen';
 import OtpScreen from '../screens/auth/OtpScreen';
 import ExperienceScreen from '../screens/ExperienceScreen';
-import DineSection from '../screens/DineSection';
+
 import FoodDetailScreen from '../screens/FoodDetailScreen';
 import CatItemScreen from '../screens/CatItemScreen';
 import OrderSummaryScreen from '../screens/OrderSummaryScreen';
 import MapScreen from '../screens/MapScreen';
 import OrderSuccessScreen from '../screens/ComfromScreen';
 import SearchScreen from '../screens/SearchScreen';
-import TableBookingShow from '../screens/TableBookingShow';
+
 import ItemDetalis from '../screens/ItemDetalis';
 import OrderDetailsScreen from '../screens/OrderDetailsScreen';
 import OderCartScreen from '../screens/OderCartScreen';
@@ -90,11 +90,7 @@ const StackNav = () => {
         component={CatItemScreen}
         options={{headerShown: false}}
       />
-      <Stack.Screen
-        name="DineSection"
-        component={DineSection}
-        options={{headerShown: false}}
-      />
+    
       <Stack.Screen
       name='OrderSummaryScreen'
       component={OrderSummaryScreen}
@@ -116,12 +112,7 @@ const StackNav = () => {
       component={SearchScreen}
       options={{headerShown:false}}
       />
-      
-            <Stack.Screen
-      name='TableBookingShow'
-      component={TableBookingShow}
-      options={{headerShown:false}}
-      />
+ 
 
       <Stack.Screen 
       name='ItemDetalis'

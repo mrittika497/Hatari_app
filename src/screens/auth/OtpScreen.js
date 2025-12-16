@@ -77,9 +77,9 @@ const OtpScreen = ({route, navigation}) => {
       if (user?._id) {
         try {
           await AsyncStorage.setItem('userId', user._id);
-          console.log('✅ User ID saved:', user._id);
+     
         } catch (error) {
-          console.log('❌ Error saving user ID:', error);
+
         }
       }
     };

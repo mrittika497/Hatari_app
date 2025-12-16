@@ -60,7 +60,7 @@ const CatItemScreen = () => {
     page = 1,
     hasMore = false,
   } = useSelector((state) => state.catItems || {});
-console.log(categoryFoods,"------------------categoryFoods");
+
 
   // UI state
   const [selectedFood, setSelectedFood] = useState(null);
@@ -260,7 +260,7 @@ const [initialLoading, setInitialLoading] = useState(true);
 
   const renderItem = ({ item, index }) => {
     const food = item?.food || {};
-    console.log(food,"-----------------------food");
+
     
     const typeRaw = Array.isArray(food.type) ? food.type[0] : String(food.type || "");
     const type = String(typeRaw).toLowerCase();

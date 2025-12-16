@@ -26,6 +26,7 @@ import { fetchCoupons } from '../redux/slice/couponSlice';
 import { postBilling } from '../redux/slice/postBillingSlice';
 import { fetchUserAddresses } from '../redux/slice/saveaddressSlice';
 import { deleteUserAddress } from '../redux/slice/AddressDeleteSlice';
+import CustomHeader from '../components/CustomHeader';
 
 const { width } = Dimensions.get('window');
 
@@ -38,7 +39,7 @@ const OrderSummaryScreen = () => {
   );
   const { addresses, loading } = useSelector((state) => state.address);
   const { items: cartItems } = useSelector((state) => state.cart);
-  console.log(cartItems, '-------cartItems');
+
   
   const { token } = useSelector((state) => state.auth);
   const { data } = useSelector((state) => state.deliverySettings);
@@ -97,26 +98,8 @@ const OrderSummaryScreen = () => {
     }
   };
 
-  // Calculate total per item including add-ons
-//   const getItemTotal = (item) => {
-//     console.log(item,"-------------------item");
-    
-//     let price = item.hasVariation && item?.totalPrice
-//       ? item.selectedOption === 'full'
-//         ? Number(item.priceInfo?.fullPrice || 0)
-//         : Number(item.priceInfo?.halfPrice || 0)
-//       : Number( item.priceInfo?.staticPrice || 0);
-
-//     const addonsTotal = (item.selectedAddOns || []).reduce(
-//       (sum, a) => sum + Number(a.price || 0),
-//       0
-//     );
-// console.log(price, addonsTotal, '----------price, addonsTotal');
-
-//     return (price + addonsTotal) * Number(item.quantity || 1);
-//   };
 const getItemTotal = item => {
-  console.log(item,"---------------------------getitemss");
+
   
   let price = 0;
   if (item.hasVariation) {
@@ -208,30 +191,59 @@ const getItemTotal = item => {
         billingMobile: savedAddress?.contact,
         type: experienceType?.toLowerCase() || 'delivery',
         deliveryCharges: Number(data?.delivery_charges_value) || 0,
-        foodDetails: cartItems.map((item) => (   
+        // foodDetails: cartItems.map((item) => (   
       
         
            
-          {
-          foodId: item.id || item.foodId,
-          quantity: Number(item.quantity),
-          variant: item.selectedOption,
-        //  variant: item?.variant,
-          note: item.note || '',
-          price: item.hasVariation
-            ? item.selectedOption === 'full'
-              ? Number(item.priceInfo?.fullPrice)
-              : Number(item.priceInfo?.halfPrice)
-            : Number(item.totalPrice || item.priceInfo?.staticPrice),
-          addOns: (item.selectedAddOns || []).map((add) => ({
-            name: add.name,
-            image: add.image || '',
-            type: add.type || '',
-            price: Number(add.price || 0),
-          })),
-        })),
+        //   {
+        //   foodId: item.id || item.foodId,
+        //   quantity: Number(item.quantity),
+        //   variant: item.selectedOption,
+        // //  variant: item?.variant,
+        //   note: item.note || '',
+        //   price: item.hasVariation
+        //     ? item.selectedOption === 'full'
+        //       ? Number(item.priceInfo?.fullPrice)
+        //       : Number(item.priceInfo?.halfPrice)
+        //     : Number(item.totalPrice || item.priceInfo?.staticPrice),
+        //   addOns: (item.selectedAddOns || []).map((add) => ({
+        //     name: add.name,
+        //     image: add.image || '',
+        //     type: add.type || '',
+        //     price: Number(add.price || 0),
+        //   })),
+        // })),
 
-  
+  foodDetails: cartItems.map(item => {
+  const isFull = item.selectedOption === 'full';
+  const isHalf = item.selectedOption === 'half';
+
+  return {
+    foodId: item.id || item.foodId,
+    quantity: Number(item.quantity),
+    variant: item.hasVariation ? item.selectedOption : null,
+    note: item.note || '',
+
+    // ✅ backend-required fields
+    fullPrice: item.hasVariation && isFull
+      ? Number(item.priceInfo?.fullPrice || 0)
+      : !item.hasVariation
+        ? Number(item.unitPrice || item.priceInfo?.staticPrice || 0)
+        : null,
+
+    halfPrice: item.hasVariation && isHalf
+      ? Number(item.priceInfo?.halfPrice || 0)
+      : null,
+
+    addOns: (item.selectedAddOns || []).map(add => ({
+      name: add.name,
+      image: add.image || '',
+      type: add.type || '',
+      price: Number(add.price || 0),
+    })),
+  };
+}),
+
         
         totalAmount: itemTotal,
         grossAmount: grandTotal,
@@ -241,7 +253,7 @@ const getItemTotal = item => {
         couponCode: selectedCoupon?.code || null,
         paymentStatus: 'Pending',
       };
-console.log(billingData, '-------billingData');
+
 
       await dispatch(postBilling(billingData)).unwrap();
       dispatch(clearCart());
@@ -278,6 +290,8 @@ console.log(billingData, '-------billingData');
   };
 
   return (
+    <> 
+      <CustomHeader title=" My Order" />
     <DashboardScreen scrollable={false}>
       <ScrollView contentContainerStyle={{ paddingBottom: 200 }}>
         {/* ADDRESS CARD */}
@@ -355,9 +369,12 @@ console.log(billingData, '-------billingData');
               <View style={{ flex: 1, marginLeft: 10 }}>
                 <Text style={styles.itemName}>{item.name}</Text>
                 <Text style={styles.foodQtyPrice}>Qty: {item.quantity}</Text>
+                <View style={{flexDirection:"row"}}> 
                 <Text style={styles.itemPrice}>
                   {formatCurrency(getItemTotal(item))}
                 </Text>
+                 <Text style={{color:"black"}}>  {item?.selectedOption}</Text>
+                 </View>
                 {item.selectedAddOns?.length > 0 && (
                   <Text style={{ color: '#555', fontSize: 13 }}>
                     {item.selectedAddOns
@@ -545,6 +562,7 @@ console.log(billingData, '-------billingData');
         </View>
       </Modal>
     </DashboardScreen>
+    </>
   );
 };
 

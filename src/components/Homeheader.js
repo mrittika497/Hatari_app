@@ -22,6 +22,8 @@ const HomeHeader = () => {
     state => state.experience,
   );
   const restaurantList = useSelector(state => state.restaurants.list || []);
+  console.log(restaurantList, "-----------------restaurantList-------------");
+
   const cartItems = useSelector(state => state.cart.items || []);
   const totalCount = cartItems.length;
 
@@ -36,11 +38,11 @@ const HomeHeader = () => {
         barStyle="light-content"
         translucent={false}
       />
- 
+
 
       {/* 🔥 Modern Gradient Header */}
       <LinearGradient
-           colors={['#ef2435', '#fefefc']}
+        colors={['#ef2435', '#fefefc']}
         style={styles.headerBackground}
       >
         <View style={styles.headerTop}>
@@ -57,8 +59,13 @@ const HomeHeader = () => {
 
             <View style={{ maxWidth: '70%' }}>
               <Text style={styles.branchText} numberOfLines={1}>
-                {selectedRestaurant?.name || 'Select Branch'}
+                {selectedRestaurant
+                  ? selectedRestaurant.isActive
+                    ? selectedRestaurant.name
+                    : 'Restaurant not available'
+                  : 'Select Branch'}
               </Text>
+
             </View>
 
             <Image
@@ -115,17 +122,23 @@ const HomeHeader = () => {
                   );
                 }}
               >
-                <Text
-                  style={[
-                    styles.dropdownText,
-                    selectedRestaurant?._id === restaurant._id && {
-                      color: '#e91e3c',
-                      fontWeight: 'bold',
-                    },
-                  ]}
-                >
-                  {restaurant.name}
-                </Text>
+              <Text
+  style={[
+    styles.dropdownText,
+    selectedRestaurant?._id === restaurant._id && {
+      color: '#e91e3c',
+      fontWeight: 'bold',
+    },
+    restaurant.isActive === false && {
+      color: 'red',
+    },
+  ]}
+>
+  {restaurant.isActive
+    ? restaurant.name
+    : 'Restaurant not available'}
+</Text>
+
               </TouchableOpacity>
             ))}
           </ScrollView>

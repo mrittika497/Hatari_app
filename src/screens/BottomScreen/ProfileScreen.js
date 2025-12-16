@@ -20,9 +20,9 @@ import {fetchUserProfile} from '../../redux/slice/profileSlice';
 const ProfileScreen = ({navigation}) => {
   const dispatch = useDispatch();
   const userData = useSelector(state => state.profile);
-  console.log(userData, '-------------------userData');
+
   const userdata = userData?.userData;
-  console.log(userdata, '-------------------userdata');
+
   useEffect(() => {
     dispatch(fetchUserProfile());
   }, []);

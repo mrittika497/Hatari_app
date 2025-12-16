@@ -26,6 +26,7 @@ import TopPickerReducer from '../slice/TopPickerSlice';
 import profileReducer from '../slice/profileSlice';
 import deleteAddressReducer from '../slice/AddressDeleteSlice';
 import GetAllCategoryReducer from '../slice/GetAllCategorySlice';
+import CategoriSliceReducer from '../slice/CategoriSlice';
 const store = configureStore({
   reducer: {
     home: HomeReducer,
@@ -54,7 +55,8 @@ const store = configureStore({
     catItemsbySubcat: TopPickerReducer,
     profile: profileReducer,
     deleteAddress: deleteAddressReducer,
-    categories: GetAllCategoryReducer,
+    categoriesAllcat: GetAllCategoryReducer,
+    categories:CategoriSliceReducer,
   },
 });
 

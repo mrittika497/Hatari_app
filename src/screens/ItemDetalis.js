@@ -1,5 +1,5 @@
 // ⭐ ITEM DETAILS SCREEN — CLEAN & ENHANCED
-import React, {useEffect} from 'react';
+import React, {useCallback, useEffect} from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,13 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  BackHandler,
 } from 'react-native';
 import {useDispatch, useSelector} from 'react-redux';
 import {fetchFoodOrders} from '../redux/slice/getfoodorderSlice';
 import DashboardScreen from '../components/DashboardScreen';
 import CustomHeader from '../components/CustomHeader';
-import {useNavigation} from '@react-navigation/native';
+import {CommonActions, useFocusEffect, useNavigation} from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Theme from '../assets/theme';
 
@@ -21,10 +22,34 @@ const ItemDetalis = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const {orders, loading, error} = useSelector(state => state.foodOrder);
-  console.log(orders,"-------------------orders in ItemDetalis");
-  
 
+  
   const orderData = orders?.data || [];
+useFocusEffect(
+  useCallback(() => {
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [
+              {
+                name: 'Bottom',
+                state: {
+                  routes: [{ name: 'HomeScreen' }],
+                },
+              },
+            ],
+          })
+        );
+        return true; // ⛔ block default back
+      }
+    );
+
+    return () => backHandler.remove(); // ✅ correct cleanup
+  }, [navigation])
+);
 
   useEffect(() => {
     dispatch(fetchFoodOrders());
@@ -59,7 +84,7 @@ const ItemDetalis = () => {
     );
 
   const getSelectedPrice = food => {
-    console.log(food,"---------------------response.data in getfoodorderSlice");
+  
     
     if (!food) return 0;   
     if (food?.variant === 'fullPrice') return Number(food?.fullPrice || 0);
@@ -81,7 +106,7 @@ const ItemDetalis = () => {
       <DashboardScreen scrollable={false}>
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
           {orderData.map((item, index) => {
-            console.log(item,"--------------------------------------itemDetalis-------------");
+   
             
             const restaurant = item?.restaurant || {};
             const foodDetails = item?.foodDetails || [];

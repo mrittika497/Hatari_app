@@ -7,7 +7,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 // Import Screens
 import HomeScreen from '../screens/BottomScreen/HomeScreen';
 import ProfileScreen from '../screens/BottomScreen/ProfileScreen';
-import CartScreen from '../screens/BottomScreen/CartScreen';
+
 import MenuScreen from '../screens/BottomScreen/MenuScreen';
 import OrderSummary from '../screens/BottomScreen/OrderSummary';
 

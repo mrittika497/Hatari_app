@@ -34,14 +34,14 @@ const OderCartScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const {items: cartItems} = useSelector(state => state.cart);
-  console.log("--------7777777777777777777777777",cartItems,"----------------------odercatScreen666666---------------");
+ 
   
   const [loading, setLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  // console.log(cartItems,"----------------------selectedItemodercatScreen---------------");
+
   
   const [noteText, setNoteText] = useState('');
-  // console.log(noteText,"------------------------------noteText");
+
 
   
   
@@ -74,27 +74,6 @@ const OderCartScreen = () => {
     setNoteText('');
    
   };
-
-  // const handleSaveNote = async () => {
-  //   console.log("close");
-    
-  //   if (selectedItem) {
-  //     dispatch(updateNote({id: selectedItem.id, note: noteText}));
-  //     const resultAction = await dispatch(
-  //       postCustomizedFood({
-  //         food: selectedItem.id,
-  //         quantity: selectedItem.quantity,
-  //         note: noteText,
-  //       }),
-  //     );
-  //     if (postCustomizedFood.fulfilled.match(resultAction)) {
-       
-  //     } else {
-     
-  //     }
-  //   }
-  //   closeModal();
-  // };
 
 const handleSaveNote = async () => {
   if (!selectedItem) return;
@@ -138,10 +117,12 @@ const handleSaveNote = async () => {
 };
  const renderItem = ({item}) => {
 
-console.log(item,"----------------------itemodercatScreen---------------");
+
 
 const getItemTotal = (item) => {
-  const base = Number(item.totalPrice) || 0;
+
+  
+  const base = Number(item.unitPrice) || 0;
   const addons =
     item?.selectedAddOns?.reduce((sum, a) => sum + Number(a.price), 0) || 0;
 
@@ -179,7 +160,7 @@ const getItemTotal = (item) => {
 <Text style={styles.itemPrice}>
  <Text style={styles.itemPrice}>
   {formatCurrency(getItemTotal(item))}
-</Text>{" "}
+</Text>
   {item.selectedOption === "half" ? "(Half)" : item.selectedOption === "full" ? "(Full)" : ""}
 </Text>
 
@@ -233,7 +214,7 @@ const getItemTotal = (item) => {
 
   return (
     <> 
-      {/* <CustomHeader title="My Cart" /> */}
+      <CustomHeader title="My Cart" />
     <DashboardScreen scrollable={false}>
     
 
