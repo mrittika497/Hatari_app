@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, {useCallback} from 'react';
 import {
   View,
   Text,
@@ -14,18 +14,21 @@ import Theme from '../assets/theme';
 import DashboardScreen from '../components/DashboardScreen';
 import CustomHeader from '../components/CustomHeader';
 import {useSelector} from 'react-redux';
-import { CommonActions, useFocusEffect, useNavigation } from '@react-navigation/native';
+import {
+  CommonActions,
+  useFocusEffect,
+  useNavigation,
+} from '@react-navigation/native';
 
 const {width} = Dimensions.get('window');
 
 const OrderDetailsScreen = ({route}) => {
-    const navigation = useNavigation();
+  const navigation = useNavigation();
   const {order} = route.params;
+  console.log(order, 'orderDetails');
+  
 
-  const foodprices = order?.foodDetails.reduce(
-    (total, item) => total + (item?.price || 0),
-    0,
-  );
+
 
 
   useFocusEffect(
@@ -40,29 +43,54 @@ const OrderDetailsScreen = ({route}) => {
                 {
                   name: 'Bottom',
                   state: {
-                    routes: [{ name: 'HomeScreen' }],
+                    routes: [{name: 'HomeScreen'}],
                   },
                 },
               ],
-            })
+            }),
           );
           return true; // ⛔ block default back
-        }
+        },
       );
-  
+
       return () => backHandler.remove(); // ✅ correct cleanup
-    }, [navigation])
+    }, [navigation]),
   );
 
   const {selectedRestaurant, experienceType} = useSelector(
     state => state.experience,
   );
+// ✅ DEFINE FIRST
+const getItemPrice = item => {
+  if (item.variant === 'full') {
+    return item.fullPrice ?? item.foodId?.priceInfo?.fullPrice ?? 0;
+  }
+
+  if (item.variant === 'half') {
+    return item.halfPrice ?? item.foodId?.priceInfo?.halfPrice ?? 0;
+  }
+
+  return (
+    item.price ??
+    item.foodId?.priceInfo?.fullPrice ??
+    item.foodId?.priceInfo?.halfPrice ??
+    0
+  );
+};
+
+// ✅ THEN USE IT
+const foodprices = order?.foodDetails.reduce((total, item) => {
+  const unitPrice = getItemPrice(item);
+  const qty = Number(item.quantity || 1);
+  return total + unitPrice * qty;
+}, 0);
 
 
   const restaurant = order?.restaurant || {};
   const foodDetails = order?.foodDetails || [];
-  const address = order?.address || {};
+  console.log(foodDetails, 'foodDetails');
 
+  const address = order?.address || {};
 
   const status = order?.deliveryStatus || 'Ordered';
 
@@ -123,9 +151,8 @@ const OrderDetailsScreen = ({route}) => {
                   />
                   <Text style={styles.foodName}>{item?.foodId?.name}</Text>
                   <Text style={styles.foodQtyPrice}>Qty: {item?.quantity}</Text>
-                  <Text style={styles.foodPrice}>
-                    ₹{item?.price || item?.foodId?.price}
-                  </Text>
+                  <Text style={styles.foodPrice}>₹{getItemPrice(item)}</Text>
+
                   <Text style={styles.foodPrice}>{item?.note}</Text>
                 </View>
               )}

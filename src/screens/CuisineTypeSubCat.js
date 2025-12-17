@@ -1,5 +1,3 @@
-// CuisineTypeSubCat.js
-
 import React, { useEffect, useState, useRef } from "react";
 import {
   StyleSheet,
@@ -28,17 +26,35 @@ const CuisineTypeSubCat = ({ navigation }) => {
   const { id, cuisineType } = route.params || {};
 
   const dispatch = useDispatch();
-  const subcategories = useSelector((state) => state.subCategories);
-  const categoriesState = useSelector((state) => state.categories);
 
+  // ✅ Redux selectors
+  const isVeg = useSelector(state => state.foodFilter.isVeg);
+  const subcategories = useSelector(state => state.subCategories);
+  const categoriesState = useSelector(state => state.categoriesAllcat);
+
+  // ✅ Local state
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(id);
+
   const slideAnim = useRef(new Animated.Value(width)).current;
 
+  // ✅ Data
   const subcateData = subcategories?.data || [];
-  const categoriesData = categoriesState?.categories?.foods || [];
+  const categoriesData =
+    categoriesState?.categories?.categories || [];
 
-  // Fetch categories and subcategories
+  // ✅ Veg / Non-Veg filter
+  const filteredCategories = categoriesData.filter(item => {
+    if (!item?.type) return !isVeg;
+
+    const types = Array.isArray(item.type)
+      ? item.type.map(t => t.toLowerCase())
+      : [String(item.type).toLowerCase()];
+
+    return isVeg ? types.includes("veg") : !types.includes("veg");
+  });
+
+  // ✅ Fetch subcategories & categories
   useEffect(() => {
     if (selectedCategory) {
       dispatch(
@@ -49,10 +65,18 @@ const CuisineTypeSubCat = ({ navigation }) => {
         })
       );
     }
-    dispatch(fetchAllCategories(cuisineType));
-  }, [selectedCategory, cuisineType]);
 
-  // Animate side menu
+    if (cuisineType?._id) {
+      dispatch(
+        fetchAllCategories({
+          mainCategory: cuisineType._id,
+          type: isVeg ? "veg" : "non-veg",
+        })
+      );
+    }
+  }, [selectedCategory, cuisineType, isVeg]);
+
+  // ✅ Animate side menu
   useEffect(() => {
     Animated.timing(slideAnim, {
       toValue: menuOpen ? width - 220 : width,
@@ -61,23 +85,21 @@ const CuisineTypeSubCat = ({ navigation }) => {
     }).start();
   }, [menuOpen]);
 
-  // Subcategory card
+  // ✅ Subcategory card
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <TouchableOpacity
+        activeOpacity={0.8}
         onPress={() =>
           navigation.navigate("TopPicksScreen", {
             categoryId: item?._id,
             categoryName: item?.name,
-            cuisineType: item?.cuisineType,
+            cuisineType,
           })
         }
-        activeOpacity={0.8}
       >
         <LinearGradient
           colors={["#ff6b6b", "#fbededff"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
           style={styles.touchCard}
         >
           <Image source={{ uri: item.image }} style={styles.image} />
@@ -89,7 +111,7 @@ const CuisineTypeSubCat = ({ navigation }) => {
     </View>
   );
 
-  const handleCategorySelect = (catId) => {
+  const handleCategorySelect = catId => {
     setSelectedCategory(catId);
     setMenuOpen(false);
   };
@@ -97,10 +119,11 @@ const CuisineTypeSubCat = ({ navigation }) => {
   return (
     <View style={{ flex: 1 }}>
       <CustomHeader title="Subcategories" />
+
       <DashboardScreen scrollEnabled={false}>
         <FlatList
           data={subcateData}
-          keyExtractor={(item) => item._id}
+          keyExtractor={item => item._id}
           renderItem={renderItem}
           numColumns={3}
           contentContainerStyle={styles.grid}
@@ -134,8 +157,8 @@ const CuisineTypeSubCat = ({ navigation }) => {
         </View>
 
         <FlatList
-          data={categoriesData}
-          keyExtractor={(item) => item._id}
+          data={filteredCategories}
+          keyExtractor={item => item._id}
           contentContainerStyle={{ paddingBottom: 50 }}
           renderItem={({ item }) => (
             <TouchableOpacity
@@ -168,6 +191,7 @@ const CuisineTypeSubCat = ({ navigation }) => {
 };
 
 export default CuisineTypeSubCat;
+
 
 const styles = StyleSheet.create({
   grid: {

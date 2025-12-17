@@ -299,7 +299,7 @@ const CatItemScreen = () => {
 
 const renderItem = ({ item }) => {
   const dataItem = item?.food || item; // fallback
-  console.log(dataItem, "-------------------dataItem");
+
 
   const isFoodAvailable = dataItem.available !== false; // true if available
 

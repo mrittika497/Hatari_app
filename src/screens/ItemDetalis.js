@@ -22,6 +22,8 @@ const ItemDetalis = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const {orders, loading, error} = useSelector(state => state.foodOrder);
+  console.log(orders,"--------------------------------***********");
+  
 
   
   const orderData = orders?.data || [];
@@ -106,6 +108,7 @@ useFocusEffect(
       <DashboardScreen scrollable={false}>
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
           {orderData.map((item, index) => {
+   console.log(item,"--------------------------------itemItemDetalis88888888888888888888888888888***********");
    
             
             const restaurant = item?.restaurant || {};

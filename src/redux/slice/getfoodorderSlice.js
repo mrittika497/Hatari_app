@@ -2,16 +2,17 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axiosInstance from '../../global_Url/axiosInstance';
 import { API } from '../../global_Url/GlobalUrl';
 
-// Async thunk to fetch food orders from API
 export const fetchFoodOrders = createAsyncThunk(
   'foodOrder/fetchFoodOrders',
   async (_, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get(API.getfoodOrder);
- console.log(response,"-------------------response.data in getfoodorderSlice");
-      return response.data; // Axios already parses JSON
+      // ✅ Return only the array
+      return response.data || [];
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(
+        error.response?.data?.message || error.message
+      );
     }
   }
 );
@@ -25,17 +26,10 @@ const initialState = {
 const getFoodOrderSlice = createSlice({
   name: 'foodOrder',
   initialState,
-  reducers: {
-    addOrder: (state, action) => {
-      state.orders.push(action.payload);
-    },
-    removeOrder: (state, action) => {
-      state.orders = state.orders.filter(order => order.id !== action.payload);
-    },
-  },
-  extraReducers: (builder) => {
+  reducers: {},
+  extraReducers: builder => {
     builder
-      .addCase(fetchFoodOrders.pending, (state) => {
+      .addCase(fetchFoodOrders.pending, state => {
         state.loading = true;
         state.error = null;
       })
@@ -49,7 +43,5 @@ const getFoodOrderSlice = createSlice({
       });
   },
 });
-
-export const { addOrder, removeOrder } = getFoodOrderSlice.actions;
 
 export default getFoodOrderSlice.reducer;

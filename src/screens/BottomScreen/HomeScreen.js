@@ -71,6 +71,8 @@ const HomeScreen = () => {
     '----------------------------123good-------------------',
   );
   const categoridataList = categoridata?.categoridata || [];
+  console.log(categoridataList, '----------------------------categoridataList-------------------');
+  
 
   // Auto-scroll banners
   useEffect(() => {
@@ -144,7 +146,9 @@ const HomeScreen = () => {
     return Number(info.staticPrice || 0);
   };
 
-  const openModal = cuisineType => {
+  const openModal = (cuisineType) => {
+    console.log(cuisineType,"---------------------cuisineType");
+    
     setSubCategoryData(cuisineType);
     setModalVisible(true);
   };
@@ -332,11 +336,12 @@ const isRestaurantActive = selectedRestaurant?.isActive !== false;
           <TouchableOpacity
             key={item.id}
             style={styles.categoryCard}
-            onPress={() => openModal(item?.slug)}>
+            onPress={() => openModal(item)}>
             <LinearGradient
               colors={['#fd4b57ff', '#fefdfdff']}
               style={styles.categoryCircle}>
               <Image source={{uri: item.image}} style={styles.categoryImage} />
+            
             </LinearGradient>
           </TouchableOpacity>
         ))}
@@ -353,7 +358,7 @@ const isRestaurantActive = selectedRestaurant?.isActive !== false;
 
 const renderItem = ({ item }) => {
   const dataItem = item?.food || item; // fallback
-  console.log(dataItem, "-------------------dataItem");
+
 
   const isFoodAvailable = dataItem.available !== false; // true if available
 

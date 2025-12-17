@@ -1,5 +1,5 @@
 // OrderSummaryScreen.js
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -17,33 +17,32 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
-import { useDispatch, useSelector } from 'react-redux';
+import {useNavigation} from '@react-navigation/native';
+import {useDispatch, useSelector} from 'react-redux';
 import DashboardScreen from '../components/DashboardScreen';
-import { clearCart } from '../redux/slice/cartSlice';
-import { fetchDeliverySettings } from '../redux/slice/deliverySettingsSlice';
-import { fetchCoupons } from '../redux/slice/couponSlice';
-import { postBilling } from '../redux/slice/postBillingSlice';
-import { fetchUserAddresses } from '../redux/slice/saveaddressSlice';
-import { deleteUserAddress } from '../redux/slice/AddressDeleteSlice';
+import {clearCart} from '../redux/slice/cartSlice';
+import {fetchDeliverySettings} from '../redux/slice/deliverySettingsSlice';
+import {fetchCoupons} from '../redux/slice/couponSlice';
+import {postBilling} from '../redux/slice/postBillingSlice';
+import {fetchUserAddresses} from '../redux/slice/saveaddressSlice';
+import {deleteUserAddress} from '../redux/slice/AddressDeleteSlice';
 import CustomHeader from '../components/CustomHeader';
 
-const { width } = Dimensions.get('window');
+const {width} = Dimensions.get('window');
 
 const OrderSummaryScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
-  const { selectedRestaurant, experienceType } = useSelector(
-    (state) => state.experience
+  const {selectedRestaurant, experienceType} = useSelector(
+    state => state.experience,
   );
-  const { addresses, loading } = useSelector((state) => state.address);
-  const { items: cartItems } = useSelector((state) => state.cart);
+  const {addresses, loading} = useSelector(state => state.address);
+  const {items: cartItems} = useSelector(state => state.cart);
 
-  
-  const { token } = useSelector((state) => state.auth);
-  const { data } = useSelector((state) => state.deliverySettings);
-  const couponState = useSelector((state) => state.coupons);
+  const {token} = useSelector(state => state.auth);
+  const {data} = useSelector(state => state.deliverySettings);
+  const couponState = useSelector(state => state.coupons);
 
   const couponList = couponState?.list?.data || [];
 
@@ -85,7 +84,7 @@ const OrderSummaryScreen = () => {
   }, []);
 
   // Format currency
-  const formatCurrency = (value) => {
+  const formatCurrency = value => {
     try {
       return new Intl.NumberFormat('en-IN', {
         style: 'currency',
@@ -98,32 +97,37 @@ const OrderSummaryScreen = () => {
     }
   };
 
-const getItemTotal = item => {
+  const getItemTotal = item => {
+    let price = 0;
+    if (item.hasVariation) {
+      const variant = item.selectedOption?.toLowerCase() || 'full';
+      price =
+        variant === 'full'
+          ? Number(item.priceInfo?.fullPrice || 0)
+          : Number(item.priceInfo?.halfPrice || 0);
+    } else {
+      price = Number(
+        item.priceInfo?.staticPrice ?? item.totalPrice ?? item.unitPrice ?? 0,
+      );
+    }
 
-  
-  let price = 0;
-  if (item.hasVariation) {
-    const variant = item.selectedOption?.toLowerCase() || 'full';
-    price = variant === 'full'
-      ? Number(item.priceInfo?.fullPrice || 0)
-      : Number(item.priceInfo?.halfPrice || 0);
-  } else {
-    price = Number(item.priceInfo?.staticPrice ?? item.totalPrice ?? item.unitPrice ?? 0);
-  }
+    const addonsTotal = (item.selectedAddOns || []).reduce(
+      (sum, a) => sum + Number(a.price) * (a.quantity || 1),
+      0,
+    );
 
-  const addonsTotal = (item.selectedAddOns || []).reduce(
-    (sum, a) => sum + (Number(a.price) * (a.quantity || 1)),
-    0
+    return (price + addonsTotal) * (Number(item.quantity) || 1);
+  };
+
+  const itemTotal = cartItems.reduce(
+    (sum, item) => sum + getItemTotal(item),
+    0,
   );
-
-  return (price + addonsTotal) * (Number(item.quantity) || 1);
-};
-
-  const itemTotal = cartItems.reduce((sum, item) => sum + getItemTotal(item), 0);
+  console.log(itemTotal, '------------------totalAmount---------------------');
 
   const packingFee = cartItems.reduce(
     (sum, item) => sum + (item.packagingCharges || 0),
-    0
+    0,
   );
 
   let discount = 0;
@@ -153,13 +157,15 @@ const getItemTotal = item => {
     cgstAmt +
     sgstAmt +
     convenienceAmt -
-    discount;
+    discount; // remove cgstAmt/sgstAmt if backend applies them
 
-  const applyCoupon = (coupon) => {
+  console.log(grandTotal, '------------------grandTotal---------------------');
+
+  const applyCoupon = coupon => {
     if (itemTotal < coupon.minOrderAmount) {
       ToastAndroid.show(
         `Min order ₹${coupon.minOrderAmount} required`,
-        ToastAndroid.SHORT
+        ToastAndroid.SHORT,
       );
       return;
     }
@@ -188,13 +194,11 @@ const getItemTotal = item => {
         restaurantId: selectedRestaurant?._id || '12345',
         address: savedAddress?._id || '54321',
         billingName: savedAddress?.name,
-        billingMobile: savedAddress?.contact,
+        billingMobile: savedAddress?.contact || '7864512300',
         type: experienceType?.toLowerCase() || 'delivery',
         deliveryCharges: Number(data?.delivery_charges_value) || 0,
-        // foodDetails: cartItems.map((item) => (   
-      
-        
-           
+        // foodDetails: cartItems.map((item) => (
+
         //   {
         //   foodId: item.id || item.foodId,
         //   quantity: Number(item.quantity),
@@ -214,46 +218,38 @@ const getItemTotal = item => {
         //   })),
         // })),
 
-  foodDetails: cartItems.map(item => {
-  const isFull = item.selectedOption === 'full';
-  const isHalf = item.selectedOption === 'half';
-
+       foodDetails: cartItems.map(item => {
+  const quantity = Number(item.quantity || 1);
   return {
     foodId: item.id || item.foodId,
-    quantity: Number(item.quantity),
+    quantity,
     variant: item.hasVariation ? item.selectedOption : null,
-    note: item.note || '',
-
-    // ✅ backend-required fields
-    fullPrice: item.hasVariation && isFull
+    fullPrice: item.hasVariation && item.selectedOption === 'full'
       ? Number(item.priceInfo?.fullPrice || 0)
-      : !item.hasVariation
-        ? Number(item.unitPrice || item.priceInfo?.staticPrice || 0)
-        : null,
-
-    halfPrice: item.hasVariation && isHalf
+      : null,
+    halfPrice: item.hasVariation && item.selectedOption === 'half'
       ? Number(item.priceInfo?.halfPrice || 0)
       : null,
-
+    unitPrice: !item.hasVariation ? Number(item.priceInfo?.staticPrice || item.unitPrice || 0) : null,
     addOns: (item.selectedAddOns || []).map(add => ({
       name: add.name,
       image: add.image || '',
       type: add.type || '',
       price: Number(add.price || 0),
+      quantity: add.quantity || 1,
     })),
   };
 }),
 
-        
-        totalAmount: itemTotal,
-        grossAmount: grandTotal,
+
+        totalAmount: grandTotal,
+        grossAmount: itemTotal,
         packingCharge: packingFee,
         CGST: cgstAmt,
         SGST: sgstAmt,
         couponCode: selectedCoupon?.code || null,
         paymentStatus: 'Pending',
       };
-
 
       await dispatch(postBilling(billingData)).unwrap();
       dispatch(clearCart());
@@ -266,10 +262,10 @@ const getItemTotal = item => {
     }
   };
 
-  const handleDeleteAddress = (id) => {
-    setLocalAddresses((prev) => prev.filter((item) => item._id !== id));
+  const handleDeleteAddress = id => {
+    setLocalAddresses(prev => prev.filter(item => item._id !== id));
     Alert.alert('Delete Address', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
+      {text: 'Cancel', style: 'cancel'},
       {
         text: 'Delete',
         style: 'destructive',
@@ -290,284 +286,304 @@ const getItemTotal = item => {
   };
 
   return (
-    <> 
+    <>
       <CustomHeader title=" My Order" />
-    <DashboardScreen scrollable={false}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 200 }}>
-        {/* ADDRESS CARD */}
-        <View style={styles.addressCard}>
-          {savedAddress ? (
-            <>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.addrName}>
-                  {savedAddress?.name} ({savedAddress?.addressType})
-                </Text>
-                <Text style={styles.addrDetails}>
-                  {savedAddress.flat}, {savedAddress.address}, {savedAddress.pin}
-                </Text>
-                <Text style={styles.addrPhone}>{savedAddress.contact}</Text>
-              </View>
-
-              <TouchableOpacity
-                onPress={() => setModalVisible(true)}
-                style={styles.changeBtn}
-              >
-                <Text style={styles.changeText}>Change</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <TouchableOpacity
-              onPress={() => navigation.navigate('MapScreen')}
-              style={{ flexDirection: 'row', alignItems: 'center' }}
-            >
-              <Icon name="add-location-alt" size={22} color="red" />
-              <Text style={styles.addAddressText}>Add Delivery Address</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* COUPONS */}
-        <View style={styles.sectionBox}>
-          <Text style={styles.sectionTitle}>Available Coupons</Text>
-          {couponList.map((coupon) => (
-            <LinearGradient
-              key={coupon._id}
-              colors={
-                selectedCoupon?._id === coupon._id
-                  ? ['#f50606e6', '#c16280ff']
-                  : ['#e47369ff', '#db2b2bff']
-              }
-              style={styles.couponCard}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={styles.couponDesc}>{coupon.description}</Text>
-                <Text style={styles.couponDetails}>
-                  Min ₹{coupon.minOrderAmount} | {coupon.discountDisplay}
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => applyCoupon(coupon)}
-                style={[
-                  styles.applyBtn,
-                  selectedCoupon?._id === coupon._id && { backgroundColor: '#ccc' },
-                ]}
-              >
-                <Text style={styles.applyText}>
-                  {selectedCoupon?._id === coupon._id ? 'APPLIED' : 'APPLY'}
-                </Text>
-              </TouchableOpacity>
-            </LinearGradient>
-          ))}
-        </View>
-
-        {/* CART ITEMS */}
-        <View style={styles.sectionBox}>
-          <Text style={styles.sectionTitle}>Your Items</Text>
-          {cartItems.map((item) => (
-            <View key={item._id} style={styles.itemRow}>
-              <Image source={{ uri: item.image }} style={styles.itemImage} />
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.foodQtyPrice}>Qty: {item.quantity}</Text>
-                <View style={{flexDirection:"row"}}> 
-                <Text style={styles.itemPrice}>
-                  {formatCurrency(getItemTotal(item))}
-                </Text>
-                 <Text style={{color:"black"}}>  {item?.selectedOption}</Text>
-                 </View>
-                {item.selectedAddOns?.length > 0 && (
-                  <Text style={{ color: '#555', fontSize: 13 }}>
-                    {item.selectedAddOns
-                      .map((a) => `${a.name} (+₹${a.price})`)
-                      .join(', ')}
+      <DashboardScreen scrollable={false}>
+        <ScrollView contentContainerStyle={{paddingBottom: 200}}>
+          {/* ADDRESS CARD */}
+          <View style={styles.addressCard}>
+            {savedAddress ? (
+              <>
+                <View style={{flex: 1}}>
+                  <Text style={styles.addrName}>
+                    {savedAddress?.name} ({savedAddress?.addressType})
                   </Text>
-                )}
-                {item.note && (
-                  <View style={styles.noteTag}>
-                    <Text style={styles.noteText}>📝 {item.note}</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          ))}
-        </View>
+                  <Text style={styles.addrDetails}>
+                    {savedAddress.flat}, {savedAddress.address},{' '}
+                    {savedAddress.pin}
+                  </Text>
+                  <Text style={styles.addrPhone}>{savedAddress.contact}</Text>
+                </View>
 
-        {/* BILL DETAILS */}
-        <View style={styles.sectionBox}>
-          <Text style={styles.sectionTitle}>Bill Details</Text>
-          <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Item Total</Text>
-            <Text style={styles.billLabel}>{formatCurrency(itemTotal)}</Text>
+                <TouchableOpacity
+                  onPress={() => setModalVisible(true)}
+                  style={styles.changeBtn}>
+                  <Text style={styles.changeText}>Change</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <TouchableOpacity
+                onPress={() => navigation.navigate('MapScreen')}
+                style={{flexDirection: 'row', alignItems: 'center'}}>
+                <Icon name="add-location-alt" size={22} color="red" />
+                <Text style={styles.addAddressText}>Add Delivery Address</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
-          {cartItems.map((item, index) =>
-            item.selectedAddOns?.length > 0 ? (
-              <View key={index}>
-                <Text style={{ fontWeight: '600', marginTop: 10 }}>{item.name}</Text>
-                {item.selectedAddOns.map((a, i) => (
-                  <View key={i} style={styles.billRow}>
-                    <Text style={styles.billLabel}>{a.name}</Text>
-                    <Text style={styles.billLabel}>{formatCurrency(a.price)}</Text>
+          {/* COUPONS */}
+          <View style={styles.sectionBox}>
+            <Text style={styles.sectionTitle}>Available Coupons</Text>
+            {couponList.map(coupon => (
+              <LinearGradient
+                key={coupon._id}
+                colors={
+                  selectedCoupon?._id === coupon._id
+                    ? ['#f50606e6', '#c16280ff']
+                    : ['#e47369ff', '#db2b2bff']
+                }
+                style={styles.couponCard}>
+                <View style={{flex: 1}}>
+                  <Text style={styles.couponDesc}>{coupon.description}</Text>
+                  <Text style={styles.couponDetails}>
+                    Min ₹{coupon.minOrderAmount} | {coupon.discountDisplay}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => applyCoupon(coupon)}
+                  style={[
+                    styles.applyBtn,
+                    selectedCoupon?._id === coupon._id && {
+                      backgroundColor: '#ccc',
+                    },
+                  ]}>
+                  <Text style={styles.applyText}>
+                    {selectedCoupon?._id === coupon._id ? 'APPLIED' : 'APPLY'}
+                  </Text>
+                </TouchableOpacity>
+              </LinearGradient>
+            ))}
+          </View>
+
+          {/* CART ITEMS */}
+          <View style={styles.sectionBox}>
+            <Text style={styles.sectionTitle}>Your Items</Text>
+            {cartItems.map(item => (
+              <View key={item._id} style={styles.itemRow}>
+                <Image source={{uri: item.image}} style={styles.itemImage} />
+                <View style={{flex: 1, marginLeft: 10}}>
+                  <Text style={styles.itemName}>{item.name}</Text>
+                  <Text style={styles.foodQtyPrice}>Qty: {item.quantity}</Text>
+                  <View style={{flexDirection: 'row'}}>
+                    <Text style={styles.itemPrice}>
+                      {formatCurrency(getItemTotal(item))}
+                    </Text>
+                    <Text style={{color: 'black'}}>
+                      {' '}
+                      {item?.selectedOption}
+                    </Text>
+                  </View>
+                  {item.selectedAddOns?.length > 0 && (
+                    <Text style={{color: '#555', fontSize: 13}}>
+                      {item.selectedAddOns
+                        .map(a => `${a.name} (+₹${a.price})`)
+                        .join(', ')}
+                    </Text>
+                  )}
+                  {item.note && (
+                    <View style={styles.noteTag}>
+                      <Text style={styles.noteText}>📝 {item.note}</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {/* BILL DETAILS */}
+          <View style={styles.sectionBox}>
+            <Text style={styles.sectionTitle}>Bill Details</Text>
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>Item Total</Text>
+              <Text style={styles.billLabel}>{formatCurrency(itemTotal)}</Text>
+            </View>
+
+            {cartItems.map((item, index) =>
+              item.selectedAddOns?.length > 0 ? (
+                <View key={index}>
+                  <Text style={{fontWeight: '600', marginTop: 10}}>
+                    {item.name}
+                  </Text>
+                  {item.selectedAddOns.map((a, i) => (
+                    <View key={i} style={styles.billRow}>
+                      <Text style={styles.billLabel}>{a.name}</Text>
+                      <Text style={styles.billLabel}>
+                        {formatCurrency(a.price)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null,
+            )}
+
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>Delivery Fee</Text>
+              <Text style={styles.billLabel}>
+                {formatCurrency(data?.delivery_charges_value || 0)}
+              </Text>
+            </View>
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>Packing Fee</Text>
+              <Text style={styles.billLabel}>{formatCurrency(packingFee)}</Text>
+            </View>
+            {data?.Cgst && (
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>CGST ({data.Cgst}%)</Text>
+                <Text style={styles.billLabel}>{formatCurrency(cgstAmt)}</Text>
+              </View>
+            )}
+            {data?.Sgst && (
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>SGST ({data.Sgst}%)</Text>
+                <Text style={styles.billLabel}>{formatCurrency(sgstAmt)}</Text>
+              </View>
+            )}
+            {selectedCoupon && (
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>Coupon Discount</Text>
+                <Text style={styles.billLabel}>
+                  - {formatCurrency(discount)}
+                </Text>
+              </View>
+            )}
+            <View style={styles.divider} />
+            <View style={styles.billRow}>
+              <Text style={styles.totalLabel}>Grand Total</Text>
+              <Text style={styles.totalValue}>
+                {formatCurrency(grandTotal)}
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* BOTTOM BAR */}
+        {cartItems.length > 0 && (
+          <View style={styles.bottomBar}>
+            <Text style={styles.bottomTotal}>{formatCurrency(grandTotal)}</Text>
+            <TouchableOpacity
+              onPress={handleProceed}
+              style={styles.continueBtn}>
+              <Text style={styles.continueText}>Proceed to Pay</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ADDRESS MODAL */}
+        <Modal
+          visible={modalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setModalVisible(false)}>
+          <View style={styles.savemodalView}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Address</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Icon name="close" size={26} color="red" />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.locationContainer}
+              onPress={() => navigation.navigate('MapScreen')}>
+              <Text style={styles.locationText}>
+                Select your current location +
+              </Text>
+            </TouchableOpacity>
+
+            {loading ? (
+              <ActivityIndicator color="red" />
+            ) : (
+              <ScrollView style={{maxHeight: 450}}>
+                {localAddresses.map(item => (
+                  <View key={item._id} style={styles.addressItem}>
+                    <TouchableOpacity
+                      style={{flex: 1}}
+                      onPress={async () => {
+                        setSavedAddress(item);
+                        await AsyncStorage.setItem(
+                          'savedAddress',
+                          JSON.stringify(item),
+                        );
+                        setModalVisible(false);
+                        ToastAndroid.show(
+                          'Address selected!',
+                          ToastAndroid.SHORT,
+                        );
+                      }}>
+                      <Text style={styles.addressType}>{item.addressType}</Text>
+                      <Text style={styles.addressText}>
+                        {item.flat}, {item.address}
+                      </Text>
+                      <Text style={styles.nameText}>
+                        {item.name} - {item.contact}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {savedAddress?._id === item._id && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={22}
+                        color="#f11b1b"
+                      />
+                    )}
+
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.navigate('MapScreen', {editData: item})
+                      }
+                      style={{marginLeft: 10}}>
+                      <Ionicons name="create-outline" size={22} color="blue" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => handleDeleteAddress(item._id)}
+                      style={{marginLeft: 10}}>
+                      <Ionicons name="trash-outline" size={22} color="red" />
+                    </TouchableOpacity>
                   </View>
                 ))}
-              </View>
-            ) : null
-          )}
+              </ScrollView>
+            )}
+          </View>
+        </Modal>
 
-          <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Delivery Fee</Text>
-            <Text style={styles.billLabel}>
-              {formatCurrency(data?.delivery_charges_value || 0)}
-            </Text>
-          </View>
-          <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Packing Fee</Text>
-            <Text style={styles.billLabel}>{formatCurrency(packingFee)}</Text>
-          </View>
-          {data?.Cgst && (
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>CGST ({data.Cgst}%)</Text>
-              <Text style={styles.billLabel}>{formatCurrency(cgstAmt)}</Text>
+        {/* COD MODAL */}
+        <Modal
+          visible={codModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setCodModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Ionicons name="cash-outline" size={50} color="red" />
+              <Text style={styles.modalTitle}>Cash on Delivery</Text>
+              <Text style={styles.modalText}>
+                You’ll pay {formatCurrency(grandTotal)} on delivery.
+              </Text>
+
+              <TouchableOpacity
+                onPress={handleConfirmCOD}
+                style={styles.modalBtn}>
+                <Text style={styles.modalBtnText}>Confirm Order</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setCodModalVisible(false)}
+                style={[
+                  styles.modalBtn,
+                  {backgroundColor: '#ccc', marginTop: 8},
+                ]}>
+                <Text style={styles.modalBtnText}>Cancel</Text>
+              </TouchableOpacity>
             </View>
-          )}
-          {data?.Sgst && (
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>SGST ({data.Sgst}%)</Text>
-              <Text style={styles.billLabel}>{formatCurrency(sgstAmt)}</Text>
-            </View>
-          )}
-          {selectedCoupon && (
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Coupon Discount</Text>
-              <Text style={styles.billLabel}>- {formatCurrency(discount)}</Text>
-            </View>
-          )}
-          <View style={styles.divider} />
-          <View style={styles.billRow}>
-            <Text style={styles.totalLabel}>Grand Total</Text>
-            <Text style={styles.totalValue}>{formatCurrency(grandTotal)}</Text>
           </View>
-        </View>
-      </ScrollView>
-
-      {/* BOTTOM BAR */}
-      {cartItems.length > 0 && (
-        <View style={styles.bottomBar}>
-          <Text style={styles.bottomTotal}>{formatCurrency(grandTotal)}</Text>
-          <TouchableOpacity onPress={handleProceed} style={styles.continueBtn}>
-            <Text style={styles.continueText}>Proceed to Pay</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* ADDRESS MODAL */}
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.savemodalView}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Select Address</Text>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Icon name="close" size={26} color="red" />
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            style={styles.locationContainer}
-            onPress={() => navigation.navigate('MapScreen')}
-          >
-            <Text style={styles.locationText}>Select your current location +</Text>
-          </TouchableOpacity>
-
-          {loading ? (
-            <ActivityIndicator color="red" />
-          ) : (
-            <ScrollView style={{ maxHeight: 450 }}>
-              {localAddresses.map((item) => (
-                <View key={item._id} style={styles.addressItem}>
-                  <TouchableOpacity
-                    style={{ flex: 1 }}
-                    onPress={async () => {
-                      setSavedAddress(item);
-                      await AsyncStorage.setItem(
-                        'savedAddress',
-                        JSON.stringify(item)
-                      );
-                      setModalVisible(false);
-                      ToastAndroid.show('Address selected!', ToastAndroid.SHORT);
-                    }}
-                  >
-                    <Text style={styles.addressType}>{item.addressType}</Text>
-                    <Text style={styles.addressText}>
-                      {item.flat}, {item.address}
-                    </Text>
-                    <Text style={styles.nameText}>
-                      {item.name} - {item.contact}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {savedAddress?._id === item._id && (
-                    <Ionicons name="checkmark-circle" size={22} color="#f11b1b" />
-                  )}
-
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('MapScreen', { editData: item })}
-                    style={{ marginLeft: 10 }}
-                  >
-                    <Ionicons name="create-outline" size={22} color="blue" />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => handleDeleteAddress(item._id)}
-                    style={{ marginLeft: 10 }}
-                  >
-                    <Ionicons name="trash-outline" size={22} color="red" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </ScrollView>
-          )}
-        </View>
-      </Modal>
-
-      {/* COD MODAL */}
-      <Modal
-        visible={codModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setCodModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Ionicons name="cash-outline" size={50} color="red" />
-            <Text style={styles.modalTitle}>Cash on Delivery</Text>
-            <Text style={styles.modalText}>
-              You’ll pay {formatCurrency(grandTotal)} on delivery.
-            </Text>
-
-            <TouchableOpacity onPress={handleConfirmCOD} style={styles.modalBtn}>
-              <Text style={styles.modalBtnText}>Confirm Order</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setCodModalVisible(false)}
-              style={[styles.modalBtn, { backgroundColor: '#ccc', marginTop: 8 }]}
-            >
-              <Text style={styles.modalBtnText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    </DashboardScreen>
+        </Modal>
+      </DashboardScreen>
     </>
   );
 };
 
 export default OrderSummaryScreen;
-
 
 /* ------------------ STYLES ------------------ */
 const styles = StyleSheet.create({
