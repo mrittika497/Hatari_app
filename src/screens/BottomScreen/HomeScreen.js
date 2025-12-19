@@ -41,6 +41,8 @@ const HomeScreen = () => {
   const isVeg = useSelector(state => state.foodFilter.isVeg);
   const {bannerlist} = useSelector(state => state.banners);
   const cartItems = useSelector(s => s.cart.items || []);
+    const totalCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  console.log(totalCount, '----------------------totalCount');
 
   const [modalVisible, setModalVisible] = useState(false);
   const [modalVisibleTop, setModalVisibleTop] = useState(false);
@@ -250,10 +252,22 @@ const isRestaurantActive = selectedRestaurant?.isActive !== false;
     },
   ];
 
-  const filteredFoods = foods.filter(item => {
-    const type = (item?.food?.type || '').toLowerCase().trim();
-    return isVeg ? type === 'veg' : type !== 'veg';
-  });
+ const filteredFoods = foods.filter(item => {
+  const rawType = item?.food?.type || item?.type || '';
+  const type = rawType.toLowerCase().trim();
+
+  if (isVeg === true) {
+    return type === 'veg';
+  }
+
+  if (isVeg === false) {
+    return type === 'non-veg';
+  }
+
+  return true; // fallback (if toggle state is null)
+});
+
+  
 
   const renderHeader = () => (
     <>
@@ -358,15 +372,14 @@ const isRestaurantActive = selectedRestaurant?.isActive !== false;
 
 const renderItem = ({ item }) => {
   const dataItem = item?.food || item; // fallback
-
-
   const isFoodAvailable = dataItem.available !== false; // true if available
+
 
   return (
     <View style={styles.card}>
       <Image source={{ uri: dataItem.image }} style={styles.image} />
       <View style={styles.details}>
-        <Text style={styles.cuisine}>{dataItem.mainCategory || ''}</Text>
+        <Text style={styles.cuisine}>{dataItem.cuisineType || ''}</Text>
         <View style={styles.row}>
           <View
             style={[
@@ -479,7 +492,7 @@ const renderItem = ({ item }) => {
                         />
                         <View style={{flex: 1, marginLeft: 12}}>
                           <Text style={styles.modalCuisine}>
-                            {selectedFood?.mainCategory}
+                            {selectedFood?.cuisineType}
                           </Text>
                           <Text style={styles.modalFoodName}>
                             {selectedFood.name}
@@ -639,7 +652,7 @@ const renderItem = ({ item }) => {
               colors={['#ff4d4d', '#ff6f61', '#ff8a65']}
               style={styles.bottomGradient}>
               <Text style={styles.bottomMsg}>
-                ✓ Item added successfully ({cartItems.length} in cart)
+                ✓ Item added successfully ({totalCount} in cart)
               </Text>
               <TouchableOpacity
                 style={styles.bottomBtn}

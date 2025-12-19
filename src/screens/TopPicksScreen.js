@@ -1,5 +1,5 @@
-// TopPicksScreen.js — Full screen, defensive, error-free
-import React, { useEffect, useRef, useState, useCallback } from "react";
+// TopPicksScreen.js — Production-ready, full screen, error-free
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,6 @@ import {
   ActivityIndicator,
   RefreshControl,
   TouchableWithoutFeedback,
-  Keyboard,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
@@ -24,9 +23,8 @@ import LinearGradient from "react-native-linear-gradient";
 import DashboardScreen from "../components/DashboardScreen";
 import CustomHeader from "../components/CustomHeader";
 
-import { fetchCategoryFoodsBySubcat } from "../redux/slice/TopPickerSlice";
+import { fetchAllFoods } from "../redux/slice/AllFoodsSlice";
 import { addToCart } from "../redux/slice/cartSlice";
-import Theme from "../assets/theme";
 
 const { width } = Dimensions.get("window");
 
@@ -35,154 +33,95 @@ const TopPicksScreen = () => {
   const dispatch = useDispatch();
   const route = useRoute();
 
-  // defensive selectors (avoid undefined)
   const isVeg = useSelector((state) => state.foodFilter?.isVeg ?? null);
   const cartItems = useSelector((state) => state.cart?.items ?? []);
+   const totalCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  console.log(totalCount, '----------------------totalCount');
+  const { AllFoodsData } = useSelector((state) => state.allFoods ?? {});
 
-  const {
-    categoryId,
-    categoryName,
-    restaurantId,
-    categoryIngredients,
-    cuisineType,
-  } = route.params ?? {};
+  const { categoryId, categoryName } = route.params ?? {};
 
-  const {
-    data: categoryFoods = [],
-    loading = false,
-    page = 1,
-    hasMore = false,
-  } = useSelector((state) => state.catItemsbySubcat ?? {});
-
-  // UI state
   const [selectedFood, setSelectedFood] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [selectedOption, setSelectedOption] = useState("half");
+  const [selectedAddOns, setSelectedAddOns] = useState([]);
+  const [totalPrice, setTotalPrice] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [bottomBoxVisible, setBottomBoxVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedOption, setSelectedOption] = useState("half"); // 'half'|'full'|'static'
-  const [totalPrice, setTotalPrice] = useState(0);
-  console.log(totalPrice,"----------------------------totalPrice----------------------");
-  
-  // animations  
+
+  // Animations
   const slideAnim = useRef(new Animated.Value(0)).current;
   const boxAnim = useRef(new Animated.Value(150)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // safe helper to normalize food object (supports mixed API)
+  // Normalize food (supports multiple API formats)
   const normalizeFood = (item) => {
     if (!item) return null;
     if (item.food && typeof item.food === "object") return item.food;
     return item;
   };
 
-  // initial fetch
+  // Compute unit price
+  const computeUnitPrice = (food, option = "half") => {
+    const info = food?.priceInfo ?? {};
+    if (info.hasVariation)
+      return option === "half"
+        ? Number(info.halfPrice || 0)
+        : Number(info.fullPrice || 0);
+    return Number(info.staticPrice || 0);
+  };
+
+  // Update total
   useEffect(() => {
-    dispatch(
-      fetchCategoryFoodsBySubcat({
-        subCategoryId: categoryId,
-        categoryIngredients,
-        restaurantId,
-        cuisineType,
-        page: 1,
-      })
-    );
+    if (!selectedFood) return;
+    const base = computeUnitPrice(selectedFood, selectedOption) * quantity;
+    const addons =
+      selectedAddOns.reduce((sum, a) => sum + Number(a.price || 0), 0) *
+      quantity;
+    setTotalPrice(base + addons);
+  }, [selectedFood, selectedOption, quantity, selectedAddOns]);
 
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, categoryId, cuisineType, restaurantId]);
-
-  // pagination
-  const handleLoadMore = () => {
-    if (!loading && hasMore) {
+  // Fetch food items
+  useEffect(() => {
+    if (categoryId) {
       dispatch(
-        fetchCategoryFoodsBySubcat({
-          subCategoryId: categoryId,
-          categoryIngredients,
-          restaurantId,
-          cuisineType,
-          page: page + 1,
+        fetchAllFoods({
+          subCategory: categoryId,
+          type: isVeg ? "veg" : "non-veg",
         })
       );
     }
-  };
+  }, [categoryId, dispatch, isVeg]);
 
-  // pull to refresh
-  const onRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await dispatch(
-        fetchCategoryFoodsBySubcat({
-          subCategoryId: categoryId,
-          categoryIngredients,
-          restaurantId,
-          cuisineType,
-          page: 1,
-        })
-      );
-    } catch (e) {
-      // ignore
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  // client-side veg filter (defensive)
-  const filteredFoods = (categoryFoods || []).filter((item) => {
+  // Filter foods by veg/non-veg
+  const filteredFoods = (AllFoodsData?.data || []).filter((item) => {
     const food = normalizeFood(item);
     if (!food) return false;
 
     const rawType = Array.isArray(food.type) ? food.type[0] : String(food.type || "");
     const type = rawType.toLowerCase();
 
-    if (isVeg === true) {
-      return type.includes("veg") && !type.includes("non");
-    }
-    if (isVeg === false) {
-      return type.includes("non");
-    }
+    if (isVeg === true) return type.includes("veg") && !type.includes("non");
+    if (isVeg === false) return type.includes("non");
     return true;
   });
 
-  // helpers for pricing
-  const getUnitPrice = (food, option = "half") => {
-    if (!food?.priceInfo) return 0;
-    const info = food.priceInfo;
-    if (info.hasVariation) {
-      return option === "half" ? Number(info.halfPrice || 0) : Number(info.fullPrice || 0);
-    }
-    return Number(info.staticPrice || 0);
+  const toggleAddOn = (addon) => {
+    const exists = selectedAddOns.some((a) => a.name === addon.name);
+    setSelectedAddOns(
+      exists
+        ? selectedAddOns.filter((a) => a.name !== addon.name)
+        : [...selectedAddOns, addon]
+    );
   };
 
-  const updateTotal = (qty = quantity, option = selectedOption) => {
-    if (!selectedFood) return;
-    const unit = getUnitPrice(selectedFood, option);
-    setTotalPrice(unit * (qty || 1));
-  };
-
-  // open modal: set defaults and animate
-  const openModal = (foodItem) => {
-    const food = normalizeFood(foodItem);
-    if (!food) return;
-
+  const openModal = (food) => {
     setSelectedFood(food);
+    setSelectedOption(food?.priceInfo?.hasVariation ? "half" : "full");
     setQuantity(1);
-
-    // default option & price
-    if (food.priceInfo?.hasVariation) {
-      setSelectedOption("half");
-      setTotalPrice(Number(food.priceInfo.halfPrice || 0));
-    } else {
-      setSelectedOption("static");
-      setTotalPrice(Number(food.priceInfo.staticPrice || 0));
-    }
-
+    setSelectedAddOns([]);
     setModalVisible(true);
+    slideAnim.setValue(0);
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 300,
@@ -200,27 +139,27 @@ const TopPicksScreen = () => {
       setModalVisible(false);
       setSelectedFood(null);
       setQuantity(1);
+      setSelectedAddOns([]);
       setSelectedOption("half");
-      setTotalPrice(0);
     });
   };
 
-  // keep total in sync with quantity/option changes
-  useEffect(() => {
-    updateTotal(quantity, selectedOption);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quantity, selectedOption, selectedFood]);
-
-  // add to cart
   const handleConfirmAdd = () => {
     if (!selectedFood) return;
-    dispatch(addToCart({ ...selectedFood, quantity, option: selectedOption, totalPrice }));
+    dispatch(
+      addToCart({
+        ...selectedFood,
+        quantity,
+        option: selectedOption,
+        selectedAddOns,
+        totalPrice,
+      })
+    );
     closeModal();
     setBottomBoxVisible(true);
     Animated.timing(boxAnim, {
       toValue: 0,
       duration: 400,
-      easing: Easing.out(Easing.ease),
       useNativeDriver: true,
     }).start();
   };
@@ -231,314 +170,346 @@ const TopPicksScreen = () => {
       duration: 300,
       useNativeDriver: true,
     }).start(() => setBottomBoxVisible(false));
-
-    // NOTE: adjust route name if your app uses a different name
     navigation.navigate("OderCartScreen");
   };
 
-  // skeleton/shimmer renderer
-  const renderSkeleton = (i) => (
-    <View style={styles.card} key={`skeleton-${i}`}>
-      <ShimmerPlaceHolder LinearGradient={LinearGradient} style={styles.image} />
-      <View style={{ flex: 1, marginLeft: 10 }}>
-        <ShimmerPlaceHolder LinearGradient={LinearGradient} style={{ width: width * 0.4, height: 14, marginBottom: 6, borderRadius: 4 }} />
-        <ShimmerPlaceHolder LinearGradient={LinearGradient} style={{ width: width * 0.25, height: 14, marginBottom: 6, borderRadius: 4 }} />
-        <ShimmerPlaceHolder LinearGradient={LinearGradient} style={{ width: width * 0.2, height: 14, borderRadius: 4 }} />
-      </View>
-    </View>
-  );
+const renderItem = ({ item, index }) => {
+  const food = normalizeFood(item);
+  if (!food) return null;
 
-  // item renderer
-  const renderItem = ({ item, index }) => {
-    const food = normalizeFood(item);
-    if (!food) return null;
-
-    const rawType = Array.isArray(food.type) ? food.type[0] : String(food.type || "");
-    const type = rawType.toLowerCase();
-
-    const priceInfo = food.priceInfo || {};
-    const priceDisplay = priceInfo.hasVariation
-      ? `Half ₹${priceInfo.halfPrice} • Full ₹${priceInfo.fullPrice}`
-      : `₹${priceInfo.staticPrice ?? "N/A"}`;
-
-    const imageUri = food.image || food.imageUrl || food.img || "";
-
-    const keyId = String(food._id || item._id || item.id || index);
-
-    return (
-      <View style={styles.card} key={keyId}>
-        <Image source={{ uri: imageUri }} style={styles.image} />
-
-        <View style={styles.details}>
-          <Text style={styles.cuisine}>{food.cuisineType || ""}</Text>
-
-          <View style={styles.row}>
-            <View
-              style={[
-                styles.typeIndicator,
-                { borderColor: type.includes("veg") && !type.includes("non") ? "green" : "red" },
-              ]}
-            >
-              <View
-                style={[
-                  styles.typeDot,
-                  { backgroundColor: type.includes("veg") && !type.includes("non") ? "green" : "red" },
-                ]}
-              />
-            </View>
-
-            <Text style={styles.name} numberOfLines={1}>
-              {food.name}
-            </Text>
-          </View>
-
-          <Text style={styles.priceText}>Price: {priceDisplay}</Text>
-        </View>
-
-        <TouchableOpacity style={styles.addBtn} onPress={() => openModal(food)}>
-          <Text style={styles.addText}>Add</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  };
-
-  const keyExtractor = (item, idx) => String(item?.food?._id ?? item?._id ?? item?.id ?? idx);
+  const type = String(food.type ?? "").toLowerCase();
+  const priceInfo = food.priceInfo || {};
+  const imageUri = food.image || "";
 
   return (
-    <> 
-     <CustomHeader title={categoryName ?? "Top Picks"} />
+    <View style={styles.card} key={food._id || index}>
+      <Image source={{ uri: imageUri }} style={styles.image} />
+      <View style={styles.details}>
+        <Text style={styles.cuisine}>{food.cuisineType || ""}</Text>
+        <View style={styles.row}>
+          <View
+            style={[
+              styles.typeIndicator,
+              {
+                borderColor:
+                  type.includes("veg") && !type.includes("non") ? "green" : "red",
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.typeDot,
+                {
+                  backgroundColor:
+                    type.includes("veg") && !type.includes("non")
+                      ? "green"
+                      : "red",
+                },
+              ]}
+            />
+          </View>
+          <Text style={styles.name} numberOfLines={1}>
+            {food.name}
+          </Text>
+        </View>
 
-    <DashboardScreen scrollable={false}>
-     
-
-      <View style={styles.container}>
-        {loading && page === 1 ? (
-          Array.from({ length: 6 }).map((_, i) => renderSkeleton(i))
-        ) : filteredFoods.length === 0 ? (
-          <Text style={styles.noData}>No items available</Text>
+        {priceInfo.hasVariation ? (
+          <>
+            <Text style={styles.priceText}>Half: ₹{priceInfo.halfPrice}</Text>
+            <Text style={styles.priceText}>Full: ₹{priceInfo.fullPrice}</Text>
+          </>
         ) : (
-          <FlatList
-            showsVerticalScrollIndicator={false}
-            data={filteredFoods}
-            keyExtractor={keyExtractor}
-            renderItem={renderItem}
-            contentContainerStyle={{ paddingBottom: 120 }}
-            onEndReached={handleLoadMore}
-            onEndReachedThreshold={0.3}
-            ListFooterComponent={
-              loading ? (
-                page === 1 ? null : <ActivityIndicator size="large" color="#FF4D4D" style={{ margin: 10 }} />
-              ) : null
-            }
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            ListEmptyComponent={!loading ? <Text style={styles.noData}>No items available</Text> : null}
-          />
+          <Text style={styles.priceText}>Price: ₹{priceInfo.staticPrice ?? "N/A"}</Text>
         )}
       </View>
 
-      {/* Quantity Modal */}
-      <Modal transparent visible={modalVisible} animationType="none">
-        <TouchableWithoutFeedback onPress={closeModal}>
-          <View style={styles.modalOverlay}>
-            {/* Prevent overlay closing when tapping content by wrapping content in another TouchableWithoutFeedback */}
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <Animated.View
-                style={[
-                  styles.modalContent,
-                  {
-                    transform: [
-                      {
-                        translateY: slideAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [300, 0],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
-              >
-                <View style={styles.modalHandle} />
+      <TouchableOpacity style={styles.addBtn} onPress={() => openModal(food)}>
+        <Text style={styles.addText}>Add</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
-                {selectedFood && (
-                  <>
-                    <View style={styles.modalFoodRow}>
-                      <Image source={{ uri: selectedFood.image || selectedFood.imageUrl || "" }} style={styles.modalImage} />
-                      <View style={{ flex: 1, marginLeft: 10 }}>
-                        <Text style={styles.modalFoodName}>{selectedFood.name}</Text>
-                        <Text style={styles.modalCuisine}>{selectedFood?.cuisineType}</Text>
 
-                        {selectedFood?.priceInfo?.hasVariation ? (
-                          <View style={{ flexDirection: "row", marginTop: 8 }}>
-                            <TouchableOpacity
-                              style={[styles.optionBtn, selectedOption === "half" && styles.selectedOption]}
-                              onPress={() => {
-                                setSelectedOption("half");
-                                updateTotal(quantity, "half");
-                              }}
-                            >
-                              <Text style={[styles.optionText, selectedOption === "half" && styles.optionTextSelected]}>
-                                Half – ₹{selectedFood.priceInfo.halfPrice}
-                              </Text>
-                            </TouchableOpacity>
+  const keyExtractor = (item, idx) =>
+    String(item?.food?._id ?? item?._id ?? item?.id ?? idx);
 
-                            <TouchableOpacity
-                              style={[styles.optionBtn, selectedOption === "full" && styles.selectedOption]}
-                              onPress={() => {
-                                setSelectedOption("full");
-                                updateTotal(quantity, "full");
-                              }}
-                            >
-                              <Text style={[styles.optionText, selectedOption === "full" && styles.optionTextSelected]}>
-                                Full – ₹{selectedFood.priceInfo.fullPrice}
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                        ) : (
-                          <Text style={styles.modalPriceStatic}>Price:₹{selectedFood.priceInfo?.staticPrice}</Text>
-                        )}
+  return (
+    <>
+      <CustomHeader title={categoryName ?? "Top Picks"} />
+      <DashboardScreen scrollable={false}>
+        <View style={styles.container}>
+          {filteredFoods.length === 0 ? (
+            <Text style={styles.noData}>No items available</Text>
+          ) : (
+            <FlatList
+              showsVerticalScrollIndicator={false}
+              data={filteredFoods}
+              keyExtractor={keyExtractor}
+              renderItem={renderItem}
+              contentContainerStyle={{ paddingBottom: 120 }}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={() => {}} />
+              }
+            />
+          )}
+        </View>
+
+        {/* Modal */}
+        <Modal transparent visible={modalVisible} animationType="none">
+          <TouchableWithoutFeedback onPress={closeModal}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback>
+                <Animated.View
+                  style={[
+                    styles.modalContent,
+                    {
+                      transform: [
+                        {
+                          translateY: slideAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [300, 0],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  <View style={styles.modalHandle} />
+                  {selectedFood && (
+                    <>
+                      <View style={styles.modalHeader}>
+                        <Image
+                          source={{ uri: selectedFood.image }}
+                          style={styles.modalImg}
+                        />
+                        <View style={{ flex: 1, marginLeft: 12 }}>
+                          <Text style={styles.modalCuisine}>
+                            {selectedFood.cuisineType}
+                          </Text>
+                          <Text style={styles.modalFoodName}>
+                            {selectedFood.name}
+                          </Text>
+                        </View>
                       </View>
-                    </View>
 
-                    {selectedFood?.description ? <Text style={styles.modalDescription}>{selectedFood.description}</Text> : null}
+                      {selectedFood?.priceInfo?.hasVariation ? (
+                        <View style={styles.optionRow}>
+                          {["half", "full"].map((opt) => (
+                            <TouchableOpacity
+                              key={opt}
+                              style={[
+                                styles.optionBtn,
+                                selectedOption === opt && styles.selectedOption,
+                              ]}
+                              onPress={() => setSelectedOption(opt)}
+                            >
+                              <Text
+                                style={[
+                                  styles.optionText,
+                                  selectedOption === opt &&
+                                    styles.optionTextSelected,
+                                ]}
+                              >
+                                {opt.charAt(0).toUpperCase() + opt.slice(1)} – ₹
+                                {opt === "half"
+                                  ? selectedFood.priceInfo.halfPrice
+                                  : selectedFood.priceInfo.fullPrice}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      ) : (
+                        <Text style={styles.staticPrice}>
+                          Price: ₹{selectedFood.priceInfo.staticPrice}
+                        </Text>
+                      )}
 
-                    <View style={styles.quantityBox}>
-                      <TouchableOpacity
-                        style={styles.qtyBtn}
-                        onPress={() => {
-                          if (quantity > 1) {
-                            const newQty = quantity - 1;
-                            setQuantity(newQty);
-                            updateTotal(newQty);
+                      {selectedFood?.description && (
+                        <Text style={styles.modalDescription}>
+                          {selectedFood.description}
+                        </Text>
+                      )}
+
+                      {selectedFood?.addOns?.length > 0 && (
+                        <View style={{ marginTop: 15 }}>
+                          <Text style={styles.addonTitle}>Add-ons</Text>
+                          {selectedFood.addOns.map((addon, index) => {
+                            const isSelected = selectedAddOns.some(
+                              (a) => a.name === addon.name
+                            );
+                            return (
+                              <TouchableOpacity
+                                key={index}
+                                style={[
+                                  styles.addonItem,
+                                  isSelected && {
+                                    borderColor: "#FF4D4D",
+                                    borderWidth: 1.5,
+                                  },
+                                ]}
+                                onPress={() => toggleAddOn(addon)}
+                              >
+                                <Image
+                                  source={{ uri: addon.image }}
+                                  style={styles.addonImage}
+                                />
+                                <View style={{ flex: 1 }}>
+                                  <Text style={styles.addonName}>{addon.name}</Text>
+                                  <Text style={styles.addonPrice}>₹{addon.price}</Text>
+                                </View>
+                                <View
+                                  style={
+                                    isSelected
+                                      ? styles.checkmarkSelected
+                                      : styles.checkmarkBox
+                                  }
+                                >
+                                  {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                                </View>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      )}
+
+                      <View style={styles.quantityBox}>
+                        <TouchableOpacity
+                          style={styles.qtyBtn}
+                          onPress={() =>
+                            quantity > 1 && setQuantity(quantity - 1)
                           }
-                        }}
-                      >
-                        <Text style={styles.qtyText}>-</Text>
-                      </TouchableOpacity>
+                        >
+                          <Text style={styles.qtyText}>-</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.qtyValue}>{quantity}</Text>
+                        <TouchableOpacity
+                          style={styles.qtyBtn}
+                          onPress={() => setQuantity(quantity + 1)}
+                        >
+                          <Text style={styles.qtyText}>+</Text>
+                        </TouchableOpacity>
+                      </View>
 
-                      <Text style={styles.qtyValue}>{quantity}</Text>
+                      <View style={styles.modalFooter}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.totalPrice}>
+                            Total: ₹{totalPrice}
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.confirmBtn}
+                          onPress={handleConfirmAdd}
+                        >
+                          <Text style={styles.confirmBtnText}>Confirm Add</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                  )}
+                </Animated.View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
 
-                      <TouchableOpacity
-                        style={styles.qtyBtn}
-                        onPress={() => {
-                          const newQty = quantity + 1;
-                          setQuantity(newQty);
-                          updateTotal(newQty);
-                        }}
-                      >
-                        <Text style={styles.qtyText}>+</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.modalFooter}>
-                      <Text style={styles.totalText}>Total: ₹{totalPrice}</Text>
-
-                      <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirmAdd}>
-                        <Text style={styles.confirmBtnText}>Confirm Add</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </>
-                )}
-              </Animated.View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-
-      {/* Bottom success box */}
-      {bottomBoxVisible && (
-        <Animated.View
-          style={[
-            styles.bottomBox,
-            {
-              transform: [
-                {
-                  translateY: boxAnim.interpolate({
-                    inputRange: [0, 150],
-                    outputRange: [0, 150],
-                  }),
-                },
-              ],
-            },
-          ]}
-        >
-          <LinearGradient colors={["#ff4d4d", "#ff6f61", "#ff8a65"]} style={styles.bottomGradient}>
-            <Text style={styles.bottomMsg}>✓ Item added successfully ({cartItems.length} in cart)</Text>
-
-            <TouchableOpacity style={styles.bottomBtn} onPress={handleGoToCart}>
-              <Text style={styles.bottomBtnText}>Go to Cart</Text>
-            </TouchableOpacity>
-          </LinearGradient>
-        </Animated.View>
-      )}
-    </DashboardScreen>
-        </>
+        {/* Added to cart bottom box */}
+        {bottomBoxVisible && (
+          <Animated.View
+            style={[
+              styles.bottomBox,
+              {
+                transform: [
+                  {
+                    translateY: boxAnim.interpolate({
+                      inputRange: [0, 150],
+                      outputRange: [0, 150],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <LinearGradient
+              colors={["#ff4d4d", "#ff6f61", "#ff8a65"]}
+              style={styles.bottomGradient}
+            >
+              <Text style={styles.bottomMsg}>
+                ✓ Item added successfully ({totalCount} in cart)
+              </Text>
+              <TouchableOpacity
+                style={styles.bottomBtn}
+                onPress={handleGoToCart}
+              >
+                <Text style={styles.bottomBtnText}>Go to Cart</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </Animated.View>
+        )}
+      </DashboardScreen>
+    </>
   );
 };
 
 export default TopPicksScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal:10 },
+  container: { flex: 1, paddingHorizontal: 10 },
   noData: { textAlign: "center", marginTop: 20, color: "gray" },
 
-  // card
   card: {
-    flexDirection: "row",
-    backgroundColor: "#f9f9f9",
+    flexDirection: 'row',
+    backgroundColor: '#f9f9f9',
     borderRadius: 15,
     padding: 10,
     marginBottom: 15,
-    alignItems: "center",
+    alignItems: 'center',
     elevation: 3,
   },
   image: { width: 80, height: 80, borderRadius: 10, backgroundColor: "#f2f2f2" },
   details: { flex: 1, marginLeft: 10 },
-  cuisine: { marginLeft: 0, color: "black", fontSize: Theme.fontSizes?.small ?? 12, fontWeight: "500" },
-
+  cuisine: { color: "#000", fontSize: 12, fontWeight: "500" },
+  row: { flexDirection: "row", alignItems: "center", marginTop: 4 },
+  name: {fontSize: 15, fontWeight: '600', color: 'black', width: '90%'},
   typeIndicator: { width: 14, height: 14, borderWidth: 1, borderRadius: 3, justifyContent: "center", alignItems: "center" },
   typeDot: { width: 7, height: 7, borderRadius: 50 },
-
-  row: { flexDirection: "row", alignItems: "center", marginTop: 4 },
-  name: { fontSize: Theme.fontSizes?.small ?? 14, fontWeight: "600", marginLeft: 6, color: "#000" },
-
-  ratingWrapper: { backgroundColor: "green", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, alignSelf: "flex-start", marginTop: 4 },
-  ratingText: { color: "#fff", fontSize: 10, fontWeight: "600" },
-
   priceText: { color: "#000", marginTop: 4, fontSize: 13 },
-
   addBtn: { backgroundColor: "#FF4D4D", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
   addText: { color: "#fff", fontWeight: "600", fontSize: 13 },
 
-  // modal
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
-  modalContent: { backgroundColor: "#fff", padding: 20, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
-  modalHandle: { width: 50, height: 5, borderRadius: 3, backgroundColor: "#ccc", alignSelf: "center", marginBottom: 10 },
-
-  modalFoodRow: { flexDirection: "row", alignItems: "center", marginBottom: 15 },
-  modalImage: { width: 70, height: 70, borderRadius: 10, backgroundColor: "#f2f2f2" },
-  modalFoodName: { fontSize: 16, fontWeight: "bold", color: "#000" },
-  modalPriceStatic: { fontSize: 16, color: "#222222", fontWeight: "700", marginBottom: 10 },
-  modalDescription: { marginTop: 10, color: "#444" },
-
-  optionBtn: { paddingVertical: 8, paddingHorizontal: 15, borderColor: "#aaa", borderWidth: 1, borderRadius: 8, marginRight: 10 },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+  modalContent: { backgroundColor: "#fff", paddingVertical: 20, paddingHorizontal: 18, borderTopLeftRadius: 25, borderTopRightRadius: 25 },
+  modalHandle: { width: 60, height: 6, borderRadius: 3, backgroundColor: "#ddd", alignSelf: "center", marginBottom: 15 },
+  modalHeader: { flexDirection: "row", alignItems: "center", marginBottom: 15 },
+  modalImg: { width: 80, height: 80, borderRadius: 12, backgroundColor: "#f2f2f2", borderWidth: 1, borderColor: "#eee" },
+  modalFoodName: { fontSize: 18, fontWeight: "700", color: "#222" },
+  modalCuisine: { fontSize: 14, color: "#888", marginTop: 2 },
+  modalDescription: { marginTop: 12, fontSize: 14, color: "#555", lineHeight: 20 },
+  optionRow: { flexDirection: "row", marginTop: 12 },
+  optionBtn: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1, borderColor: "#FF4D4D", marginRight: 10, backgroundColor: "#fff" },
   selectedOption: { backgroundColor: "#FF4D4D", borderColor: "#FF4D4D" },
-  optionText: { color: "#000" },
+  optionText: { color: "#FF4D4D", fontWeight: "600" },
   optionTextSelected: { color: "#fff", fontWeight: "700" },
-  modalCuisine: { fontSize: 14, color: "#555" },
-  quantityBox: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#F1F1F1", borderRadius: 25, paddingHorizontal: 10, paddingVertical: 6, marginVertical: 10 },
-  qtyBtn: { width: 30, height: 30, backgroundColor: "#fff", borderRadius: 15, justifyContent: "center", alignItems: "center", elevation: 2 },
-  qtyText: { fontSize: 18, fontWeight: "bold", color: "#FF4D4D" },
-  qtyValue: { fontSize: 16, fontWeight: "bold", color: "#000", marginHorizontal: 15 },
+  staticPrice: { fontSize: 16, fontWeight: "700", color: "#FF4D4D", marginTop: 10 },
 
-  modalFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 },
-  totalText: { fontSize: 16, fontWeight: "bold", color: "#000" },
-  confirmBtn: { backgroundColor: "#FF4D4D", borderRadius: 25, paddingVertical: 12, paddingHorizontal: 25 },
-  confirmBtnText: { color: "#fff", fontSize: 15, fontWeight: "bold" },
+  quantityBox: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#FFF0F0", borderRadius: 25, paddingHorizontal: 12, paddingVertical: 6, marginVertical: 15 },
+  qtyBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: "#FFEEEE", justifyContent: "center", alignItems: "center" },
+  qtyText: { fontSize: 18, fontWeight: "700", color: "#FF4D4D" },
+  qtyValue: { marginHorizontal: 18, fontSize: 16, fontWeight: "700", color: "#333" },
 
-  // shimmer sizes
-  shimmerImage: { width: 80, height: 80, borderRadius: 10 },
+  addonTitle: { fontSize: 15, fontWeight: "700", color: "#222", marginBottom: 8 },
+  addonItem: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff5f5", borderRadius: 12, padding: 10, marginBottom: 10 },
+  addonImage: { width: 45, height: 45, borderRadius: 10, backgroundColor: "#eee", marginRight: 10 },
+  addonName: { fontSize: 14, fontWeight: "600", color: "#333" },
+  addonPrice: { fontSize: 13, color: "#FF4D4D", marginTop: 2 },
+  checkmarkBox: { width: 22, height: 22, borderRadius: 12, borderWidth: 1, borderColor: "#FF4D4D", justifyContent: "center", alignItems: "center" },
+  checkmarkSelected: { width: 22, height: 22, borderRadius: 12, backgroundColor: "#FF4D4D", justifyContent: "center", alignItems: "center" },
+  checkmark: { color: "#fff", fontSize: 14, fontWeight: "700" },
 
-  // bottom box
+  modalFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 18 },
+  totalPrice: { fontSize: 15, fontWeight: "700", color: "#333" },
+  confirmBtn: { backgroundColor: "#FF4D4D", paddingHorizontal: 20, paddingVertical: 12, borderRadius: 25 },
+  confirmBtnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+
   bottomBox: { position: "absolute", bottom: 60, width: "100%", paddingHorizontal: 16 },
   bottomGradient: { padding: 15, borderRadius: 20 },
   bottomMsg: { color: "#fff", textAlign: "center", marginBottom: 10 },

@@ -5,16 +5,28 @@ import { API } from "../../global_Url/GlobalUrl";
 // Async thunk to fetch all foods
 export const fetchAllFoods = createAsyncThunk(
   "foods/fetchAll",
-  async (_, { rejectWithValue }) => { // no need to pass token
+  async ({ subCategory, type }, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.get(API.getallfoods ); // token added automatically
-      return response.data; 
+      const response = await axiosInstance.get(API.getallfoods, {
+        params: {
+          subCategory,
+          type,
+        },
+      });
+
+      console.log(
+        response.data,
+        "------------------ fetchAllFoods response ------------------"
+      );
+
+      return response.data;
     } catch (error) {
       console.log("Fetch Foods Error:", error.response || error.message);
       return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
+
 
 const AllFoodsSlice = createSlice({
   name: "allFoods",

@@ -47,7 +47,8 @@ const CatItemScreen = () => {
   } = useSelector(s => s.FoodPagination);
 
   const cartItems = useSelector(s => s.cart.items || []);
-
+ const totalCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  console.log(totalCount, '----------------------totalCount');
   // UI state
   const [selectedFood, setSelectedFood] = useState(null);
   const [selectedOption, setSelectedOption] = useState('half'); // 'half' | 'full'
@@ -199,23 +200,25 @@ const CatItemScreen = () => {
     setTotalPrice(finalTotal);
   };
 
-  const filteredFoods = AllFoodsData.filter(item => {
-    const food = item.food;
-    if (!food) return false;
+const filteredFoods = AllFoodsData.filter(item => {
+  const food = item.food || item; // match renderItem
+  if (!food) return false;
 
-    // normalize types
-    let typeStr = String(food.type || '').toLowerCase();
-    if (typeStr === 'nonveg') typeStr = 'non-veg';
-    if (typeStr === 'vegetarian') typeStr = 'veg';
+  let typeStr = String(food.type || '').toLowerCase();
+  if (typeStr === 'nonveg') typeStr = 'non-veg';
+  if (typeStr === 'vegetarian') typeStr = 'veg';
 
-    if (isVeg === true && typeStr !== 'veg') return false;
-    if (isVeg === false && typeStr !== 'non-veg') return false;
+  if (isVeg === true && typeStr !== 'veg') return false;
+  if (isVeg === false && typeStr !== 'non-veg') return false;
 
-    if (searchText) {
-      return food.name.toLowerCase().includes(searchText.toLowerCase());
-    }
-    return true;
-  });
+  if (searchText) {
+    return food.name.toLowerCase().includes(searchText.toLowerCase());
+  }
+  return true;
+});
+
+console.log(filteredFoods,"--------------------------------filteredFoods");
+
 
   // -------------------------
   // Modal open / close
@@ -307,7 +310,7 @@ const renderItem = ({ item }) => {
     <View style={styles.card}>
       <Image source={{ uri: dataItem.image }} style={styles.image} />
       <View style={styles.details}>
-        <Text style={styles.cuisine}>{dataItem.mainCategory || ''}</Text>
+        <Text style={styles.cuisine}>{dataItem.cuisineType || ''}</Text>
         <View style={styles.row}>
           <View
             style={[
@@ -538,12 +541,13 @@ const renderItem = ({ item }) => {
                             style={styles.modalImg}
                           />
                           <View style={{flex: 1, marginLeft: 12}}>
+                              <Text style={styles.modalCuisine}>
+                              {selectedFood?.cuisineType}
+                            </Text>
                             <Text style={styles.modalFoodName}>
                               {selectedFood.name}
                             </Text>
-                            <Text style={styles.modalCuisine}>
-                              {selectedFood?.cuisineType}
-                            </Text>
+                          
                           </View>
                         </View>
 
@@ -709,7 +713,7 @@ const renderItem = ({ item }) => {
                 colors={['#ff4d4d', '#ff6f61', '#ff8a65']}
                 style={styles.bottomGradient}>
                 <Text style={styles.bottomMsg}>
-                  ✓ Item added successfully ({cartItems.length} in cart)
+                  ✓ Item added successfully ({totalCount} in cart)
                 </Text>
 
                 <TouchableOpacity

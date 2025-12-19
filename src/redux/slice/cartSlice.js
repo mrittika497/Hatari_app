@@ -11,9 +11,14 @@ addToCart: (state, action) => {
   const newItem = action.payload;
   const selectedAddOns = newItem.selectedAddOns || []; 
   // const addOnTotal = selectedAddOns.reduce((sum, a) => sum + (a.price || 0), 0);
-  const existingItem = state.items.find(
-    i => i.id === newItem.id && i.selectedOption === newItem.selectedOption
-  );
+const existingItem = state.items.find(
+  i =>
+    i.id === newItem.id &&
+    i.selectedOption === newItem.selectedOption &&
+    JSON.stringify(i.selectedAddOns || []) === JSON.stringify(newItem.selectedAddOns || [])
+);
+
+
 
   if (existingItem) {
     // Increase quantity

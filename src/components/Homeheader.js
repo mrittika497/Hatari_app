@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -9,23 +9,24 @@ import {
   StatusBar,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
-import { useDispatch, useSelector } from 'react-redux';
+import {useNavigation} from '@react-navigation/native';
+import {useDispatch, useSelector} from 'react-redux';
 import ToggleComponents from './ToggleComponents';
-import { setExperience, setRestaurant } from '../redux/slice/experienceSlice';
+import {setExperience, setRestaurant} from '../redux/slice/experienceSlice';
 
 const HomeHeader = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
-  const { experienceId, selectedRestaurant } = useSelector(
+  const {experienceId, selectedRestaurant} = useSelector(
     state => state.experience,
   );
   const restaurantList = useSelector(state => state.restaurants.list || []);
-  console.log(restaurantList, "-----------------restaurantList-------------");
+  console.log(restaurantList, '-----------------restaurantList-------------');
 
   const cartItems = useSelector(state => state.cart.items || []);
-  const totalCount = cartItems.length;
+  const totalCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  console.log(totalCount, '----------------------totalCount');
 
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedExperience, setSelectedExperience] = useState('Delivery');
@@ -34,30 +35,26 @@ const HomeHeader = () => {
     <>
       {/* 🔥 FIXED STATUSBAR */}
       <StatusBar
-        backgroundColor='#ef2435'
+        backgroundColor="#ef2435"
         barStyle="light-content"
         translucent={false}
       />
 
-
       {/* 🔥 Modern Gradient Header */}
       <LinearGradient
         colors={['#ef2435', '#fefefc']}
-        style={styles.headerBackground}
-      >
+        style={styles.headerBackground}>
         <View style={styles.headerTop}>
-
           {/* 🔥 Branch Selector */}
           <TouchableOpacity
             style={styles.branchSelector}
-            onPress={() => setShowDropdown(!showDropdown)}
-          >
+            onPress={() => setShowDropdown(!showDropdown)}>
             <Image
               source={require('../assets/images/location.png')}
               style={styles.locationIcon}
             />
 
-            <View style={{ maxWidth: '70%' }}>
+            <View style={{maxWidth: '70%'}}>
               <Text style={styles.branchText} numberOfLines={1}>
                 {selectedRestaurant
                   ? selectedRestaurant.isActive
@@ -65,7 +62,6 @@ const HomeHeader = () => {
                     : 'Restaurant not available'
                   : 'Select Branch'}
               </Text>
-
             </View>
 
             <Image
@@ -77,8 +73,7 @@ const HomeHeader = () => {
           {/* 🔥 Cart Button */}
           <TouchableOpacity
             onPress={() => navigation.navigate('OderCartScreen')}
-            style={styles.cartContainer}
-          >
+            style={styles.cartContainer}>
             <Image
               source={require('../assets/images/cart.png')}
               style={styles.cartIcon}
@@ -95,9 +90,8 @@ const HomeHeader = () => {
         {/* 🔍 Search Bar */}
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={() => navigation.navigate('Bottom', { screen: 'MenuScreen' })}
-          style={styles.searchInput}
-        >
+          onPress={() => navigation.navigate('Bottom', {screen: 'MenuScreen'})}
+          style={styles.searchInput}>
           <Text style={styles.placeholder}>Search dishes or restaurants…</Text>
         </TouchableOpacity>
       </LinearGradient>
@@ -105,7 +99,7 @@ const HomeHeader = () => {
       {/* 🔽 Dropdown */}
       {showDropdown && (
         <View style={styles.dropdownList}>
-          <ScrollView style={{ maxHeight: 220 }}>
+          <ScrollView style={{maxHeight: 220}}>
             {restaurantList.map((restaurant, index) => (
               <TouchableOpacity
                 key={restaurant._id || index}
@@ -120,25 +114,22 @@ const HomeHeader = () => {
                       restaurant,
                     }),
                   );
-                }}
-              >
-              <Text
-  style={[
-    styles.dropdownText,
-    selectedRestaurant?._id === restaurant._id && {
-      color: '#e91e3c',
-      fontWeight: 'bold',
-    },
-    restaurant.isActive === false && {
-      color: 'red',
-    },
-  ]}
->
-  {restaurant.isActive
-    ? restaurant.name
-    : 'Restaurant not available'}
-</Text>
-
+                }}>
+                <Text
+                  style={[
+                    styles.dropdownText,
+                    selectedRestaurant?._id === restaurant._id && {
+                      color: '#e91e3c',
+                      fontWeight: 'bold',
+                    },
+                    restaurant.isActive === false && {
+                      color: 'red',
+                    },
+                  ]}>
+                  {restaurant.isActive
+                    ? restaurant.name
+                    : 'Restaurant not available'}
+                </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -176,12 +167,12 @@ const styles = StyleSheet.create({
     width: '72%',
   },
 
-  locationIcon: { width: 20, height: 20, tintColor: '#fff', marginRight: 6 },
-  branchText: { color: '#fff', fontWeight: '600', fontSize: 16 },
-  downArrow: { width: 14, height: 14, tintColor: '#fff', marginLeft: 6 },
+  locationIcon: {width: 20, height: 20, tintColor: '#fff', marginRight: 6},
+  branchText: {color: '#fff', fontWeight: '600', fontSize: 16},
+  downArrow: {width: 14, height: 14, tintColor: '#fff', marginLeft: 6},
 
-  cartContainer: { position: 'relative' },
-  cartIcon: { width: 24, height: 24, tintColor: '#fff' },
+  cartContainer: {position: 'relative'},
+  cartIcon: {width: 24, height: 24, tintColor: '#fff'},
 
   cartBadge: {
     position: 'absolute',
@@ -192,7 +183,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     paddingVertical: 1,
   },
-  cartCount: { color: '#e91e3c', fontSize: 10, fontWeight: '700' },
+  cartCount: {color: '#e91e3c', fontSize: 10, fontWeight: '700'},
 
   searchInput: {
     backgroundColor: '#fff',
@@ -203,7 +194,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     elevation: 4,
   },
-  placeholder: { color: '#666', fontSize: 14 },
+  placeholder: {color: '#666', fontSize: 14},
 
   dropdownList: {
     backgroundColor: '#fff',
@@ -221,7 +212,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
 
-  dropdownText: { fontSize: 14, color: '#333' },
+  dropdownText: {fontSize: 14, color: '#333'},
 
   toggleWrapper: {
     paddingHorizontal: 20,
