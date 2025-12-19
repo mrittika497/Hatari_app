@@ -154,6 +154,8 @@ useFocusEffect(
                 {/* FOOD ITEMS */}
                 <View style={styles.foodListContainer}>
                   {foodDetails.map((food, idx) => {
+                    console.log(food,"-------------------food");
+                    
                     const basePrice = getSelectedPrice(food);
                     const addOnsTotal = getAddOnsTotal(food);
                     const totalPrice = (basePrice + addOnsTotal) * (food?.quantity || 1);
@@ -195,7 +197,7 @@ useFocusEffect(
                           {/* Note */}
                           {food?.note && (
                             <Text style={[styles.foodDesc, {fontStyle: 'italic'}]}>
-                              📝 {food.note}
+                              📝 {food.note} 
                             </Text>
                           )}
                         </View>

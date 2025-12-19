@@ -25,7 +25,7 @@ const HomeHeader = () => {
   console.log(restaurantList, '-----------------restaurantList-------------');
 
   const cartItems = useSelector(state => state.cart.items || []);
-  const totalCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+      const totalCount = cartItems.length;
   console.log(totalCount, '----------------------totalCount');
 
   const [showDropdown, setShowDropdown] = useState(false);

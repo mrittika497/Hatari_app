@@ -47,8 +47,7 @@ const CatItemScreen = () => {
   } = useSelector(s => s.FoodPagination);
 
   const cartItems = useSelector(s => s.cart.items || []);
- const totalCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  console.log(totalCount, '----------------------totalCount');
+    const totalCount = cartItems.length;
   // UI state
   const [selectedFood, setSelectedFood] = useState(null);
   const [selectedOption, setSelectedOption] = useState('half'); // 'half' | 'full'

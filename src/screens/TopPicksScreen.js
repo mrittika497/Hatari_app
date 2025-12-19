@@ -35,7 +35,7 @@ const TopPicksScreen = () => {
 
   const isVeg = useSelector((state) => state.foodFilter?.isVeg ?? null);
   const cartItems = useSelector((state) => state.cart?.items ?? []);
-   const totalCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+     const totalCount = cartItems.length;
   console.log(totalCount, '----------------------totalCount');
   const { AllFoodsData } = useSelector((state) => state.allFoods ?? {});
 
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
   details: { flex: 1, marginLeft: 10 },
   cuisine: { color: "#000", fontSize: 12, fontWeight: "500" },
   row: { flexDirection: "row", alignItems: "center", marginTop: 4 },
-  name: {fontSize: 15, fontWeight: '600', color: 'black', width: '90%'},
+  name: {fontSize: 15, fontWeight: '600', color: 'black', width: '90%',left:7},
   typeIndicator: { width: 14, height: 14, borderWidth: 1, borderRadius: 3, justifyContent: "center", alignItems: "center" },
   typeDot: { width: 7, height: 7, borderRadius: 50 },
   priceText: { color: "#000", marginTop: 4, fontSize: 13 },

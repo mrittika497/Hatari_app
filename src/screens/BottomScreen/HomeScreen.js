@@ -41,7 +41,7 @@ const HomeScreen = () => {
   const isVeg = useSelector(state => state.foodFilter.isVeg);
   const {bannerlist} = useSelector(state => state.banners);
   const cartItems = useSelector(s => s.cart.items || []);
-    const totalCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    const totalCount = cartItems.length;
   console.log(totalCount, '----------------------totalCount');
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -373,8 +373,8 @@ const isRestaurantActive = selectedRestaurant?.isActive !== false;
 const renderItem = ({ item }) => {
   const dataItem = item?.food || item; // fallback
   const isFoodAvailable = dataItem.available !== false; // true if available
-
-
+ console.log(isFoodAvailable,"--------------------isFoodAvailable");
+ 
   return (
     <View style={styles.card}>
       <Image source={{ uri: dataItem.image }} style={styles.image} />
@@ -785,11 +785,14 @@ const styles = StyleSheet.create({
   categoryWrapper: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginVertical: 10,
+    marginVertical: 10
   },
   categoryCard: {
     alignItems: 'center',
-    marginRight: 20,
+    // marginRight: 20,
+    paddingHorizontal:10
+    
+
   },
   categoryCircle: {
     width: 90,

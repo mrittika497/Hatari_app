@@ -39,6 +39,8 @@ const OrderSummaryScreen = () => {
   );
   const {addresses, loading} = useSelector(state => state.address);
   const {items: cartItems} = useSelector(state => state.cart);
+  console.log(cartItems,"-------------------cartItems");
+  
 
   const {token} = useSelector(state => state.auth);
   const {data} = useSelector(state => state.deliverySettings);
@@ -219,11 +221,14 @@ const OrderSummaryScreen = () => {
         // })),
 
        foodDetails: cartItems.map(item => {
+        console.log(item,"--item---------------------",item);
+        
   const quantity = Number(item.quantity || 1);
   return {
     foodId: item.id || item.foodId,
     quantity,
     variant: item.hasVariation ? item.selectedOption : null,
+    note:item?.note,
     fullPrice: item.hasVariation && item.selectedOption === 'full'
       ? Number(item.priceInfo?.fullPrice || 0)
       : null,
@@ -365,13 +370,14 @@ const OrderSummaryScreen = () => {
                   <Text style={styles.itemName}>{item.name}</Text>
                   <Text style={styles.foodQtyPrice}>Qty: {item.quantity}</Text>
                   <View style={{flexDirection: 'row'}}>
-                    <Text style={styles.itemPrice}>
-                      {formatCurrency(getItemTotal(item))}
-                    </Text>
-                    <Text style={{color: 'black'}}>
-                      {' '}
-                      {item?.selectedOption}
-                    </Text>
+                  <Text style={styles.itemPrice}>
+  {formatCurrency(getItemTotal(item))}{' '}
+  {item.selectedOption
+    ? `(${item.selectedOption.charAt(0).toUpperCase()}${item.selectedOption.slice(1)})`
+    : ''}
+</Text>
+
+                 
                   </View>
                   {item.selectedAddOns?.length > 0 && (
                     <Text style={{color: '#555', fontSize: 13}}>

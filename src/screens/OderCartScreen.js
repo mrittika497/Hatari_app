@@ -34,6 +34,8 @@ const OderCartScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const {items: cartItems} = useSelector(state => state.cart);
+  console.log(cartItems,"--------------------------cartItems");
+  
  
   
   const [loading, setLoading] = useState(false);
@@ -116,7 +118,12 @@ const handleSaveNote = async () => {
   }
 };
  const renderItem = ({item}) => {
+console.log(item,"------------------- order111");
+const isVeg = item.type?.toLowerCase() === 'veg';
+const isNonVeg = item.type?.toLowerCase() === 'non-veg' || item.type?.toLowerCase() === 'chicken';
 
+// Veg: green, Non-Veg: red
+const typeColor = isVeg ? 'green' : 'red';
 
 
 const getItemTotal = (item) => {
@@ -135,18 +142,10 @@ const getItemTotal = (item) => {
 
       <View style={styles.detailsContainer}>
         <View style={styles.itemHeader}>
-          <View
-            style={[
-              styles.typeIndicator,
-              {borderColor: item.type?.includes('veg') ? 'green' : 'red'},
-            ]}>
-            <View
-              style={[
-                styles.typeDot,
-                {backgroundColor: item.type?.includes('veg') ? 'green' : 'red'},
-              ]}
-            />
-          </View>
+       <View style={[styles.typeIndicator, { borderColor: typeColor }]}>
+  <View style={[styles.typeDot, { backgroundColor: typeColor }]} />
+</View>
+
 
           <Text style={styles.itemName} numberOfLines={1}>
             {item.name}
@@ -362,7 +361,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   typeDot: {width: 8, height: 8, borderRadius: 4},
-  itemName: {fontSize: width * 0.04, fontWeight: '700', color: '#333', flexShrink: 1},
+  itemName: {fontSize: width * 0.04, fontWeight: '700', color: '#333', flexShrink: 1,left:4},
   itemPrice: {fontSize: width * 0.037, color: '#777', marginTop: 2},
   ratingWrapper: {
     backgroundColor: 'green',

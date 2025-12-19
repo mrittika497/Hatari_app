@@ -23,15 +23,11 @@ const HomeCatModal = ({
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
-  // ✅ Redux state
   const isVeg = useSelector(state => state.foodFilter.isVeg);
   const categoriesState = useSelector(state => state.categoriesAllcat);
 
-  // ✅ Categories list
-  const categoriesData =
-    categoriesState?.categories?.categories || [];
+  const categoriesData = categoriesState?.categories?.categories || [];
 
-  // ✅ Fetch categories when modal opens or veg toggle changes
   useEffect(() => {
     if (visible && cuisineType?._id) {
       dispatch(
@@ -43,7 +39,6 @@ const HomeCatModal = ({
     }
   }, [visible, cuisineType, isVeg]);
 
-  // ✅ Veg / Non-Veg filter (SAFE)
   const filteredCategories = categoriesData.filter(item => {
     if (!item?.type) return !isVeg;
 
@@ -54,10 +49,6 @@ const HomeCatModal = ({
     return isVeg ? types.includes('veg') : !types.includes('veg');
   });
 
-  console.log(filteredCategories,"---------------------filteredCategories");
-  
-
-  // ✅ Navigate to subcategory screen
   const handleCategoryClick = item => {
     navigation.navigate('CuisineTypeSubCat', {
       id: item?._id,
@@ -138,14 +129,13 @@ const HomeCatModal = ({
 
 export default HomeCatModal;
 
-
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end',
   },
-  backdrop: {flex: 1},
+  backdrop: { flex: 1 },
   container: {
     backgroundColor: '#fff',
     borderTopLeftRadius: 28,
@@ -163,8 +153,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 5,
   },
-  headerTitle: {fontSize: 20, fontWeight: '700', color: '#fff'},
-  closeText: {fontSize: 24, color: '#fff', fontWeight: '700'},
+  headerTitle: { fontSize: 20, fontWeight: '700', color: '#fff' },
+  closeText: { fontSize: 24, color: '#fff', fontWeight: '700' },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -173,36 +163,38 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   loadingCard: {
-    width: '30%',
+    width: '48%',
     height: 120,
     borderRadius: 48,
     backgroundColor: '#f0f0f0',
-    marginBottom: 25,
-    marginHorizontal: 5,
+    marginBottom: 16,
     elevation: 3,
   },
   card: {
-    width: '30%',
+    width: '48%', // 2 items side by side
     alignItems: 'center',
-    marginBottom: 25,
-    borderRadius: 45,
+    marginBottom: 16,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    paddingVertical: 12,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 5,
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
   categoryCircle: {
-    width: 95,
-    height: 95,
-    borderRadius: 48,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 6,
+    elevation: 4,
   },
   foodImage: {
-    width: 75,
-    height: 75,
-    borderRadius: 37,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     borderWidth: 2,
     borderColor: '#fff',
   },

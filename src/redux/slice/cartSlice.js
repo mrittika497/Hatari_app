@@ -43,7 +43,7 @@ const existingItem = state.items.find(
       : Number(priceInfo.fullPrice);
 
     state.items.push({
-      id: newItem.id,
+      id: newItem._id,
       name: newItem.name,
       image: newItem.image,
       quantity: newItem.quantity || 1,

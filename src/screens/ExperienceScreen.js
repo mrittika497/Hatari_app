@@ -246,7 +246,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "900",
     color: "#fff",
-    marginTop: 25,
+    // marginTop: 25,
+    marginVertical:"7%"
   },
   errorText: { color: "red", marginTop: 10 },
   restaurantCard: {

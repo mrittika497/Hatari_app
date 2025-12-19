@@ -54,6 +54,9 @@ const CuisineTypeSubCat = ({ navigation }) => {
     return isVeg ? types.includes("veg") : !types.includes("veg");
   });
 
+  console.log(filteredCategories,"---------------------filteredCategories");
+  
+
   // ✅ Fetch subcategories & categories
   useEffect(() => {
     if (selectedCategory) {
