@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
   optionTextSelected: { color: "#fff", fontWeight: "700" },
   staticPrice: { fontSize: 16, fontWeight: "700", color: "#FF4D4D", marginTop: 10 },
 
-  quantityBox: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#FFF0F0", borderRadius: 25, paddingHorizontal: 12, paddingVertical: 6, marginVertical: 15 },
+  quantityBox: { flexDirection: "row", alignItems: "center", justifyContent: "center",  backgroundColor: 'rgba(240, 227, 227, 1)', borderRadius: 25, paddingHorizontal: 12, paddingVertical: 6, marginVertical: 15 },
   qtyBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: "#FFEEEE", justifyContent: "center", alignItems: "center" },
   qtyText: { fontSize: 18, fontWeight: "700", color: "#FF4D4D" },
   qtyValue: { marginHorizontal: 18, fontSize: 16, fontWeight: "700", color: "#333" },

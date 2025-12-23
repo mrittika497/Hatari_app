@@ -33,6 +33,8 @@ const ExperienceScreen = () => {
   const navigation = useNavigation();
 
   const { experienceId, selectedRestaurant } = useSelector((state) => state.experience);
+  console.log(experienceId,"------------------------experienceId");
+  
   const { data: nearestRestaurants, loading, error } = useSelector(
     (state) => state.nearestRestaurants
   );
@@ -247,7 +249,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#fff",
     // marginTop: 25,
-    marginVertical:"7%"
+    marginVertical:"3%"
   },
   errorText: { color: "red", marginTop: 10 },
   restaurantCard: {

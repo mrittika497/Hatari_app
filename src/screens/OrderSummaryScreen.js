@@ -49,6 +49,8 @@ const OrderSummaryScreen = () => {
   const couponList = couponState?.list?.data || [];
 
   const [savedAddress, setSavedAddress] = useState(null);
+  console.log(savedAddress,"------------------------savedAddress");
+  
   const [userid, setUserId] = useState(null);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
   const [codModalVisible, setCodModalVisible] = useState(false);
@@ -255,6 +257,8 @@ const OrderSummaryScreen = () => {
         couponCode: selectedCoupon?.code || null,
         paymentStatus: 'Pending',
       };
+      console.log(billingData,"--------------------------billingDataoderSummary");
+      
 
       await dispatch(postBilling(billingData)).unwrap();
       dispatch(clearCart());
@@ -265,6 +269,8 @@ const OrderSummaryScreen = () => {
     } catch (e) {
       ToastAndroid.show('Order failed. Try again.', ToastAndroid.SHORT);
     }
+    console.log(billingData,"-------------------------------billingData44444");
+    
   };
 
   const handleDeleteAddress = id => {
@@ -307,7 +313,7 @@ const OrderSummaryScreen = () => {
                     {savedAddress.flat}, {savedAddress.address},{' '}
                     {savedAddress.pin}
                   </Text>
-                  <Text style={styles.addrPhone}>{savedAddress.contact}</Text>
+                  <Text style={styles.addrPhone}>{savedAddress?.mobileNumber}</Text>
                 </View>
 
                 <TouchableOpacity
@@ -521,7 +527,7 @@ const OrderSummaryScreen = () => {
                         {item.flat}, {item.address}
                       </Text>
                       <Text style={styles.nameText}>
-                        {item.name} - {item.contact}
+                        {item.name} - {item.mobileNumber}
                       </Text>
                     </TouchableOpacity>
 

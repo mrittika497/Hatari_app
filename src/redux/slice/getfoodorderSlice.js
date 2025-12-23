@@ -7,6 +7,8 @@ export const fetchFoodOrders = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get(API.getfoodOrder);
+      console.log(response,"-------------------------------foodOrders");
+      
       // ✅ Return only the array
       return response.data || [];
     } catch (error) {

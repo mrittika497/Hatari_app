@@ -30,6 +30,7 @@ import HomeHeader from '../../components/Homeheader';
 import HomeCatModal from '../../components/HomeCatModal';
 import {addToCart} from '../../redux/slice/cartSlice';
 import {fetchCategories} from '../../redux/slice/CategoriSlice';
+import { setExperience } from '../../redux/slice/experienceSlice';
 
 const {width} = Dimensions.get('window');
 
@@ -41,16 +42,23 @@ const HomeScreen = () => {
   const isVeg = useSelector(state => state.foodFilter.isVeg);
   const {bannerlist} = useSelector(state => state.banners);
   const cartItems = useSelector(s => s.cart.items || []);
-    const totalCount = cartItems.length;
+  const totalCount = cartItems.length;
   console.log(totalCount, '----------------------totalCount');
 
   const [modalVisible, setModalVisible] = useState(false);
   const [modalVisibleTop, setModalVisibleTop] = useState(false);
   const [subCategoryData, setSubCategoryData] = useState([]);
-  console.log(subCategoryData,"---------------------subCategoryData");
-  
+  console.log(subCategoryData, '---------------------subCategoryData');
+
   const [loading, setLoading] = useState(true);
+
+  const { experienceId, experienceType } = useSelector(
+  state => state.experience
+);
+
   const [selectedExperience, setSelectedExperience] = useState('Delivery');
+  console.log(selectedExperience,"-----------------selectedExperience");
+  
   const [selectedOption, setSelectedOption] = useState('half');
   const [quantity, setQuantity] = useState(1);
   const [foods, setFoods] = useState([]);
@@ -73,8 +81,17 @@ const HomeScreen = () => {
     '----------------------------123good-------------------',
   );
   const categoridataList = categoridata?.categoridata || [];
-  console.log(categoridataList, '----------------------------categoridataList-------------------');
-  
+  console.log(
+    categoridataList,
+    '----------------------------categoridataList-------------------',
+  );
+  // 👇 Custom display order: 0 → 2 → 1
+const categoryDisplayOrder = [0, 2, 1];
+
+const orderedCategories = categoryDisplayOrder
+  .map(index => categoridataList[index])
+  .filter(Boolean);
+
 
   // Auto-scroll banners
   useEffect(() => {
@@ -148,18 +165,17 @@ const HomeScreen = () => {
     return Number(info.staticPrice || 0);
   };
 
-  const openModal = (cuisineType) => {
-    console.log(cuisineType,"---------------------cuisineType");
-    
+  const openModal = cuisineType => {
+    console.log(cuisineType, '---------------------cuisineType');
+
     setSubCategoryData(cuisineType);
     setModalVisible(true);
   };
   const selectedRestaurant = useSelector(
-  state => state.experience.selectedRestaurant
-);
+    state => state.experience.selectedRestaurant,
+  );
 
-const isRestaurantActive = selectedRestaurant?.isActive !== false;
-
+  const isRestaurantActive = selectedRestaurant?.isActive !== false;
 
   const openModal2 = food => {
     setSelectedFood(food);
@@ -252,59 +268,63 @@ const isRestaurantActive = selectedRestaurant?.isActive !== false;
     },
   ];
 
- const filteredFoods = foods.filter(item => {
-  const rawType = item?.food?.type || item?.type || '';
-  const type = rawType.toLowerCase().trim();
+  const filteredFoods = foods.filter(item => {
+    const rawType = item?.food?.type || item?.type || '';
+    const type = rawType.toLowerCase().trim();
 
-  if (isVeg === true) {
-    return type === 'veg';
-  }
+    if (isVeg === true) {
+      return type === 'veg';
+    }
 
-  if (isVeg === false) {
-    return type === 'non-veg';
-  }
+    if (isVeg === false) {
+      return type === 'non-veg';
+    }
 
-  return true; // fallback (if toggle state is null)
-});
-
-  
+    return true; // fallback (if toggle state is null)
+  });
 
   const renderHeader = () => (
     <>
-      <View style={styles.expContainer}>
-        {experiences.map(exp => (
-          <TouchableOpacity
-            key={exp.id}
-            activeOpacity={0.8}
-            onPress={() => setSelectedExperience(exp.title)}>
-            <LinearGradient
-              colors={
-                selectedExperience === exp.title
-                  ? ['#FF512F', '#DD2476']
-                  : ['#fff', '#f3f3f3']
-              }
-              style={[
-                styles.expButton,
-                selectedExperience === exp.title && styles.expButtonActive,
-              ]}>
-              <Image
-                source={exp.img}
-                style={[
-                  styles.expIcon,
-                  selectedExperience === exp.title && {tintColor: '#fff'},
-                ]}
-              />
-              <Text
-                style={[
-                  styles.expText,
-                  selectedExperience === exp.title && {color: '#fff'},
-                ]}>
-                {exp.title}
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        ))}
-      </View>
+    <View style={styles.expContainer}>
+  {experiences.map(exp => (
+    <TouchableOpacity
+      key={exp.id}
+      activeOpacity={0.8}
+      onPress={() =>
+        dispatch(setExperience({ id: exp.id, type: exp.title }))
+      }>
+
+      <LinearGradient
+        colors={
+          experienceType === exp.title
+            ? ['#FF512F', '#DD2476']
+            : ['#fff', '#f3f3f3']
+        }
+        style={[
+          styles.expButton,
+          experienceType === exp.title && styles.expButtonActive,
+        ]}>
+
+        <Image
+          source={exp.img}
+          style={[
+            styles.expIcon,
+            experienceType === exp.title && { tintColor: '#fff' },
+          ]}
+        />
+
+        <Text
+          style={[
+            styles.expText,
+            experienceType === exp.title && { color: '#fff' },
+          ]}>
+          {exp.title}
+        </Text>
+      </LinearGradient>
+    </TouchableOpacity>
+  ))}
+</View>
+
 
       {/* Banners */}
       <Animated.ScrollView
@@ -346,7 +366,7 @@ const isRestaurantActive = selectedRestaurant?.isActive !== false;
       {/* Categories */}
       <SectionDivider title="What would you like to have today?" />
       <View style={styles.categoryWrapper}>
-        {categoridataList.map(item => (
+        {orderedCategories.map(item => (
           <TouchableOpacity
             key={item.id}
             style={styles.categoryCard}
@@ -355,7 +375,6 @@ const isRestaurantActive = selectedRestaurant?.isActive !== false;
               colors={['#fd4b57ff', '#fefdfdff']}
               style={styles.categoryCircle}>
               <Image source={{uri: item.image}} style={styles.categoryImage} />
-            
             </LinearGradient>
           </TouchableOpacity>
         ))}
@@ -370,313 +389,321 @@ const isRestaurantActive = selectedRestaurant?.isActive !== false;
     </>
   );
 
-const renderItem = ({ item }) => {
-  const dataItem = item?.food || item; // fallback
-  const isFoodAvailable = dataItem.available !== false; // true if available
- console.log(isFoodAvailable,"--------------------isFoodAvailable");
- 
-  return (
-    <View style={styles.card}>
-      <Image source={{ uri: dataItem.image }} style={styles.image} />
-      <View style={styles.details}>
-        <Text style={styles.cuisine}>{dataItem.cuisineType || ''}</Text>
-        <View style={styles.row}>
-          <View
-            style={[
-              styles.typeBox,
-              {
-                borderColor:
-                  (dataItem.type || '').toLowerCase() === 'veg' ? 'green' : 'red',
-              },
-            ]}
-          >
+  const renderItem = ({item}) => {
+    const dataItem = item?.food || item; // fallback
+    const isFoodAvailable = dataItem.available !== false; // true if available
+    console.log(isFoodAvailable, '--------------------isFoodAvailable');
+
+    return (
+      <View style={styles.card}>
+        <Image source={{uri: dataItem.image}} style={styles.image} />
+        <View style={styles.details}>
+          <Text style={styles.cuisine}>
+            {dataItem?.cuisineType
+              ? dataItem.cuisineType.charAt(0).toUpperCase() +
+                dataItem.cuisineType.slice(1)
+              : ''}
+          </Text>
+
+          <View style={styles.row}>
             <View
               style={[
-                styles.typeDot,
+                styles.typeBox,
                 {
-                  backgroundColor:
-                    (dataItem.type || '').toLowerCase() === 'veg' ? 'green' : 'red',
+                  borderColor:
+                    (dataItem.type || '').toLowerCase() === 'veg'
+                      ? 'green'
+                      : 'red',
                 },
-              ]}
-            />
+              ]}>
+              <View
+                style={[
+                  styles.typeDot,
+                  {
+                    backgroundColor:
+                      (dataItem.type || '').toLowerCase() === 'veg'
+                        ? 'green'
+                        : 'red',
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.name} numberOfLines={1}>
+              {dataItem?.name}
+            </Text>
           </View>
-          <Text style={styles.name} numberOfLines={1}>
-            {dataItem?.name}
-          </Text>
+
+          {dataItem.priceInfo?.hasVariation ? (
+            <>
+              <Text style={styles.priceText}>
+                Half: ₹{dataItem.priceInfo.halfPrice}
+              </Text>
+              <Text style={styles.priceText}>
+                Full: ₹{dataItem.priceInfo.fullPrice}
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.priceText}>
+              Price: ₹{dataItem.priceInfo?.staticPrice}
+            </Text>
+          )}
         </View>
 
-        {dataItem.priceInfo?.hasVariation ? (
-          <>
-            <Text style={styles.priceText}>
-              Half: ₹{dataItem.priceInfo.halfPrice}
-            </Text>
-            <Text style={styles.priceText}>
-              Full: ₹{dataItem.priceInfo.fullPrice}
-            </Text>
-          </>
-        ) : (
-          <Text style={styles.priceText}>
-            Price: ₹{dataItem.priceInfo?.staticPrice}
+        <TouchableOpacity
+          style={[styles.addBtn, !isFoodAvailable && {backgroundColor: '#ccc'}]}
+          onPress={() => {
+            if (!isFoodAvailable) {
+              alert('Food not available right now');
+              return;
+            }
+            openModal2(dataItem);
+          }}>
+          <Text style={styles.addText}>
+            {isFoodAvailable ? 'Add' : 'Not Available'}
           </Text>
-        )}
+        </TouchableOpacity>
       </View>
-
-      <TouchableOpacity
-        style={[
-          styles.addBtn,
-          !isFoodAvailable && { backgroundColor: '#ccc' },
-        ]}
-        onPress={() => {
-          if (!isFoodAvailable) {
-            alert('Food not available right now');
-            return;
-          }
-          openModal2(dataItem);
-        }}
-      >
-        <Text style={styles.addText}>
-          {isFoodAvailable ? 'Add' : 'Not Available'}
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
+    );
+  };
 
   return (
     <>
       <HomeHeader />
 
-    {isRestaurantActive ? (
-      <DashboardScreen scrollable={false}>
-        <FlatList
-          data={filteredFoods}
-          keyExtractor={(item, index) => item?._id || index.toString()}
-          renderItem={renderItem}
-          ListHeaderComponent={renderHeader}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingBottom: tabBarHeight + 50,
-            paddingHorizontal: 10,
-          }}
-        />
+      {isRestaurantActive ? (
+        <DashboardScreen scrollable={false}>
+          <FlatList
+            data={filteredFoods}
+            keyExtractor={(item, index) => item?._id || index.toString()}
+            renderItem={renderItem}
+            ListHeaderComponent={renderHeader}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingBottom: tabBarHeight + 50,
+              paddingHorizontal: 10,
+            }}
+          />
 
-        {/* MODAL */}
-        <Modal transparent visible={modalVisibleTop} animationType="none">
-          <TouchableWithoutFeedback onPress={closeModal}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback>
-                <Animated.View
-                  style={[
-                    styles.modalContent,
-                    {
-                      transform: [
-                        {
-                          translateY: slideAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [300, 0],
-                          }),
-                        },
-                      ],
-                    },
-                  ]}>
-                  <View style={styles.modalHandle} />
+          {/* MODAL */}
+          <Modal transparent visible={modalVisibleTop} animationType="none">
+            <TouchableWithoutFeedback onPress={closeModal}>
+              <View style={styles.modalOverlay}>
+                <TouchableWithoutFeedback>
+                  <Animated.View
+                    style={[
+                      styles.modalContent,
+                      {
+                        transform: [
+                          {
+                            translateY: slideAnim.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [300, 0],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}>
+                    <View style={styles.modalHandle} />
 
-                  {selectedFood && (
-                    <>
-                      {/* Food Header */}
-                      <View style={styles.modalHeader}>
-                        <Image
-                          source={{uri: selectedFood.image}}
-                          style={styles.modalImg}
-                        />
-                        <View style={{flex: 1, marginLeft: 12}}>
-                          <Text style={styles.modalCuisine}>
-                            {selectedFood?.cuisineType}
-                          </Text>
-                          <Text style={styles.modalFoodName}>
-                            {selectedFood.name}
-                          </Text>
-                        </View>
-                      </View>
-
-                      {/* Price / Variation */}
-                      {selectedFood?.priceInfo?.hasVariation ? (
-                        <View style={styles.optionRow}>
-                          {['half', 'full'].map(opt => (
-                            <TouchableOpacity
-                              key={opt}
-                              style={[
-                                styles.optionBtn,
-                                selectedOption === opt && styles.selectedOption,
-                              ]}
-                              onPress={() => setSelectedOption(opt)}>
-                              <Text
-                                style={[
-                                  styles.optionText,
-                                  selectedOption === opt &&
-                                    styles.optionTextSelected,
-                                ]}>
-                                {opt.charAt(0).toUpperCase() + opt.slice(1)} – ₹
-                                {opt === 'half'
-                                  ? selectedFood.priceInfo.halfPrice
-                                  : selectedFood.priceInfo.fullPrice}
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
-                        </View>
-                      ) : (
-                        <Text style={styles.staticPrice}>
-                          Price: ₹{selectedFood.priceInfo.staticPrice}
-                        </Text>
-                      )}
-
-                      {/* Description */}
-                      {selectedFood?.description && (
-                        <Text style={styles.modalDescription}>
-                          {selectedFood.description}
-                        </Text>
-                      )}
-
-                      {/* Add-ons */}
-                      {selectedFood?.addOns?.length > 0 && (
-                        <View style={{marginTop: 15}}>
-                          <Text style={styles.addonTitle}>Add-ons</Text>
-                          {selectedFood.addOns.map((addon, index) => {
-                            const isSelected = selectedAddOns.some(
-                              a => a.name === addon.name,
-                            );
-                            return (
-                              <TouchableOpacity
-                                key={index}
-                                style={[
-                                  styles.addonItem,
-                                  isSelected && {
-                                    borderColor: '#FF4D4D',
-                                    borderWidth: 1.5,
-                                  },
-                                ]}
-                                onPress={() => toggleAddOn(addon)}>
-                                <Image
-                                  source={{uri: addon.image}}
-                                  style={styles.addonImage}
-                                />
-                                <View style={{flex: 1}}>
-                                  <Text style={styles.addonName}>
-                                    {addon.name}
-                                  </Text>
-                                  <Text style={styles.addonPrice}>
-                                    ₹{addon.price}
-                                  </Text>
-                                </View>
-                                <View
-                                  style={
-                                    isSelected
-                                      ? styles.checkmarkSelected
-                                      : styles.checkmarkBox
-                                  }>
-                                  {isSelected && (
-                                    <Text style={styles.checkmark}>✓</Text>
-                                  )}
-                                </View>
-                              </TouchableOpacity>
-                            );
-                          })}
-                        </View>
-                      )}
-
-                      {/* Quantity Selector */}
-                      <View style={styles.quantityBox}>
-                        <TouchableOpacity
-                          style={styles.qtyBtn}
-                          onPress={() =>
-                            quantity > 1 && setQuantity(quantity - 1)
-                          }>
-                          <Text style={styles.qtyText}>-</Text>
-                        </TouchableOpacity>
-                        <Text style={styles.qtyValue}>{quantity}</Text>
-                        <TouchableOpacity
-                          style={styles.qtyBtn}
-                          onPress={() => setQuantity(quantity + 1)}>
-                          <Text style={styles.qtyText}>+</Text>
-                        </TouchableOpacity>
-                      </View>
-
-                      {/* Footer: Total + Confirm */}
-                      <View style={styles.modalFooter}>
-                        <View style={{flex: 1}}>
-                          <Text style={styles.totalPrice}>
-                            Base: ₹{baseTotal}{' '}
-                            {selectedOption === 'half' ? '(Half)' : '(Full)'}{' '}
-                            {selectedAddOns.length > 0 &&
-                              ` + Add-ons: ${selectedAddOns
-                                .map(a => `${a.name} ₹${a.price}`)
-                                .join(', ')}`}
-                          </Text>
-                        </View>
-                        <View style={{flex: 1, alignItems: 'flex-end'}}>
-                          <TouchableOpacity
-                            style={styles.confirmBtn}
-                            onPress={handleConfirmAdd}>
-                            <Text style={styles.confirmBtnText}>
-                              Confirm Add
+                    {selectedFood && (
+                      <>
+                        {/* Food Header */}
+                        <View style={styles.modalHeader}>
+                          <Image
+                            source={{uri: selectedFood.image}}
+                            style={styles.modalImg}
+                          />
+                          <View style={{flex: 1, marginLeft: 12}}>
+                            <Text style={styles.modalCuisine}>
+                              {selectedFood?.cuisineType
+                                ? selectedFood.cuisineType
+                                    .charAt(0)
+                                    .toUpperCase() +
+                                  selectedFood.cuisineType.slice(1)
+                                : ''}
                             </Text>
+
+                            <Text style={styles.modalFoodName}>
+                              {selectedFood.name}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Price / Variation */}
+                        {selectedFood?.priceInfo?.hasVariation ? (
+                          <View style={styles.optionRow}>
+                            {['half', 'full'].map(opt => (
+                              <TouchableOpacity
+                                key={opt}
+                                style={[
+                                  styles.optionBtn,
+                                  selectedOption === opt &&
+                                    styles.selectedOption,
+                                ]}
+                                onPress={() => setSelectedOption(opt)}>
+                                <Text
+                                  style={[
+                                    styles.optionText,
+                                    selectedOption === opt &&
+                                      styles.optionTextSelected,
+                                  ]}>
+                                  {opt.charAt(0).toUpperCase() + opt.slice(1)} –
+                                  ₹
+                                  {opt === 'half'
+                                    ? selectedFood.priceInfo.halfPrice
+                                    : selectedFood.priceInfo.fullPrice}
+                                </Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        ) : (
+                          <Text style={styles.staticPrice}>
+                            Price: ₹{selectedFood.priceInfo.staticPrice}
+                          </Text>
+                        )}
+
+                        {/* Description */}
+                        {selectedFood?.description && (
+                          <Text style={styles.modalDescription}>
+                            {selectedFood.description}
+                          </Text>
+                        )}
+
+                        {/* Add-ons */}
+                        {selectedFood?.addOns?.length > 0 && (
+                          <View style={{marginTop: 15}}>
+                            <Text style={styles.addonTitle}>Add-ons</Text>
+                            {selectedFood.addOns.map((addon, index) => {
+                              const isSelected = selectedAddOns.some(
+                                a => a.name === addon.name,
+                              );
+                              return (
+                                <TouchableOpacity
+                                  key={index}
+                                  style={[
+                                    styles.addonItem,
+                                    isSelected && {
+                                      borderColor: '#FF4D4D',
+                                      borderWidth: 1.5,
+                                    },
+                                  ]}
+                                  onPress={() => toggleAddOn(addon)}>
+                                  <Image
+                                    source={{uri: addon.image}}
+                                    style={styles.addonImage}
+                                  />
+                                  <View style={{flex: 1}}>
+                                    <Text style={styles.addonName}>
+                                      {addon.name}
+                                    </Text>
+                                    <Text style={styles.addonPrice}>
+                                      ₹{addon.price}
+                                    </Text>
+                                  </View>
+                                  <View
+                                    style={
+                                      isSelected
+                                        ? styles.checkmarkSelected
+                                        : styles.checkmarkBox
+                                    }>
+                                    {isSelected && (
+                                      <Text style={styles.checkmark}>✓</Text>
+                                    )}
+                                  </View>
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
+                        )}
+
+                        {/* Quantity Selector */}
+                        <View style={styles.quantityBox}>
+                          <TouchableOpacity
+                            style={styles.qtyBtn}
+                            onPress={() =>
+                              quantity > 1 && setQuantity(quantity - 1)
+                            }>
+                            <Text style={styles.qtyText}>-</Text>
+                          </TouchableOpacity>
+                          <Text style={styles.qtyValue}>{quantity}</Text>
+                          <TouchableOpacity
+                            style={styles.qtyBtn}
+                            onPress={() => setQuantity(quantity + 1)}>
+                            <Text style={styles.qtyText}>+</Text>
                           </TouchableOpacity>
                         </View>
-                      </View>
-                    </>
-                  )}
-                </Animated.View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
 
-        {/* ADDED TO CART BOX */}
-        {bottomBoxVisible && (
-          <Animated.View
-            style={[
-              styles.bottomBox,
-              {
-                transform: [
-                  {
-                    translateY: boxAnim.interpolate({
-                      inputRange: [0, 150],
-                      outputRange: [0, 150],
-                    }),
-                  },
-                ],
-              },
-            ]}>
-            <LinearGradient
-              colors={['#ff4d4d', '#ff6f61', '#ff8a65']}
-              style={styles.bottomGradient}>
-              <Text style={styles.bottomMsg}>
-                ✓ Item added successfully ({totalCount} in cart)
-              </Text>
-              <TouchableOpacity
-                style={styles.bottomBtn}
-                onPress={handleGoToCart}>
-                <Text style={styles.bottomBtnText}>Go to Cart</Text>
-              </TouchableOpacity>
-            </LinearGradient>
-          </Animated.View>
-        )}
-      </DashboardScreen>
-       ) : (
-      // 🚫 RESTAURANT CLOSED UI (DESIGNED – NOT BLANK)
-      <View style={styles.closedContainer}>
-      
+                        {/* Footer: Total + Confirm */}
+                        <View style={styles.modalFooter}>
+                          <View style={{flex: 1}}>
+                            <Text style={styles.totalPrice}>
+                              Base: ₹{baseTotal}{' '}
+                              {selectedOption === 'half' ? '(Half)' : '(Full)'}{' '}
+                              {selectedAddOns.length > 0 &&
+                                ` + Add-ons: ${selectedAddOns
+                                  .map(a => `${a.name} ₹${a.price}`)
+                                  .join(', ')}`}
+                            </Text>
+                          </View>
+                          <View style={{flex: 1, alignItems: 'flex-end'}}>
+                            <TouchableOpacity
+                              style={styles.confirmBtn}
+                              onPress={handleConfirmAdd}>
+                              <Text style={styles.confirmBtnText}>
+                                Confirm Add
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      </>
+                    )}
+                  </Animated.View>
+                </TouchableWithoutFeedback>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
 
-        <Text style={styles.closedTitle}>
-          Restaurant not available
-        </Text>
+          {/* ADDED TO CART BOX */}
+          {bottomBoxVisible && (
+            <Animated.View
+              style={[
+                styles.bottomBox,
+                {
+                  transform: [
+                    {
+                      translateY: boxAnim.interpolate({
+                        inputRange: [0, 150],
+                        outputRange: [0, 150],
+                      }),
+                    },
+                  ],
+                },
+              ]}>
+              <LinearGradient
+                colors={['#ff4d4d', '#ff6f61', '#ff8a65']}
+                style={styles.bottomGradient}>
+                <Text style={styles.bottomMsg}>
+                  ✓ Item added successfully ({totalCount} in cart)
+                </Text>
+                <TouchableOpacity
+                  style={styles.bottomBtn}
+                  onPress={handleGoToCart}>
+                  <Text style={styles.bottomBtnText}>Go to Cart</Text>
+                </TouchableOpacity>
+              </LinearGradient>
+            </Animated.View>
+          )}
+        </DashboardScreen>
+      ) : (
+        // 🚫 RESTAURANT CLOSED UI (DESIGNED – NOT BLANK)
+        <View style={styles.closedContainer}>
+          <Text style={styles.closedTitle}>Restaurant not available</Text>
 
-        <Text style={styles.closedSubtitle}>
-          Please check back later or choose another branch
-        </Text>
-      </View>
-    )}
+          <Text style={styles.closedSubtitle}>
+            Please check back later or choose another branch
+          </Text>
+        </View>
+      )}
     </>
   );
 };
@@ -763,7 +790,6 @@ const styles = StyleSheet.create({
   bannerImage: {
     width: '95%',
     height: '100%',
-    borderRadius: 10,
   },
   bannerShimmer: {
     width: width,
@@ -785,14 +811,12 @@ const styles = StyleSheet.create({
   categoryWrapper: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginVertical: 10
+    marginVertical: 10,
   },
   categoryCard: {
     alignItems: 'center',
     // marginRight: 20,
-    paddingHorizontal:10
-    
-
+    paddingHorizontal: 10,
   },
   categoryCircle: {
     width: 90,
@@ -985,7 +1009,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     marginVertical: 15,
-    shadowColor: '#FF4D4D',
+    shadowColor: '#f9eeeeff',
     shadowOpacity: 0.05,
     shadowOffset: {width: 0, height: 2},
     shadowRadius: 5,
@@ -995,7 +1019,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#FFEEEE',
+    backgroundColor: 'rgba(240, 227, 227, 1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1090,32 +1114,30 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 15,
     fontWeight: '700',
-    
   },
 
   closedContainer: {
-  flex: 1,
-  justifyContent: 'center',
-  alignItems: 'center',
-  padding: 20,
-  backgroundColor: '#fff',
-},
-closedImage: {
-  width: 220,
-  height: 220,
-  resizeMode: 'contain',
-  marginBottom: 20,
-},
-closedTitle: {
-  fontSize: 18,
-  fontWeight: '700',
-  color: '#e53935',
-  marginBottom: 6,
-},
-closedSubtitle: {
-  fontSize: 14,
-  color: '#777',
-  textAlign: 'center',
-},
-
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  closedImage: {
+    width: 220,
+    height: 220,
+    resizeMode: 'contain',
+    marginBottom: 20,
+  },
+  closedTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#e53935',
+    marginBottom: 6,
+  },
+  closedSubtitle: {
+    fontSize: 14,
+    color: '#777',
+    textAlign: 'center',
+  },
 });

@@ -121,7 +121,7 @@ const CuisineTypeSubCat = ({ navigation }) => {
 
   return (
     <View style={{ flex: 1 }}>
-      <CustomHeader title="Subcategories" />
+      <CustomHeader title="Sub-categories" />
 
       <DashboardScreen scrollEnabled={false}>
         <FlatList

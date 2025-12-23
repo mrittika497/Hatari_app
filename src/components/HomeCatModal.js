@@ -62,6 +62,24 @@ const HomeCatModal = ({
     const str = String(text);
     return str.charAt(0).toUpperCase() + str.slice(1);
   };
+  const getCleanFoodName = name => {
+  if (!name) return '';
+
+  return name
+    .toLowerCase()
+    // remove brackets content
+    .replace(/\(.*?\)/g, '')
+    // remove unwanted words
+    .replace(/\b(veg|non\s?-?\s?veg|nonveg|indian)\b/gi, '')
+    // remove extra symbols
+    .replace(/[-_/]/g, ' ')
+    // remove extra spaces
+    .replace(/\s+/g, ' ')
+    .trim()
+    // capitalize words
+    .replace(/\b\w/g, char => char.toUpperCase());
+};
+
 
   return (
     <Modal transparent visible={visible} animationType="fade">
@@ -107,15 +125,8 @@ const HomeCatModal = ({
                       </LinearGradient>
 
                       <Text style={styles.name} numberOfLines={1}>
-                        {item?.name
-                          ?.replace(/\s*\(veg\)/gi, '')
-                          ?.replace(/\s*\(nonveg\)/gi, '')
-                          ?.replace(/\s*\(non-veg\)/gi, '')
-                          ?.replace(/\bveg\b/gi, '')
-                          ?.replace(/\bnonveg\b/gi, '')
-                          ?.replace(/\bnon-veg\b/gi, '')
-                          ?.replace(/[()]/g, '')
-                          ?.trim()}
+                      {getCleanFoodName(item?.name)}
+                
                       </Text>
                     </TouchableOpacity>
                   ))}

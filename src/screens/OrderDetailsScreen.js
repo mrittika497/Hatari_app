@@ -25,6 +25,8 @@ const {width} = Dimensions.get('window');
 const OrderDetailsScreen = ({route}) => {
   const navigation = useNavigation();
   const {order} = route.params;
+  console.log('order',"---------------------------",order);
+  
   console.log(order, 'orderDetails');
   
 
@@ -84,6 +86,22 @@ const foodprices = order?.foodDetails.reduce((total, item) => {
   const qty = Number(item.quantity || 1);
   return total + unitPrice * qty;
 }, 0);
+
+const foodPrices = Number(foodprices || 0);
+const discount = Number(order?.discount || 0);
+const cgst = Number(order?.CGST || 0);
+const sgst = Number(order?.SGST || 0);
+
+const taxableAmount = Math.max(foodPrices - discount, 0);
+
+const totalAmountPrice = Number(
+  (taxableAmount + cgst + sgst).toFixed(2)
+);
+
+console.log('Total Amount:', totalAmountPrice);
+
+
+
 
 
   const restaurant = order?.restaurant || {};
@@ -227,7 +245,7 @@ const foodprices = order?.foodDetails.reduce((total, item) => {
                   styles.chargeText,
                   {fontWeight: 'bold', color: '#FF6347'},
                 ]}>
-                ₹{order?.grossAmount || 0}
+                ₹{totalAmountPrice || 0}
               </Text>
             </View>
           </View>
