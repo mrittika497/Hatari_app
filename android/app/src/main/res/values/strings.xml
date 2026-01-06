@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">Hatari</string>
+   
+  <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">AIzaSyAC678kN-ex43hVnmy0pOSNcrsD3j9Ge4w</string>
+
 </resources>

@@ -1,7 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+<!-- add location -->
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+
+
+<!-- end -->
     <application
       android:name=".MainApplication"
       android:label="@string/app_name"
@@ -22,5 +28,9 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+
+      <meta-data
+     android:name="com.google.android.geo.API_KEY"
+     android:value="AIzaSyAC678kN-ex43hVnmy0pOSNcrsD3j9Ge4w"/>
     </application>
 </manifest>
