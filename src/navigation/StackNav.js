@@ -22,6 +22,9 @@ import CouponesScreen from '../screens/CouponesScreen';
 import TopPicksScreen from '../screens/TopPicksScreen';
 import SaveAddressModal from '../components/SaveAddressModal';
 import CuisineTypeSubCat from '../screens/CuisineTypeSubCat';
+import PrivacyPolicyScreen from '../privacy&policy/PrivacyPolicyScreen';
+import TermsConditionsScreen from '../privacy&policy/TermsConditionsScreen';
+import SupportHelpScreen from '../privacy&policy/SupportHelpScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -156,6 +159,29 @@ const StackNav = () => {
         component={Bottom}
         options={{headerShown: false}}
       />
+
+      <Stack.Screen
+        name="PrivacyPolicyScreen"
+        component={PrivacyPolicyScreen}
+        options={{headerShown: false}}
+      />
+
+          <Stack.Screen
+        name="TermsConditionsScreen"
+        component={TermsConditionsScreen}
+        options={{headerShown: false}}
+      />
+            <Stack.Screen
+        name="SupportHelpScreen"
+        component={SupportHelpScreen}
+        options={{headerShown: false}}
+      />
+
+
+
+
+      
+      
     </Stack.Navigator>
   );
 };

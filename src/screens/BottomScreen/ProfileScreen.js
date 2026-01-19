@@ -94,7 +94,7 @@ const ProfileScreen = ({navigation}) => {
               {
                 title: 'Help and Support',
                 icon: 'support-agent',
-                renavigation: 'HelpScreen',
+                renavigation: 'SupportHelpScreen',
               },
             ].map((item, index) => (
               <TouchableOpacity

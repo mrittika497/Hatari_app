@@ -43,6 +43,8 @@ const HomeScreen = () => {
 
   const isVeg = useSelector(state => state.foodFilter.isVeg);
   const { bannerlist } = useSelector(state => state.banners);
+  console.log(bannerlist,"----------bannerlist");
+  
   const cartItems = useSelector(s => s.cart.items || []);
   const totalCount = cartItems.length;
   console.log(totalCount, '----------------------totalCount');
@@ -379,7 +381,7 @@ const HomeScreen = () => {
           ? [1, 2, 3].map(i => (
             <ShimmerPlaceholder key={i} style={styles.bannerShimmer} />
           ))
-          : bannerlist?.map((banner, i) => (
+          : bannerlist  ?.filter(banner => banner.isActive)?.map((banner, i) => (
             <View key={i} style={styles.bannerCard}>
               <Image
                 source={{ uri: banner?.fullImageUrl }}
@@ -391,7 +393,7 @@ const HomeScreen = () => {
       </Animated.ScrollView>
 
       <View style={styles.dotsContainer}>
-        {bannerlist?.map((_, i) => {
+        {bannerlist  ?.filter(banner => banner.isActive)?.map((_, i) => {
           const opacity = scrollX.interpolate({
             inputRange: [(i - 1) * width, i * width, (i + 1) * width],
             outputRange: [0.3, 1, 0.3],
