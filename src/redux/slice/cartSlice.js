@@ -1,134 +1,232 @@
-import {createSlice} from '@reduxjs/toolkit';
+// import { createSlice } from "@reduxjs/toolkit";
+
+// const buildCartKey = (foodId, option, addons = []) => {
+//   const addonIds = addons.map(a => a.id).sort().join(",");
+//   return `${foodId}|${option}|${addonIds}`;
+// };
+
+// const cartSlice = createSlice({
+//   name: "cart",
+//   initialState: {
+//     items: [],
+//   },
+
+//   reducers: {
+//     hydrateCart: (state, action) => {
+//       state.items = action.payload || [];
+//     },
+
+//     addToCart: (state, action) => {
+//       const item = action.payload;
+
+//       const addonTotal =
+//         item.selectedAddOns?.reduce((s, a) => s + Number(a.price), 0) || 0;
+
+//       const unitPrice =
+//         item.priceInfo?.staticPrice
+//           ? Number(item.priceInfo.staticPrice)
+//           : item.selectedOption === "half"
+//           ? Number(item.priceInfo.halfPrice)
+//           : Number(item.priceInfo.fullPrice);
+
+//       const cartKey = buildCartKey(
+//         item._id,
+//         item.selectedOption,
+//         item.selectedAddOns
+//       );
+
+//       const existing = state.items.find(i => i.cartKey === cartKey);
+
+//       if (existing) {
+//         existing.quantity += item.quantity || 1;
+//         existing.totalPrice =
+//           (unitPrice + addonTotal) * existing.quantity;
+//       } else {
+//         state.items.push({
+//           cartKey,
+//           foodId: item._id,
+//           name: item.name,
+//           image: item.image,
+//           quantity: item.quantity || 1,
+//           selectedOption: item.selectedOption,
+//           selectedAddOns: item.selectedAddOns || [],
+//           unitPrice,
+//           addonTotal,
+//           totalPrice: (unitPrice + addonTotal) * (item.quantity || 1),
+//           note: "",
+//           restaurant: item.restaurant,
+//           type: item.type,
+//         });
+//       }
+//     },
+
+//     updateQuantity: (state, action) => {
+//       const { cartKey, quantity } = action.payload;
+//       const item = state.items.find(i => i.cartKey === cartKey);
+//       if (item) {
+//         item.quantity = Math.max(1, quantity);
+//         item.totalPrice =
+//           (item.unitPrice + item.addonTotal) * item.quantity;
+//       }
+//     },
+
+//     updateNote: (state, action) => {
+//       const { cartKey, note } = action.payload;
+//       const item = state.items.find(i => i.cartKey === cartKey);
+//       if (item) item.note = note;
+//     },
+
+//     removeFromCart: (state, action) => {
+//       state.items = state.items.filter(
+//         i => i.cartKey !== action.payload
+//       );
+//     },
+
+//     clearCart: state => {
+//       state.items = [];
+//     },
+//   },
+// });
+
+// export const {
+//   addToCart,
+//   updateQuantity,
+//   updateNote,
+//   removeFromCart,
+//   clearCart,
+//   hydrateCart,
+// } = cartSlice.actions;
+
+// export default cartSlice.reducer;
+
+
+
+
+import { createSlice } from "@reduxjs/toolkit";
+
+/* 🔐 Stable Unique Cart Key */
+const buildCartKey = (foodId, option = "full", addons = []) => {
+  const addonIds = addons
+    .map(a => a._id || a.id)
+    .filter(Boolean)
+    .sort()
+    .join("_");
+
+  return `${foodId}_${option}_${addonIds}`;
+};
 
 const cartSlice = createSlice({
-  name: 'cart',
+  name: "cart",
   initialState: {
-    items: [], // [{ id, name, priceInfo, quantity, restaurant, type }]
+    items: [],
   },
 
   reducers: {
+    /* 🔄 Hydrate Cart */
+    hydrateCart: (state, action) => {
+      state.items = action.payload || [];
+    },
+
+    /* ➕ Add To Cart */
 addToCart: (state, action) => {
-  const newItem = action.payload;
-  const selectedAddOns = newItem.selectedAddOns || []; 
-  // const addOnTotal = selectedAddOns.reduce((sum, a) => sum + (a.price || 0), 0);
-const existingItem = state.items.find(
-  i =>
-    i.id === newItem.id &&
-    i.selectedOption === newItem.selectedOption &&
-    JSON.stringify(i.selectedAddOns || []) === JSON.stringify(newItem.selectedAddOns || [])
-);
+  const item = action.payload;
+  const selectedAddOns = item.selectedAddOns || [];
 
+  const addonTotal = selectedAddOns.reduce(
+    (sum, a) => sum + Number(a.price || 0),
+    0
+  );
 
+  const unitPrice =
+    item.priceInfo?.staticPrice
+      ? Number(item.priceInfo.staticPrice)
+      : item.selectedOption === "half"
+      ? Number(item.priceInfo?.halfPrice || 0)
+      : Number(item.priceInfo?.fullPrice || 0);
 
-  if (existingItem) {
-    // Increase quantity
-    existingItem.quantity += newItem.quantity || 1;
+  const cartKey = buildCartKey(
+    item._id,
+    item.selectedOption,
+    selectedAddOns
+  );
 
-    // Recalculate price
-    existingItem.totalPrice = existingItem.unitPrice * existingItem.quantity;
+  const existing = state.items.find(
+    i => i.cartKey === cartKey
+  );
 
+  if (existing) {
+    // ✅ ADD selected quantity
+    existing.quantity += item.quantity || 1;
   } else {
-    // Compute priceInfo cleanly
-    const priceInfo = {
-      halfPrice: newItem.priceInfo?.halfPrice || null,
-      fullPrice: newItem.priceInfo?.fullPrice || null,
-      staticPrice: newItem.priceInfo?.staticPrice || null,
-    };
-
-    // Determine final unit price
-    const unitPrice = priceInfo.staticPrice
-      ? Number(priceInfo.staticPrice)
-      : newItem.selectedOption === "half"
-      ? Number(priceInfo.halfPrice)
-      : Number(priceInfo.fullPrice);
-
     state.items.push({
-      id: newItem._id,
-      name: newItem.name,
-      image: newItem.image,
-      quantity: newItem.quantity || 1,
-      selectedOption: newItem.selectedOption || "full",
-      hasVariation: newItem.hasVariation || false,
-      note: newItem.note || "",
-      priceInfo,
+      cartKey,
+      foodId: item._id,
+      name: item.name,
+      image: item.image,
+      quantity: item.quantity || 1,   // ✅ USE PASSED QUANTITY
+      selectedOption: item.selectedOption || "full",
+      selectedAddOns,
       unitPrice,
-      totalPrice: unitPrice * (newItem.quantity || 1),
-      restaurant: newItem.restaurant,
-      type: newItem.type,
-         selectedAddOns: selectedAddOns, 
-      // selectedOption: newItem.selectedOption,
+      addonTotal,
+      totalPrice: 0,
+      note: "",
+      restaurant: item.restaurant,
+      type: item.type,
     });
-  } 
+  }
+
+  // ✅ Recalculate total safely
+  const target = state.items.find(i => i.cartKey === cartKey);
+  if (target) {
+    target.totalPrice =
+      (target.unitPrice + target.addonTotal) *
+      target.quantity;
+  }
 },
-// addToCart: (state, action) => {
-//   const newItem = action.payload;
 
-//   const selectedAddOns = newItem.addOns || [];   // ⭐ Add-ons
 
-//   // Add-on total
-//   const addOnTotal = selectedAddOns.reduce((sum, a) => sum + (a.price || 0), 0);
-
-//   // Base price logic
-//   const priceInfo = {
-//     halfPrice: newItem.priceInfo?.halfPrice || null,
-//     fullPrice: newItem.priceInfo?.fullPrice || null,
-//     staticPrice: newItem.priceInfo?.staticPrice || null,
-//   };
-
-//   const baseUnitPrice = priceInfo.staticPrice
-//     ? Number(priceInfo.staticPrice)
-//     : newItem.selectedOption === "half"
-//     ? Number(priceInfo.halfPrice)
-//     : Number(priceInfo.fullPrice);
-
-//   const finalUnitPrice = baseUnitPrice + addOnTotal; // ⭐ Add-ons added here
-
-//   // ❗ Unique key: same item + same option + same addons
-//   const existingItem = state.items.find(
-//     i =>
-//       i.id === newItem.id &&
-//       i.selectedOption === newItem.selectedOption &&
-//       JSON.stringify(i.addOns) === JSON.stringify(selectedAddOns)
-//   );
-
-//   if (existingItem) {
-//     existingItem.quantity += newItem.quantity || 1;
-//     existingItem.totalPrice = existingItem.quantity * finalUnitPrice;
-//   } else {
-//     state.items.push({
-//       id: newItem.id,
-//       name: newItem.name,
-//       image: newItem.image,
-//       quantity: newItem.quantity || 1,
-//       selectedOption: newItem.selectedOption || "full",
-//       addOns: selectedAddOns,             // ⭐ stored in cart
-//       priceInfo,
-//       unitPrice: finalUnitPrice,
-//       totalPrice: finalUnitPrice * (newItem.quantity || 1),
-//       restaurant: newItem.restaurant,
-//       type: newItem.type,
-//     });
-//   }
-// },
- 
-    removeFromCart: (state, action) => {
-      const id = action.payload;
-      state.items = state.items.filter(i => i.id !== id);
-    },
-
+    /* 🔼🔽 Update Quantity */
     updateQuantity: (state, action) => {
-      const {id, quantity} = action.payload;
-      const item = state.items.find(i => i.id === id);
-      if (item) {
-        item.quantity = Math.max(1, quantity); // prevent zero/negative
+      const { cartKey, type } = action.payload;
+
+      const item = state.items.find(
+        i => i.cartKey === cartKey
+      );
+
+      if (!item) return;
+
+      if (type === "increment") {
+        item.quantity += 1;
       }
+
+      if (type === "decrement" && item.quantity > 1) {
+        item.quantity -= 1;
+      }
+
+      item.totalPrice =
+        (item.unitPrice + item.addonTotal) *
+        item.quantity;
     },
+
+    /* 📝 Update Note */
     updateNote: (state, action) => {
-      const {id, note} = action.payload;
-      const item = state.items.find(i => i.id === id);
+      const { cartKey, note } = action.payload;
+
+      const item = state.items.find(
+        i => i.cartKey === cartKey
+      );
+
       if (item) item.note = note;
     },
 
+    /* ❌ Remove Item */
+    removeFromCart: (state, action) => {
+      state.items = state.items.filter(
+        i => i.cartKey !== action.payload
+      );
+    },
+
+    /* 🗑 Clear Cart */
     clearCart: state => {
       state.items = [];
     },
@@ -136,10 +234,13 @@ const existingItem = state.items.find(
 });
 
 export const {
+  hydrateCart,
   addToCart,
-  removeFromCart,
   updateQuantity,
-  clearCart,
   updateNote,
+  removeFromCart,
+  clearCart,
 } = cartSlice.actions;
+
 export default cartSlice.reducer;
+

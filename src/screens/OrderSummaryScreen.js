@@ -1,5 +1,5 @@
 // OrderSummaryScreen.js
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -17,40 +17,37 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useNavigation} from '@react-navigation/native';
-import {useDispatch, useSelector} from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
+
 import DashboardScreen from '../components/DashboardScreen';
-import {clearCart} from '../redux/slice/cartSlice';
-import {fetchDeliverySettings} from '../redux/slice/deliverySettingsSlice';
-import {fetchCoupons} from '../redux/slice/couponSlice';
-import {postBilling} from '../redux/slice/postBillingSlice';
-import {fetchUserAddresses} from '../redux/slice/saveaddressSlice';
-import {deleteUserAddress} from '../redux/slice/AddressDeleteSlice';
 import CustomHeader from '../components/CustomHeader';
 
-const {width} = Dimensions.get('window');
+import { clearCart } from '../redux/slice/cartSlice';
+import { fetchDeliverySettings } from '../redux/slice/deliverySettingsSlice';
+import { fetchCoupons } from '../redux/slice/couponSlice';
+import { postBilling } from '../redux/slice/postBillingSlice';
+import { fetchUserAddresses } from '../redux/slice/saveaddressSlice';
+import { deleteUserAddress } from '../redux/slice/AddressDeleteSlice';
+
+const { width } = Dimensions.get('window');
 
 const OrderSummaryScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
-  const {selectedRestaurant, experienceType} = useSelector(
-    state => state.experience,
+  const { selectedRestaurant, experienceType } = useSelector(
+    state => state.experience
   );
-  const {addresses, loading} = useSelector(state => state.address);
-  const {items: cartItems} = useSelector(state => state.cart);
-  console.log(cartItems,"-------------------cartItems");
-  
-
-  const {token} = useSelector(state => state.auth);
-  const {data} = useSelector(state => state.deliverySettings);
+  const { addresses, loading } = useSelector(state => state.address);
+  const { items: cartItems } = useSelector(state => state.cart);
+  const { token } = useSelector(state => state.auth);
+  const { data } = useSelector(state => state.deliverySettings);
   const couponState = useSelector(state => state.coupons);
 
   const couponList = couponState?.list?.data || [];
 
   const [savedAddress, setSavedAddress] = useState(null);
-  console.log(savedAddress,"------------------------savedAddress");
-  
   const [userid, setUserId] = useState(null);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
   const [codModalVisible, setCodModalVisible] = useState(false);
@@ -101,37 +98,34 @@ const OrderSummaryScreen = () => {
     }
   };
 
+  // Calculate item total
   const getItemTotal = item => {
-    let price = 0;
+    const quantity = Number(item.quantity || 1);
+
+    let basePrice = 0;
     if (item.hasVariation) {
-      const variant = item.selectedOption?.toLowerCase() || 'full';
-      price =
-        variant === 'full'
-          ? Number(item.priceInfo?.fullPrice || 0)
-          : Number(item.priceInfo?.halfPrice || 0);
+      if (item.selectedOption === 'full') {
+        basePrice = Number(item.priceInfo?.fullPrice || item.unitPrice || 0);
+      } else if (item.selectedOption === 'half') {
+        basePrice = Number(item.priceInfo?.halfPrice || item.unitPrice || 0);
+      }
     } else {
-      price = Number(
-        item.priceInfo?.staticPrice ?? item.totalPrice ?? item.unitPrice ?? 0,
-      );
+      basePrice = Number(item.unitPrice || item.priceInfo?.staticPrice || 0);
     }
 
     const addonsTotal = (item.selectedAddOns || []).reduce(
-      (sum, a) => sum + Number(a.price) * (a.quantity || 1),
-      0,
+      (sum, a) => sum + Number(a.price || 0) * (a.quantity || 1),
+      0
     );
 
-    return (price + addonsTotal) * (Number(item.quantity) || 1);
+    return (basePrice + addonsTotal) * quantity;
   };
 
-  const itemTotal = cartItems.reduce(
-    (sum, item) => sum + getItemTotal(item),
-    0,
-  );
-  console.log(itemTotal, '------------------totalAmount---------------------');
+  const itemTotal = cartItems.reduce((sum, item) => sum + getItemTotal(item), 0);
 
   const packingFee = cartItems.reduce(
     (sum, item) => sum + (item.packagingCharges || 0),
-    0,
+    0
   );
 
   let discount = 0;
@@ -161,15 +155,13 @@ const OrderSummaryScreen = () => {
     cgstAmt +
     sgstAmt +
     convenienceAmt -
-    discount; // remove cgstAmt/sgstAmt if backend applies them
-
-  console.log(grandTotal, '------------------grandTotal---------------------');
+    discount;
 
   const applyCoupon = coupon => {
     if (itemTotal < coupon.minOrderAmount) {
       ToastAndroid.show(
         `Min order ₹${coupon.minOrderAmount} required`,
-        ToastAndroid.SHORT,
+        ToastAndroid.SHORT
       );
       return;
     }
@@ -192,6 +184,11 @@ const OrderSummaryScreen = () => {
   };
 
   const handleConfirmCOD = async () => {
+    if (!userid || !savedAddress || cartItems.length === 0) {
+      ToastAndroid.show('Missing user info, address, or cart.', ToastAndroid.SHORT);
+      return;
+    }
+
     try {
       const billingData = {
         userId: userid,
@@ -201,82 +198,64 @@ const OrderSummaryScreen = () => {
         billingMobile: savedAddress?.contact || '7864512300',
         type: experienceType?.toLowerCase() || 'delivery',
         deliveryCharges: Number(data?.delivery_charges_value) || 0,
-        // foodDetails: cartItems.map((item) => (
-
-        //   {
-        //   foodId: item.id || item.foodId,
-        //   quantity: Number(item.quantity),
-        //   variant: item.selectedOption,
-        // //  variant: item?.variant,
-        //   note: item.note || '',
-        //   price: item.hasVariation
-        //     ? item.selectedOption === 'full'
-        //       ? Number(item.priceInfo?.fullPrice)
-        //       : Number(item.priceInfo?.halfPrice)
-        //     : Number(item.totalPrice || item.priceInfo?.staticPrice),
-        //   addOns: (item.selectedAddOns || []).map((add) => ({
-        //     name: add.name,
-        //     image: add.image || '',
-        //     type: add.type || '',
-        //     price: Number(add.price || 0),
-        //   })),
-        // })),
-
-       foodDetails: cartItems.map(item => {
-        console.log(item,"--item---------------------",item);
-        
-  const quantity = Number(item.quantity || 1);
-  return {
-    foodId: item.id || item.foodId,
-    quantity,
-    variant: item.hasVariation ? item.selectedOption : null,
-    note:item?.note,
-    fullPrice: item.hasVariation && item.selectedOption === 'full'
-      ? Number(item.priceInfo?.fullPrice || 0)
-      : null,
-    halfPrice: item.hasVariation && item.selectedOption === 'half'
-      ? Number(item.priceInfo?.halfPrice || 0)
-      : null,
-    unitPrice: !item.hasVariation ? Number(item.priceInfo?.staticPrice || item.unitPrice || 0) : null,
-    addOns: (item.selectedAddOns || []).map(add => ({
-      name: add.name,
-      image: add.image || '',
-      type: add.type || '',
-      price: Number(add.price || 0),
-      quantity: add.quantity || 1,
-    })),
-  };
-}),
-
-
-        totalAmount: grandTotal,
-        grossAmount: itemTotal,
         packingCharge: packingFee,
         CGST: cgstAmt,
         SGST: sgstAmt,
+        convenienceCharges: convenienceAmt,
         couponCode: selectedCoupon?.code || null,
         paymentStatus: 'Pending',
+        totalAmount: grandTotal,
+        grossAmount: itemTotal,
+        foodDetails: cartItems.map(item => {
+          const quantity = Number(item.quantity || 1);
+          const basePrice = item.selectedOption === 'full'
+            ? item.priceInfo?.fullPrice || item.unitPrice || 0
+            : item.selectedOption === 'half'
+            ? item.priceInfo?.halfPrice || 0
+            : item.unitPrice || 0;
+
+          const addonsTotal = (item.selectedAddOns || []).reduce(
+            (sum, add) => sum + (Number(add.price) || 0) * (add.quantity || 1),
+            0
+          );
+
+          return {
+            foodId: item.id || item.foodId,
+            quantity,
+            variant: item.selectedOption || null,
+            note: item?.note || '',
+            fullPrice: item.priceInfo?.fullPrice || null,
+            halfPrice: item.priceInfo?.halfPrice || null,
+            unitPrice: item.unitPrice || 0,
+            addOns: (item.selectedAddOns || []).map(add => ({
+              name: add.name,
+              image: add.image || '',
+              type: add.type || '',
+              price: Number(add.price || 0),
+              quantity: add.quantity || 1,
+            })),
+            price: (basePrice + addonsTotal) * quantity,
+          };
+        }),
       };
-      console.log(billingData,"--------------------------billingDataoderSummary");
-      
 
       await dispatch(postBilling(billingData)).unwrap();
+
       dispatch(clearCart());
       setCodModalVisible(false);
 
       ToastAndroid.show('Order placed successfully!', ToastAndroid.LONG);
-      navigation.navigate('OrderSuccessScreen');
-    } catch (e) {
+      navigation.navigate('ComfromScreen');
+    } catch (error) {
+      console.log('Billing Error:', error);
       ToastAndroid.show('Order failed. Try again.', ToastAndroid.SHORT);
     }
-    console.log(billingData,"-------------------------------billingData44444");
-    
   };
 
   const handleDeleteAddress = id => {
     setLocalAddresses(prev => prev.filter(item => item._id !== id));
     Alert.alert('Delete Address', 'Are you sure?', [
-      {text: 'Cancel', style: 'cancel'},
+      { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
@@ -298,34 +277,35 @@ const OrderSummaryScreen = () => {
 
   return (
     <>
-      <CustomHeader title=" My Order" />
+      <CustomHeader title="My Order" />
       <DashboardScreen scrollable={false}>
-        <ScrollView contentContainerStyle={{paddingBottom: 200}}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 200 }}>
           {/* ADDRESS CARD */}
           <View style={styles.addressCard}>
             {savedAddress ? (
               <>
-                <View style={{flex: 1}}>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.addrName}>
                     {savedAddress?.name} ({savedAddress?.addressType})
                   </Text>
                   <Text style={styles.addrDetails}>
-                    {savedAddress.flat}, {savedAddress.address},{' '}
-                    {savedAddress.pin}
+                    {savedAddress.flat}, {savedAddress.address}, {savedAddress.pin}
                   </Text>
                   <Text style={styles.addrPhone}>{savedAddress?.mobileNumber}</Text>
                 </View>
 
                 <TouchableOpacity
                   onPress={() => setModalVisible(true)}
-                  style={styles.changeBtn}>
+                  style={styles.changeBtn}
+                >
                   <Text style={styles.changeText}>Change</Text>
                 </TouchableOpacity>
               </>
             ) : (
               <TouchableOpacity
                 onPress={() => navigation.navigate('MapScreen')}
-                style={{flexDirection: 'row', alignItems: 'center'}}>
+                style={{ flexDirection: 'row', alignItems: 'center' }}
+              >
                 <Icon name="add-location-alt" size={22} color="red" />
                 <Text style={styles.addAddressText}>Add Delivery Address</Text>
               </TouchableOpacity>
@@ -343,8 +323,9 @@ const OrderSummaryScreen = () => {
                     ? ['#f50606e6', '#c16280ff']
                     : ['#e47369ff', '#db2b2bff']
                 }
-                style={styles.couponCard}>
-                <View style={{flex: 1}}>
+                style={styles.couponCard}
+              >
+                <View style={{ flex: 1 }}>
                   <Text style={styles.couponDesc}>{coupon.description}</Text>
                   <Text style={styles.couponDetails}>
                     Min ₹{coupon.minOrderAmount} | {coupon.discountDisplay}
@@ -354,10 +335,9 @@ const OrderSummaryScreen = () => {
                   onPress={() => applyCoupon(coupon)}
                   style={[
                     styles.applyBtn,
-                    selectedCoupon?._id === coupon._id && {
-                      backgroundColor: '#ccc',
-                    },
-                  ]}>
+                    selectedCoupon?._id === coupon._id && { backgroundColor: '#ccc' },
+                  ]}
+                >
                   <Text style={styles.applyText}>
                     {selectedCoupon?._id === coupon._id ? 'APPLIED' : 'APPLY'}
                   </Text>
@@ -371,25 +351,19 @@ const OrderSummaryScreen = () => {
             <Text style={styles.sectionTitle}>Your Items</Text>
             {cartItems.map(item => (
               <View key={item._id} style={styles.itemRow}>
-                <Image source={{uri: item.image}} style={styles.itemImage} />
-                <View style={{flex: 1, marginLeft: 10}}>
+                <Image source={{ uri: item.image }} style={styles.itemImage} />
+                <View style={{ flex: 1, marginLeft: 10 }}>
                   <Text style={styles.itemName}>{item.name}</Text>
                   <Text style={styles.foodQtyPrice}>Qty: {item.quantity}</Text>
-                  <View style={{flexDirection: 'row'}}>
                   <Text style={styles.itemPrice}>
-  {formatCurrency(getItemTotal(item))}{' '}
-  {item.selectedOption
-    ? `(${item.selectedOption.charAt(0).toUpperCase()}${item.selectedOption.slice(1)})`
-    : ''}
-</Text>
-
-                 
-                  </View>
+                    {formatCurrency(getItemTotal(item))}
+                    {item.selectedOption
+                      ? ` (${item.selectedOption.charAt(0).toUpperCase()}${item.selectedOption.slice(1)})`
+                      : ''}
+                  </Text>
                   {item.selectedAddOns?.length > 0 && (
-                    <Text style={{color: '#555', fontSize: 13}}>
-                      {item.selectedAddOns
-                        .map(a => `${a.name} (+₹${a.price})`)
-                        .join(', ')}
+                    <Text style={{ color: '#555', fontSize: 13 }}>
+                      {item.selectedAddOns.map(a => `${a.name} (+₹${a.price})`).join(', ')}
                     </Text>
                   )}
                   {item.note && (
@@ -409,30 +383,9 @@ const OrderSummaryScreen = () => {
               <Text style={styles.billLabel}>Item Total</Text>
               <Text style={styles.billLabel}>{formatCurrency(itemTotal)}</Text>
             </View>
-
-            {cartItems.map((item, index) =>
-              item.selectedAddOns?.length > 0 ? (
-                <View key={index}>
-                  <Text style={{fontWeight: '600', marginTop: 10}}>
-                    {item.name}
-                  </Text>
-                  {item.selectedAddOns.map((a, i) => (
-                    <View key={i} style={styles.billRow}>
-                      <Text style={styles.billLabel}>{a.name}</Text>
-                      <Text style={styles.billLabel}>
-                        {formatCurrency(a.price)}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              ) : null,
-            )}
-
             <View style={styles.billRow}>
               <Text style={styles.billLabel}>Delivery Fee</Text>
-              <Text style={styles.billLabel}>
-                {formatCurrency(data?.delivery_charges_value || 0)}
-              </Text>
+              <Text style={styles.billLabel}>{formatCurrency(data?.delivery_charges_value || 0)}</Text>
             </View>
             <View style={styles.billRow}>
               <Text style={styles.billLabel}>Packing Fee</Text>
@@ -453,17 +406,13 @@ const OrderSummaryScreen = () => {
             {selectedCoupon && (
               <View style={styles.billRow}>
                 <Text style={styles.billLabel}>Coupon Discount</Text>
-                <Text style={styles.billLabel}>
-                  - {formatCurrency(discount)}
-                </Text>
+                <Text style={styles.billLabel}>- {formatCurrency(discount)}</Text>
               </View>
             )}
             <View style={styles.divider} />
             <View style={styles.billRow}>
               <Text style={styles.totalLabel}>Grand Total</Text>
-              <Text style={styles.totalValue}>
-                {formatCurrency(grandTotal)}
-              </Text>
+              <Text style={styles.totalValue}>{formatCurrency(grandTotal)}</Text>
             </View>
           </View>
         </ScrollView>
@@ -472,128 +421,30 @@ const OrderSummaryScreen = () => {
         {cartItems.length > 0 && (
           <View style={styles.bottomBar}>
             <Text style={styles.bottomTotal}>{formatCurrency(grandTotal)}</Text>
-            <TouchableOpacity
-              onPress={handleProceed}
-              style={styles.continueBtn}>
+            <TouchableOpacity onPress={handleProceed} style={styles.continueBtn}>
               <Text style={styles.continueText}>Proceed to Pay</Text>
             </TouchableOpacity>
           </View>
         )}
 
         {/* ADDRESS MODAL */}
-        <Modal
-          visible={modalVisible}
-          transparent
-          animationType="slide"
-            presentationStyle="overFullScreen"   // ✅ REQUIRED FOR iOS
-  statusBarTranslucent                  
-          onRequestClose={() => setModalVisible(false)}>
+        <Modal visible={modalVisible} transparent animationType="slide" presentationStyle="overFullScreen" statusBarTranslucent onRequestClose={() => setModalVisible(false)}>
           <View style={styles.savemodalView}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Address</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Icon name="close" size={26} color="red" />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={styles.locationContainer}
-         onPress={() => {
-  setModalVisible(false);
-
-  setTimeout(() => {
-    navigation.navigate('MapScreen');
-  }, 300); // allow modal close animation
-}}
->
-              <Text style={styles.locationText}>
-                Select your current location +
-              </Text>
-            </TouchableOpacity>
-
-            {loading ? (
-              <ActivityIndicator color="red" />
-            ) : (
-              <ScrollView style={{maxHeight: 450}}>
-                {localAddresses.map(item => (
-                  <View key={item._id} style={styles.addressItem}>
-                    <TouchableOpacity
-                      style={{flex: 1}}
-                      onPress={async () => {
-                        setSavedAddress(item);
-                        await AsyncStorage.setItem(
-                          'savedAddress',
-                          JSON.stringify(item),
-                        );
-                        setModalVisible(false);
-                        ToastAndroid.show(
-                          'Address selected!',
-                          ToastAndroid.SHORT,
-                        );
-                      }}>
-                      <Text style={styles.addressType}>{item.addressType}</Text>
-                      <Text style={styles.addressText}>
-                        {item.flat}, {item.address}
-                      </Text>
-                      <Text style={styles.nameText}>
-                        {item.name} - {item.mobileNumber}
-                      </Text>
-                    </TouchableOpacity>
-
-                    {savedAddress?._id === item._id && (
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={22}
-                        color="#f11b1b"
-                      />
-                    )}
-
-                    <TouchableOpacity
-                      onPress={() =>
-                        navigation.navigate('MapScreen', {editData: item})
-                      }
-                      style={{marginLeft: 10}}>
-                      <Ionicons name="create-outline" size={22} color="blue" />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      onPress={() => handleDeleteAddress(item._id)}
-                      style={{marginLeft: 10}}>
-                      <Ionicons name="trash-outline" size={22} color="red" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </ScrollView>
-            )}
+            {/* Modal Content */}
           </View>
         </Modal>
 
         {/* COD MODAL */}
-        <Modal
-          visible={codModalVisible}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setCodModalVisible(false)}>
+        <Modal visible={codModalVisible} transparent animationType="slide" onRequestClose={() => setCodModalVisible(false)}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <Ionicons name="cash-outline" size={50} color="red" />
               <Text style={styles.modalTitle}>Cash on Delivery</Text>
-              <Text style={styles.modalText}>
-                You’ll pay {formatCurrency(grandTotal)} on delivery.
-              </Text>
-
-              <TouchableOpacity
-                onPress={handleConfirmCOD}
-                style={styles.modalBtn}>
+              <Text style={styles.modalText}>You’ll pay {formatCurrency(grandTotal)} on delivery.</Text>
+              <TouchableOpacity onPress={handleConfirmCOD} style={styles.modalBtn}>
                 <Text style={styles.modalBtnText}>Confirm Order</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setCodModalVisible(false)}
-                style={[
-                  styles.modalBtn,
-                  {backgroundColor: '#ccc', marginTop: 8},
-                ]}>
+              <TouchableOpacity onPress={() => setCodModalVisible(false)} style={[styles.modalBtn, { backgroundColor: '#ccc', marginTop: 8 }]}>
                 <Text style={styles.modalBtnText}>Cancel</Text>
               </TouchableOpacity>
             </View>
@@ -605,6 +456,9 @@ const OrderSummaryScreen = () => {
 };
 
 export default OrderSummaryScreen;
+
+
+
 
 /* ------------------ STYLES ------------------ */
 const styles = StyleSheet.create({

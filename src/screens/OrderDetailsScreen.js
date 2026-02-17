@@ -25,13 +25,6 @@ const {width} = Dimensions.get('window');
 const OrderDetailsScreen = ({route}) => {
   const navigation = useNavigation();
   const {order} = route.params;
-  console.log('order',"---------------------------",order);
-  
-  console.log(order, 'orderDetails');
-  
-
-
-
 
   useFocusEffect(
     useCallback(() => {
@@ -51,65 +44,77 @@ const OrderDetailsScreen = ({route}) => {
               ],
             }),
           );
-          return true; // ⛔ block default back
+          return true; // block default back
         },
       );
 
-      return () => backHandler.remove(); // ✅ correct cleanup
+      return () => backHandler.remove();
     }, [navigation]),
   );
 
   const {selectedRestaurant, experienceType} = useSelector(
     state => state.experience,
   );
-// ✅ DEFINE FIRST
-const getItemPrice = item => {
-  if (item.variant === 'full') {
-    return item.fullPrice ?? item.foodId?.priceInfo?.fullPrice ?? 0;
-  }
 
-  if (item.variant === 'half') {
-    return item.halfPrice ?? item.foodId?.priceInfo?.halfPrice ?? 0;
-  }
+  // -----------------------
+  // Price Calculation
+  // -----------------------
+  const getItemPrice = item => {
+    console.log(item,"---------item");
+    
+  if (!item) return 0;
 
-  return (
-    item.price ??
-    item.foodId?.priceInfo?.fullPrice ??
-    item.foodId?.priceInfo?.halfPrice ??
-    0
-  );
+  // Use price if available
+  if (item.price != null) return Number(item.price);
+
+  // Use variant explicitly if set
+  if (item.variant === 'fullPrice' && item.fullPrice != null) return Number(item.fullPrice);
+  if (item.variant === 'halfPrice' && item.halfPrice != null) return Number(item.halfPrice);
+
+  // If variant is null, pick whichever price exists
+  if (item.fullPrice != null) return Number(item.fullPrice);
+  if (item.halfPrice != null) return Number(item.halfPrice);
+
+  // Fallback to staticPrice
+  return Number(item.foodId?.priceInfo?.staticPrice ?? 0);
 };
 
-// ✅ THEN USE IT
-const foodprices = order?.foodDetails.reduce((total, item) => {
-  const unitPrice = getItemPrice(item);
-  const qty = Number(item.quantity || 1);
-  return total + unitPrice * qty;
-}, 0);
 
-const foodPrices = Number(foodprices || 0);
-const discount = Number(order?.discount || 0);
-const cgst = Number(order?.CGST || 0);
-const sgst = Number(order?.SGST || 0);
+  const foodPrices = order?.foodDetails?.reduce((total, item) => {
+    console.log("----------------fooditem",item);
+    
+    const unitPrice = getItemPrice(item);
+    const addonsTotal = (item.selectedAddOns || []).reduce(
+      (sum, a) => sum + Number(a.price || 0) * (Number(a.quantity || 1)),
+      0,
+    );
+    const qty = Number(item.quantity || 1);
+    return total + (unitPrice + addonsTotal) * qty;
+  }, 0);
 
-const taxableAmount = Math.max(foodPrices - discount, 0);
+  const discount = Number(order?.discount || 0);
+  const cgst = Number(order?.CGST || 0);
+  const sgst = Number(order?.SGST || 0);
+  const deliveryCharges = Number(order?.deliveryCharges || 0);
+  const packingCharge = Number(order?.packingCharge || 0);
+  const convenienceCharges = Number(order?.convenienceCharges || 0);
 
-const totalAmountPrice = Number(
-  (taxableAmount + cgst + sgst).toFixed(2)
-);
+  const taxableAmount = Math.max(foodPrices - discount, 0);
 
-console.log('Total Amount:', totalAmountPrice);
-
-
-
-
+  const totalAmountPrice = Number(
+    (
+      taxableAmount +
+      cgst +
+      sgst +
+      deliveryCharges +
+      packingCharge +
+      convenienceCharges
+    ).toFixed(2),
+  );
 
   const restaurant = order?.restaurant || {};
   const foodDetails = order?.foodDetails || [];
-  console.log(foodDetails, 'foodDetails');
-
   const address = order?.address || {};
-
   const status = order?.deliveryStatus || 'Ordered';
 
   const statusColor =
@@ -121,7 +126,7 @@ console.log('Total Amount:', totalAmountPrice);
 
   return (
     <>
-      <CustomHeader title="Order Detalis" />
+      <CustomHeader title="Order Details" />
       <DashboardScreen scrollable={false}>
         <ScrollView
           style={styles.container}
@@ -158,22 +163,38 @@ console.log('Total Amount:', totalAmountPrice);
               horizontal
               keyExtractor={(item, idx) => idx.toString()}
               showsHorizontalScrollIndicator={false}
-              renderItem={({item}) => (
-                <View style={styles.foodCard}>
-                  <Image
-                    source={{
-                      uri:
-                        item?.food?.image || 'https://via.placeholder.com/80',
-                    }}
-                    style={styles.foodImage}
-                  />
-                  <Text style={styles.foodName}>{item?.foodId?.name}</Text>
-                  <Text style={styles.foodQtyPrice}>Qty: {item?.quantity}</Text>
-                  <Text style={styles.foodPrice}>₹{getItemPrice(item)}</Text>
-
-                  <Text style={styles.foodPrice}>{item?.note}</Text>
-                </View>
-              )}
+              renderItem={({item}) => {
+                const unitPrice = getItemPrice(item);
+                console.log(unitPrice,"---------unitPrice");
+                
+                const qty = Number(item.quantity || 1);
+                const addonsTotal = (item.selectedAddOns || []).reduce(
+                  (sum, a) => sum + Number(a.price || 0) * (Number(a.quantity || 1)),
+                  0,
+                );
+                const totalPerItem = (unitPrice + addonsTotal) * qty;
+                return (
+                  <View style={styles.foodCard}>
+                    <Image
+                      source={{
+                        uri: item?.food?.image || 'https://via.placeholder.com/80',
+                      }}
+                      style={styles.foodImage}
+                    />
+                    <Text style={styles.foodName}>{item?.foodId?.name}</Text>
+                    <Text style={styles.foodQtyPrice}>
+                      Qty: {qty} | ₹{unitPrice.toFixed(2)} each
+                    </Text>
+                    {addonsTotal > 0 && (
+                      <Text style={styles.foodQtyPrice}>
+                        Addons: ₹{addonsTotal.toFixed(2)}
+                      </Text>
+                    )}
+                    <Text style={styles.foodPrice}>Total: ₹{totalPerItem.toFixed(2)}</Text>
+                    {item?.note ? <Text style={styles.foodNote}>{item?.note}</Text> : null}
+                  </View>
+                );
+              }}
             />
           </View>
 
@@ -194,58 +215,41 @@ console.log('Total Amount:', totalAmountPrice);
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Charges</Text>
             <View style={styles.chargeRow}>
-              <Text style={styles.chargeText}>totalAmount</Text>
-              <Text style={styles.chargeText}>
-                ₹{(foodprices || 0).toFixed(2)}
-              </Text>
+              <Text style={styles.chargeText}>Food Total</Text>
+              <Text style={styles.chargeText}>₹{foodPrices.toFixed(2)}</Text>
             </View>
             {experienceType === 'Delivery' && (
               <View style={styles.chargeRow}>
                 <Text style={styles.chargeText}>Delivery</Text>
-                <Text style={styles.chargeText}>
-                  ₹{order?.deliveryCharges || 0}
-                </Text>
+                <Text style={styles.chargeText}>₹{deliveryCharges.toFixed(2)}</Text>
               </View>
             )}
-
             <View style={styles.chargeRow}>
               <Text style={styles.chargeText}>Convenience</Text>
-              <Text style={styles.chargeText}>
-                ₹{order?.convenienceCharges || 0}
-              </Text>
+              <Text style={styles.chargeText}>₹{convenienceCharges.toFixed(2)}</Text>
             </View>
             <View style={styles.chargeRow}>
-              <Text style={styles.chargeText}>packingCharge</Text>
-              <Text style={styles.chargeText}>
-                ₹{order?.packingCharge || 0}
-              </Text>
+              <Text style={styles.chargeText}>Packing Charge</Text>
+              <Text style={styles.chargeText}>₹{packingCharge.toFixed(2)}</Text>
             </View>
             <View style={styles.chargeRow}>
               <Text style={styles.chargeText}>CGST</Text>
-              <Text style={styles.chargeText}>₹{order?.CGST || 0}</Text>
+              <Text style={styles.chargeText}>₹{cgst.toFixed(2)}</Text>
             </View>
             <View style={styles.chargeRow}>
               <Text style={styles.chargeText}>SGST</Text>
-              <Text style={styles.chargeText}>₹{order?.SGST || 0}</Text>
+              <Text style={styles.chargeText}>₹{sgst.toFixed(2)}</Text>
             </View>
             <View style={styles.chargeRow}>
-              <Text style={styles.chargeText}>discount</Text>
-              <Text style={styles.chargeText}>₹{order?.discount || 0}</Text>
+              <Text style={styles.chargeText}>Discount</Text>
+              <Text style={styles.chargeText}>-₹{discount.toFixed(2)}</Text>
             </View>
             <View style={[styles.chargeRow, {marginTop: 8}]}>
-              <Text
-                style={[
-                  styles.chargeText,
-                  {fontWeight: 'bold', color: '#FF6347'},
-                ]}>
+              <Text style={[styles.chargeText, {fontWeight: 'bold', color: '#FF6347'}]}>
                 Total
               </Text>
-              <Text
-                style={[
-                  styles.chargeText,
-                  {fontWeight: 'bold', color: '#FF6347'},
-                ]}>
-                ₹{totalAmountPrice || 0}
+              <Text style={[styles.chargeText, {fontWeight: 'bold', color: '#FF6347'}]}>
+                ₹{totalAmountPrice.toFixed(2)}
               </Text>
             </View>
           </View>
@@ -300,28 +304,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: Theme.colors.black,
   },
-  foodQtyPrice: {fontSize: 12, color: '#FF6347', marginTop: 2},
-  foodPrice: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    marginTop: 2,
-    color: Theme.colors.black,
-  },
+  foodQtyPrice: {fontSize: 12, color: '#FF6347', marginTop: 2, textAlign: 'center'},
+  foodPrice: {fontSize: 13, fontWeight: 'bold', marginTop: 2, color: Theme.colors.black},
+  foodNote: {fontSize: 12, color: '#555', marginTop: 2, textAlign: 'center'},
 
   infoRow: {
     flexDirection: 'row',
-    alignItems: 'center', // FIX 1: Perfect vertical alignment
+    alignItems: 'center',
     marginTop: 6,
-    flexWrap: 'wrap', // FIX 2: Prevents text from going outside the box
-    width: '100%', // FIX 3: Makes wrapping work properly
+    flexWrap: 'wrap',
+    width: '100%',
   },
-
   infoText: {
     fontSize: 14,
     color: '#0A0909',
-    marginLeft: 6, // Space between icon & text
-    flexShrink: 1, // FIX 4: Prevents overflow
-    flexWrap: 'wrap', // Ensures long text wraps properly
+    marginLeft: 6,
+    flexShrink: 1,
+    flexWrap: 'wrap',
   },
 
   chargeRow: {

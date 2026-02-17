@@ -14,7 +14,7 @@ import Theme from "../assets/theme";
 
 const { width, height } = Dimensions.get("window");
 
-const OrderSuccessScreen = ({ navigation }) => {
+const ComfromScreen = ({ navigation }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
@@ -151,7 +151,7 @@ const OrderSuccessScreen = ({ navigation }) => {
   );
 };
 
-export default OrderSuccessScreen;
+export default ComfromScreen;
 
 const styles = StyleSheet.create({
   container: {

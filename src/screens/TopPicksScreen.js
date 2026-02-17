@@ -33,10 +33,14 @@ const TopPicksScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const route = useRoute();
-  const [baseTotal, setBaseTotal] = useState(0);
+  // const [baseTotal, setBaseTotal] = useState(0);
+  console.log(baseTotal,"----------ˇßbaseTotal");
+  
   const [addonsTotal, setAddonsTotal] = useState(0);
   const isVeg = useSelector((state) => state.foodFilter?.isVeg ?? null);
   const cartItems = useSelector((state) => state.cart?.items ?? []);
+  console.log(cartItems,"----------------------cartItems8888");
+  
   const totalCount = cartItems.length;
 
   const { AllFoodsData, page = 1, hasMore = true, loading = false } = useSelector(
@@ -176,13 +180,20 @@ const TopPicksScreen = () => {
   const handleConfirmAdd = () => {
     if (!selectedFood) return;
     dispatch(
+      // addToCart({
+      //   ...selectedFood,
+      //   quantity,
+      //   option: selectedOption,
+      //   selectedAddOns,
+      //   totalPrice,
+      // })
+
       addToCart({
-        ...selectedFood,
-        quantity,
-        option: selectedOption,
-        selectedAddOns,
-        totalPrice,
-      })
+    ...selectedFood,
+    quantity,
+    selectedOption,
+    selectedAddOns,
+  })
     );
     closeModal();
     setBottomBoxVisible(true);
@@ -202,18 +213,33 @@ const TopPicksScreen = () => {
     navigation.navigate("OderCartScreen");
   };
 
+
+  const unitPrice = selectedFood
+  ? computeUnitPrice(selectedFood, selectedOption)
+  : 0;
+
+const addonTotal = selectedAddOns.reduce(
+  (sum, a) => sum + Number(a.price || 0),
+  0
+);
+
+const baseTotal = (unitPrice + addonTotal) * quantity;
+
+
   // Update totals
-  useEffect(() => {
-    if (!selectedFood) return;
-    const unit = computeUnitPrice(selectedFood, selectedOption);
-    const base = unit * quantity;
-    const addons =
-      selectedAddOns.reduce((sum, a) => sum + Number(a.price || 0), 0) *
-      quantity;
-    setBaseTotal(base);
-    setAddonsTotal(addons);
-    setTotalPrice(base + addons);
-  }, [selectedFood, selectedOption, quantity, selectedAddOns]);
+  // useEffect(() => {
+  //   if (!selectedFood) return;
+  //   const unit = computeUnitPrice(selectedFood, selectedOption);
+  //   const base = unit * quantity;
+  //   console.log(base,"----------base");
+    
+  //   const addons =
+  //     selectedAddOns.reduce((sum, a) => sum + Number(a.price || 0), 0) *
+  //     quantity;
+  //   setBaseTotal(base);
+  //   setAddonsTotal(addons);
+  //   setTotalPrice(base + addons);
+  // }, [selectedFood, selectedOption, quantity, selectedAddOns]);
 
 
 

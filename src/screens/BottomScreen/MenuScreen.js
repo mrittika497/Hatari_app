@@ -373,6 +373,9 @@ const renderItem = ({ item }) => {
 };
 
 
+
+
+
   // -------------------------
   // stable key extractor
   // -------------------------
@@ -510,187 +513,169 @@ const renderItem = ({ item }) => {
             />
           </Animated.View>
 
-          {/* ========================= MODAL ======================== */}
-          <Modal transparent visible={modalVisible} animationType="none">
-            <TouchableWithoutFeedback onPress={closeModal}>
-              <View style={styles.modalOverlay}>
-                <TouchableWithoutFeedback onPress={() => {}}>
-                  <Animated.View
-                    style={[
-                      styles.modalContent,
-                      {
-                        transform: [
-                          {
-                            translateY: slideAnim.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [300, 0],
-                            }),
-                          },
-                        ],
-                      },
-                    ]}>
-                    <View style={styles.modalHandle} />
-
-                    {selectedFood && (
-                      <>
-                        {/* Food Header */}
-                        <View style={styles.modalHeader}>
-                          <Image
-                            source={{uri: selectedFood.image}}
-                            style={styles.modalImg}
-                          />
-                          <View style={{flex: 1, marginLeft: 12}}>
-                              <Text style={styles.modalCuisine}>
-                              {selectedFood?.cuisineType}
-                            </Text>
-                            <Text style={styles.modalFoodName}>
-                              {selectedFood.name}
-                            </Text>
-                          
-                          </View>
-                        </View>
-
-                        {/* Price / Variation */}
-                        {selectedFood?.priceInfo?.hasVariation ? (
-                          <View style={styles.optionRow}>
-                            {['half', 'full'].map(opt => (
-                              <TouchableOpacity
-                                key={opt}
-                                style={[
-                                  styles.optionBtn,
-                                  selectedOption === opt &&
-                                    styles.selectedOption,
-                                ]}
-                                onPress={() => setSelectedOption(opt)}>
-                                <Text
-                                  style={[
-                                    styles.optionText,
-                                    selectedOption === opt &&
-                                      styles.optionTextSelected,
-                                  ]}>
-                                  {opt.charAt(0).toUpperCase() + opt.slice(1)} –
-                                  ₹
-                                  {opt === 'half'
-                                    ? selectedFood.priceInfo.halfPrice
-                                    : selectedFood.priceInfo.fullPrice}
-                                </Text>
-                              </TouchableOpacity>
-                            ))}
-                          </View>
-                        ) : (
-                          <Text style={styles.staticPrice}>
-                            Price: ₹{selectedFood.priceInfo.staticPrice}
-                          </Text>
-                        )}
-
-                        {/* Description */}
-                        {selectedFood?.description && (
-                          <Text style={styles.modalDescription}>
-                            {selectedFood.description}
-                          </Text>
-                        )}
-
-                        {/* Add-ons Section */}
-                        {selectedFood?.addOns?.length > 0 && (
-                          <View style={{marginTop: 15}}>
-                            <Text style={styles.addonTitle}>Add-ons</Text>
-                            {selectedFood.addOns.map((addon, index) => {
-                              const isSelected = selectedAddOns.some(
-                                a => a.name === addon.name,
-                              );
-                              return (
-                                <TouchableOpacity
-                                  key={index}
-                                  style={[
-                                    styles.addonItem,
-                                    isSelected && {
-                                      borderColor: '#FF4D4D',
-                                      borderWidth: 1.5,
-                                    },
-                                  ]}
-                                  onPress={() => toggleAddOn(addon)}>
-                                  <Image
-                                    source={{uri: addon.image}}
-                                    style={styles.addonImage}
-                                  />
-                                  <View style={{flex: 1}}>
-                                    <Text style={styles.addonName}>
-                                      {addon.name}
-                                    </Text>
-                                    <Text style={styles.addonPrice}>
-                                      ₹{addon.price}
-                                    </Text>
-                                  </View>
-                                  <View
-                                    style={
-                                      isSelected
-                                        ? styles.checkmarkSelected
-                                        : styles.checkmarkBox
-                                    }>
-                                    {isSelected && (
-                                      <Text style={styles.checkmark}>✓</Text>
-                                    )}
-                                  </View>
-                                </TouchableOpacity>
-                              );
-                            })}
-                          </View>
-                        )}
-
-                        {/* Quantity Selector */}
-                        <View style={styles.quantityBox}>
-                          <TouchableOpacity
-                            style={styles.qtyBtn}
-                            onPress={() =>
-                              quantity > 1 && setQuantity(quantity - 1)
-                            }>
-                            <Text style={styles.qtyText}>-</Text>
-                          </TouchableOpacity>
-                          <Text style={styles.qtyValue}>{quantity}</Text>
-                          <TouchableOpacity
-                            style={styles.qtyBtn}
-                            onPress={() => setQuantity(quantity + 1)}>
-                            <Text style={styles.qtyText}>+</Text>
-                          </TouchableOpacity>
-                        </View>
-
-                        {/* Footer: Total + Confirm */}
-                        <View style={styles.modalFooter}>
-                          <View style={{flex: 1}}>
-                            <Text style={styles.totalPrice}>
-                              {/* Base Price × Quantity */}
-                              Base: ₹{baseTotal}{' '}
-                              {selectedOption === 'half'
-                                ? '(Half)'
-                                : selectedOption === 'full'
-                                ? '(Full)'
-                                : ''}
-                              {/* Add-ons */}
-                              {selectedAddOns.length > 0 &&
-                                `  +  Add-ons: ${selectedAddOns
-                                  .map(a => `${a.name} ₹${a.price}`)
-                                  .join(', ')}`}
-                              {/* Final Total */}
-                              {/* {`\nTotal: ₹${totalPrice}`} */}
-                            </Text>
-                          </View>
-                          <View style={{flex: 1, alignItems: 'flex-end'}}>
-                            <TouchableOpacity
-                              style={styles.confirmBtn}
-                              onPress={handleConfirmAdd}>
-                              <Text style={styles.confirmBtnText}>
-                                Confirm Add
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                      </>
-                    )}
-                  </Animated.View>
-                </TouchableWithoutFeedback>
-              </View>
-            </TouchableWithoutFeedback>
-          </Modal>
+        <Modal transparent visible={modalVisible} animationType="none">
+                 <TouchableWithoutFeedback onPress={closeModal}>
+                   <View style={styles.modalOverlay}>
+                     <TouchableWithoutFeedback>
+                       <Animated.View
+                         style={[
+                           styles.modalContent,
+                           {
+                             transform: [
+                               {
+                                 translateY: slideAnim.interpolate({
+                                   inputRange: [0, 1],
+                                   outputRange: [300, 0],
+                                 }),
+                               },
+                             ],
+                           },
+                         ]}
+                       >
+                         <View style={styles.modalHandle} />
+                         {selectedFood && (
+                           <>
+                             <View style={styles.modalHeader}>
+                               <Image
+                                 source={{ uri: selectedFood.image }}
+                                 style={styles.modalImg}
+                               />
+                               <View style={{ flex: 1, marginLeft: 12 }}>
+                                 <Text style={styles.modalCuisine}>
+                                   {selectedFood.cuisineType}
+                                 </Text>
+                                 <Text style={styles.modalFoodName}>
+                                   {selectedFood.name}
+                                 </Text>
+                               </View>
+                             </View>
+       
+                             {selectedFood?.priceInfo?.hasVariation ? (
+                               <View style={styles.optionRow}>
+                                 {["half", "full"].map((opt) => (
+                                   <TouchableOpacity
+                                     key={opt}
+                                     style={[
+                                       styles.optionBtn,
+                                       selectedOption === opt && styles.selectedOption,
+                                     ]}
+                                     onPress={() => setSelectedOption(opt)}
+                                   >
+                                     <Text
+                                       style={[
+                                         styles.optionText,
+                                         selectedOption === opt &&
+                                         styles.optionTextSelected,
+                                       ]}
+                                     >
+                                       {opt.charAt(0).toUpperCase() + opt.slice(1)} – ₹
+                                       {opt === "half"
+                                         ? selectedFood.priceInfo.halfPrice
+                                         : selectedFood.priceInfo.fullPrice}
+                                     </Text>
+                                   </TouchableOpacity>
+                                 ))}
+                               </View>
+                             ) : (
+                               <Text style={styles.staticPrice}>
+                                 Price: ₹{selectedFood.priceInfo.staticPrice}
+                               </Text>
+                             )}
+       
+                             {selectedFood?.description && (
+                               <Text style={styles.modalDescription}>
+                                 {selectedFood.description}
+                               </Text>
+                             )}
+       
+                             {selectedFood?.addOns?.length > 0 && (
+                               <View style={{ marginTop: 15 }}>
+                                 <Text style={styles.addonTitle}>Add-ons</Text>
+                                 {selectedFood.addOns.map((addon, index) => {
+                                   const isSelected = selectedAddOns.some(
+                                     (a) => a.name === addon.name
+                                   );
+                                   return (
+                                     <TouchableOpacity
+                                       key={index}
+                                       style={[
+                                         styles.addonItem,
+                                         isSelected && {
+                                           borderColor: "#FF4D4D",
+                                           borderWidth: 1.5,
+                                         },
+                                       ]}
+                                       onPress={() => toggleAddOn(addon)}
+                                     >
+                                       <Image
+                                         source={{ uri: addon.image }}
+                                         style={styles.addonImage}
+                                       />
+                                       <View style={{ flex: 1 }}>
+                                         <Text style={styles.addonName}>{addon.name}</Text>
+                                         <Text style={styles.addonPrice}>₹{addon.price}</Text>
+                                       </View>
+                                       <View
+                                         style={
+                                           isSelected
+                                             ? styles.checkmarkSelected
+                                             : styles.checkmarkBox
+                                         }
+                                       >
+                                         {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                                       </View>
+                                     </TouchableOpacity>
+                                   );
+                                 })}
+                               </View>
+                             )}
+       
+                             {/* Quantity Selector */}
+                             <View style={styles.quantityBox}>
+                               <TouchableOpacity
+                                 style={styles.qtyBtn}
+                                 onPress={() =>
+                                   quantity > 1 && setQuantity(quantity - 1)
+                                 }>
+                                 <Text style={styles.qtyText}>-</Text>
+                               </TouchableOpacity>
+                               <Text style={styles.qtyValue}>{quantity}</Text>
+                               <TouchableOpacity
+                                 style={styles.qtyBtn}
+                                 onPress={() => setQuantity(quantity + 1)}>
+                                 <Text style={styles.qtyText}>+</Text>
+                               </TouchableOpacity>
+                             </View>
+       
+                             {/* Footer: Total + Confirm */}
+                             <View style={styles.modalFooter}>
+                               <View style={{ flex: 1 }}>
+                                 <Text style={styles.totalPrice}>
+                                   Base: ₹{baseTotal}{' '}
+                                   {selectedOption === 'half' ? '(Half)' : '(Full)'}{' '}
+                                   {selectedAddOns.length > 0 &&
+                                     ` + Add-ons: ${selectedAddOns
+                                       .map(a => `${a.name} ₹${a.price}`)
+                                       .join(', ')}`}
+                                 </Text>
+                               </View>
+                               <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                                 <TouchableOpacity
+                                   style={styles.confirmBtn}
+                                   onPress={handleConfirmAdd}>
+                                   <Text style={styles.confirmBtnText}>
+                                     Confirm Add
+                                   </Text>
+                                 </TouchableOpacity>
+                               </View>
+                             </View>
+                           </>
+                         )}
+                       </Animated.View>
+                     </TouchableWithoutFeedback>
+                   </View>
+                 </TouchableWithoutFeedback>
+               </Modal>
 
           {/* ========================= ADDED TO CART BOX ========================= */}
           {bottomBoxVisible && (

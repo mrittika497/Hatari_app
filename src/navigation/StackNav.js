@@ -12,7 +12,7 @@ import FoodDetailScreen from '../screens/FoodDetailScreen';
 import CatItemScreen from '../screens/CatItemScreen';
 import OrderSummaryScreen from '../screens/OrderSummaryScreen';
 import MapScreen from '../screens/MapScreen';
-import OrderSuccessScreen from '../screens/ComfromScreen';
+
 import SearchScreen from '../screens/SearchScreen';
 
 import ItemDetalis from '../screens/ItemDetalis';
@@ -25,6 +25,7 @@ import CuisineTypeSubCat from '../screens/CuisineTypeSubCat';
 import PrivacyPolicyScreen from '../privacy&policy/PrivacyPolicyScreen';
 import TermsConditionsScreen from '../privacy&policy/TermsConditionsScreen';
 import SupportHelpScreen from '../privacy&policy/SupportHelpScreen';
+import ComfromScreen from '../screens/ComfromScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -105,8 +106,8 @@ const StackNav = () => {
       options={{headerShown:false}}
       />
                   <Stack.Screen
-      name='OrderSuccessScreen'
-      component={OrderSuccessScreen}
+      name='ComfromScreen'
+      component={ComfromScreen}
       options={{headerShown:false}}
       />
 

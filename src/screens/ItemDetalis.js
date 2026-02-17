@@ -22,11 +22,13 @@ const ItemDetalis = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const {orders, loading, error} = useSelector(state => state.foodOrder);
-  console.log(orders,"--------------------------------***********");
+  // console.log("----------------orders",orders,"--------------------------------orders");
   
 
   
   const orderData = orders?.data || [];
+  console.log(orderData,"----------orderData");
+  
 useFocusEffect(
   useCallback(() => {
     const backHandler = BackHandler.addEventListener(
@@ -86,21 +88,113 @@ useFocusEffect(
     );
 
   const getSelectedPrice = food => {
+    console.log(food,"---------------123food");
+    
   
     
     if (!food) return 0;   
-    if (food?.variant === 'fullPrice') return Number(food?.fullPrice || 0);
-    if (food?.variant === 'halfPrice') return Number(food?.halfPrice || 0);
+    if (food?.foodDetails?.variant === 'fullPrice') return Number(food?.foodDetails?.fullPrice || 0);
+    if (food?.foodDetails?.variant === 'halfPrice') return Number(food?.foodDetails?.halfPrice || 0);
     return Number(food?.price || food?.fullPrice || food?.halfPrice || 0);
   };
 
-  const getAddOnsTotal = food => {
-    if (!food?.addOns || food.addOns.length === 0) return 0;
-    return food.addOns.reduce(
-      (sum, addon) => sum + Number(addon.price || 0) * (addon.quantity || 1),
-      0,
-    );
-  };
+//  const getBasePrice = (food) => {
+//   if (!food) return 0;
+
+//   // Priority: main item price > variant price > foodId.staticPrice
+//   if (food.price != null) return Number(food.price);
+//   if (food.variant === 'fullPrice' && food.fullPrice != null) return Number(food.fullPrice);
+//   if (food.variant === 'halfPrice' && food.halfPrice != null) return Number(food.halfPrice);
+//   if (food.fullPrice != null) return Number(food.fullPrice);
+//   if (food.halfPrice != null) return Number(food.halfPrice);
+
+//   return Number(food.foodId?.priceInfo?.staticPrice || 0);
+// };
+
+// const getAddOnsTotal = (food) => {
+//   if (!food?.addOns || food.addOns.length === 0) return 0;
+
+//   return food.addOns.reduce((sum, addon) => {
+//     const addonQty = Number(addon.quantity || 1); // default to 1 if quantity missing
+//     return sum + Number(addon.price || 0) * addonQty;
+//   }, 0);
+// };
+
+
+
+
+// const getItemTotal = (food) => {
+//   if (!food) return 0;
+
+//   const qty = Number(food.quantity || 1);
+
+//   // Determine base price
+//   let basePrice = 0;
+//   if (food.price != null) basePrice = Number(food.price);
+//   else if (food.variant === 'fullPrice' && food.fullPrice != null) basePrice = Number(food.fullPrice);
+//   else if (food.variant === 'halfPrice' && food.halfPrice != null) basePrice = Number(food.halfPrice);
+//   else basePrice = Number(food.foodId?.priceInfo?.staticPrice || 0);
+
+//   // Add-ons total
+//   const addonsTotal = (food.addOns || []).reduce((sum, addon) => {
+//     const addonQty = Number(addon.quantity || 1); // default 1
+//     return sum + Number(addon.price || 0) * addonQty;
+//   }, 0);
+
+//   return (basePrice + addonsTotal) * qty;
+// };
+
+
+// const getBasePrice = (food) => {
+//   if (!food) return 0;
+
+//   // Variant-based priority
+//   if (food.variant === 'fullPrice' && food.fullPrice != null) return Number(food.fullPrice);
+//   if (food.variant === 'halfPrice' && food.halfPrice != null) return Number(food.halfPrice);
+
+//   // Fallbacks
+//   if (food.price != null) return Number(food.price);
+//   if (food.fullPrice != null) return Number(food.fullPrice);
+//   if (food.halfPrice != null) return Number(food.halfPrice);
+
+//   // Last fallback: static price from foodId
+//   return Number(food.foodId?.priceInfo?.staticPrice || 0);
+// };
+
+
+const getBasePrice = (food) => {
+  if (!food) return 0;
+
+  // Variant-based priority
+  if (food.variant === 'fullPrice' && food.fullPrice > 0) return Number(food.fullPrice);
+  if (food.variant === 'halfPrice' && food.halfPrice > 0) return Number(food.halfPrice);
+
+  // Fallbacks
+  if (food.price > 0) return Number(food.price);
+  if (food.fullPrice > 0) return Number(food.fullPrice);
+  if (food.halfPrice > 0) return Number(food.halfPrice);
+
+  // Last fallback: static price from foodId
+  return Number(food.foodId?.priceInfo?.staticPrice || 0);
+};
+
+const getAddOnsTotal = (food) => {
+  if (!food?.addOns || food.addOns.length === 0) return 0;
+  return food.addOns.reduce((sum, addon) => {
+    const addonQty = Number(addon.quantity || 1);
+    return sum + Number(addon.price || 0) * addonQty;
+  }, 0);
+};
+
+const getItemTotal = (food) => {
+  const basePrice = getBasePrice(food);
+  const addonsTotal = getAddOnsTotal(food);
+  const qty = Number(food.quantity || 1);
+  return (basePrice + addonsTotal) * qty;
+};
+
+
+
 
   return (
     <>
@@ -108,7 +202,7 @@ useFocusEffect(
       <DashboardScreen scrollable={false}>
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
           {orderData.map((item, index) => {
-   console.log(item,"--------------------------------itemItemDetalis88888888888888888888888888888***********");
+  //  console.log(item,"--------------------------------itemItemDetalis88888888888888888888888888888***********");
    
             
             const restaurant = item?.restaurant || {};
@@ -194,6 +288,11 @@ useFocusEffect(
                             </View>
                           )}
 
+                          <Text style={[styles.foodDesc, { fontWeight: '700', marginTop: 4 }]}>
+  Total: ₹{getItemTotal(food)}
+</Text>
+
+
                           {/* Note */}
                           {food?.note && (
                             <Text style={[styles.foodDesc, {fontStyle: 'italic'}]}>
@@ -204,7 +303,7 @@ useFocusEffect(
 
                         {/* PRICE */}
                         <View style={styles.foodPriceBox}>
-                          <Text style={styles.foodPrice}>₹ {totalPrice}</Text>
+                          <Text style={styles.foodPrice}>₹ {getItemTotal(food)}</Text>
                         </View>
                       </View>
                     );
